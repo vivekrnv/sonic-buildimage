@@ -6,6 +6,7 @@ After=swss.service
 [Timer]
 OnUnitActiveSec=0 sec
 OnBootSec=3min 30 sec
+AccuracySec=1us
 Unit=snmp.service
 
 [Install]
