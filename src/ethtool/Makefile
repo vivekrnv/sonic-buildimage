@@ -11,6 +11,8 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	git clone https://salsa.debian.org/kernel-team/ethtool/
 	pushd ethtool
 	git checkout tags/debian/1%$(ETHTOOL_VERSION_BASE)-1
+	# Disabling Netlink interface
+	sed -i 's/enable_netlink=yes/enable_netlink=no/g' configure.ac  
 	# Build package
 	dpkg-buildpackage -rfakeroot -b -us -uc -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 	popd
