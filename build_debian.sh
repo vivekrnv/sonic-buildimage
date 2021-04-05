@@ -314,6 +314,7 @@ sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y in
     python3-distutils       \
     python3-pip             \
     cron                    \
+    libmnl0                 \
     haveged                 \
     jq
 
