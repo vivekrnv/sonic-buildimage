@@ -12,8 +12,8 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	pushd ethtool
 	git checkout tags/debian/1%$(ETHTOOL_VERSION_BASE)-1
 ifneq (,(filter $(CONFIGURED_ARCH),arm64 armhf))
-	# Netlink based user-space interface support for ethtool is disabled will be using ioctl interface instead
-	sed -i 's/\(dh_auto_configure --\)/\1 --disable-netlink/g' debian/rules  
+	# Disabling Tests
+	sed -i -e 's/\(override_dh_auto_configure:\)/override_dh_auto_test:\n\techo \"Skipping Tests\"\n\n\1/g' debian/rules
 endif
 	# Build package
 	dpkg-buildpackage -rfakeroot -b -us -uc -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
