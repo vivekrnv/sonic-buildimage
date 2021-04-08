@@ -11,12 +11,13 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	git clone https://salsa.debian.org/kernel-team/ethtool/
 	pushd ethtool
 	git checkout tags/debian/1%$(ETHTOOL_VERSION_BASE)-1
-ifneq (,(filter $(CONFIGURED_ARCH),arm64 armhf))
-	# Disabling Tests
-	sed -i -e 's/\(override_dh_auto_configure:\)/override_dh_auto_test:\n\techo \"Skipping Tests\"\n\n\1/g' debian/rules
-endif
 	# Build package
+ifneq (,(filter $(CONFIGURED_ARCH),arm64 armhf))
+	DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -rfakeroot -b -us -uc -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+else
 	dpkg-buildpackage -rfakeroot -b -us -uc -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+endif
+	
 	popd
 	mv $(DERIVED_TARGET) $* $(DEST)/
 
