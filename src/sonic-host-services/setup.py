@@ -20,7 +20,8 @@ setup(
         'scripts/procdockerstatsd',
         'scripts/determine-reboot-cause',
         'scripts/process-reboot-cause',
-        'scripts/sonic-host-server'
+        'scripts/sonic-host-server',
+        'scripts/auto-techsupport'
     ],
     install_requires = [
         'dbus-python',
@@ -37,7 +38,8 @@ setup(
     tests_require = [
         'parameterized',
         'pytest',
-        'sonic-py-common'
+        'sonic-py-common',
+        'pyfakefs'
     ],
     classifiers = [
         'Development Status :: 3 - Alpha',
