@@ -1,5 +1,5 @@
 class RedisSingleton:
-    "Introduced to verify the DB updates made by the scripts"
+    "Introduced to modify/check Redis DB's data outside the scripts"
     __instance = None
     data = {}
     data["CONFIG_DB"] = {}

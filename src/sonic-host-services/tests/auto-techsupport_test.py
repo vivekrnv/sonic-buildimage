@@ -27,7 +27,6 @@ RedisHandle = RedisSingleton.getInstance()
 
 def clear_redis():
     RedisHandle.data[ats.CFG_DB].clear()
-    RedisHandle.data[ats.STATE_DB].clear()
 
 class TestTechsupportCreationEvent(unittest.TestCase):
     
@@ -39,46 +38,25 @@ class TestTechsupportCreationEvent(unittest.TestCase):
             func(*args, **kwargs)
         assert exc.value.code == 0, "{} did not exit with success".format(func.__name__)
     
-    def test_spurious_invoc_with_no_state_info(self):
-        """ Scenario: Event Notification by the systemd is not because of techsupport dump with No prev state info """
+    def test_spurious_invoc(self):
+        """ Scenario: Event Notification by the systemd is not because of techsupport dump. """
         with Patcher() as patcher:
-            patcher.fs.create_dir('/var/dump/')
-            self.assert_clean_exit(ats.handle_techsupport_creation_event)
+            patcher.fs.create_file('/var/dump/random.txt')
+            ats.handle_techsupport_creation_event()
     
-    def test_legit_invoc_with_no_state_info(self):
-        """ Scenario: Legit Event Notification with no prev state info """
+    def test_legit_invoc(self):
+        """ Scenario: Legit Event Notification."""
         clear_redis()
         RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled"}} # Enable the Feature
         with Patcher() as patcher:
             patcher.fs.create_file("/var/dump/sonic_dump_random.tar.gz")
-            self.assert_clean_exit(ats.handle_techsupport_creation_event)
-        print(RedisHandle.data[ats.STATE_DB])
-        assert ats.AUTO_TS in RedisHandle.data[ats.STATE_DB], "STATE_DB entry should've been created"
-        assert ats.PREV_TS_COUNT in RedisHandle.data[ats.STATE_DB][ats.AUTO_TS], "num_techsupports field should've been created"
-        assert int(RedisHandle.data[ats.STATE_DB][ats.AUTO_TS][ats.PREV_TS_COUNT]) == 1, "num_techsupports should be equal to 1"
-        assert ats.LAST_TS in RedisHandle.data[ats.STATE_DB][ats.AUTO_TS], "last_techsupport_run field should've been created"
-        assert not RedisHandle.data[ats.STATE_DB][ats.AUTO_TS][ats.LAST_TS], "last_techsupport_run should be NULL"
-    
-    def test_with_state_db_populated(self):
-        """ Scenario: State Info is Already Populated, Verify if it is getting updated"""
-        clear_redis()
-        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled"}} # Enable the Feature
-        print(RedisHandle.data[ats.CFG_DB])
-        with Patcher() as patcher:
-            patcher.fs.create_file("/var/dump/sonic_dump_random1.tar.gz")
-            patcher.fs.create_file("/var/dump/sonic_dump_random2.tar.gz")
-            creation_time = str(time.monotonic())
-            RedisHandle.data[ats.STATE_DB] = {ats.AUTO_TS : {ats.PREV_TS_COUNT : "2", ats.LAST_TS : creation_time}}
-            time.sleep(0.01)
-            patcher.fs.create_file("/var/dump/sonic_dump_random3.tar.gz") # Event Trigger
-            self.assert_clean_exit(ats.handle_techsupport_creation_event)
-        print(RedisHandle.data[ats.STATE_DB])
-        assert ats.AUTO_TS in RedisHandle.data[ats.STATE_DB], "STATE_DB entry should not be empty"
-        assert ats.PREV_TS_COUNT in RedisHandle.data[ats.STATE_DB][ats.AUTO_TS], "num_techsupports field can't be NULL"
-        assert int(RedisHandle.data[ats.STATE_DB][ats.AUTO_TS][ats.PREV_TS_COUNT]) == 3, "num_techsupports should be equal to 3"
-        assert ats.LAST_TS in RedisHandle.data[ats.STATE_DB][ats.AUTO_TS], "last_techsupport_run field should've been created"
-        assert RedisHandle.data[ats.STATE_DB][ats.AUTO_TS][ats.LAST_TS] != creation_time, "last_techsupport_run should've been updated"
-        
+            ats.handle_techsupport_creation_event()
+            current_fs = os.listdir(ats.TS_DIR)
+            print(current_fs)
+            assert len(current_fs) == 1 # Shouldn't be deleted
+            assert "sonic_dump_random.tar.gz" in current_fs
+            
+            
     def test_cleanup_process(self):
         """ Scenario: Check TechSupport Cleanup is properly performed """
         clear_redis()
@@ -87,24 +65,35 @@ class TestTechsupportCreationEvent(unittest.TestCase):
         with Patcher() as patcher:
             patcher.fs.create_file("/var/dump/sonic_dump_random1.tar.gz")
             patcher.fs.create_file("/var/dump/sonic_dump_random2.tar.gz")
-            creation_time = str(time.monotonic())
-            RedisHandle.data[ats.STATE_DB] = {ats.AUTO_TS : {ats.PREV_TS_COUNT : "2", ats.LAST_TS : creation_time}}
-            time.sleep(0.01)
-            patcher.fs.create_file("/var/dump/sonic_dump_random3.tar.gz") # Event Trigger
-            self.assert_clean_exit(ats.handle_techsupport_creation_event)
+            patcher.fs.create_file("/var/dump/sonic_dump_random3.tar.gz") 
+            ats.handle_techsupport_creation_event()
             current_fs = os.listdir(ats.TS_DIR)
             print(current_fs)
             assert len(current_fs) == 2
             assert "sonic_dump_random2.tar.gz" in current_fs
             assert "sonic_dump_random3.tar.gz" in current_fs
+            assert "sonic_dump_random1.tar.gz" not in current_fs 
+    
+    def test_multiple_file_cleanup(self):
+        clear_redis()
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_MAX_TS : "2"}} 
+        print(RedisHandle.data[ats.CFG_DB])
+        with Patcher() as patcher:
+            patcher.fs.create_file("/var/dump/sonic_dump_random1.tar.gz")
+            patcher.fs.create_file("/var/dump/sonic_dump_random2.tar.gz")
+            patcher.fs.create_file("/var/dump/sonic_dump_random3.tar.gz") 
+            patcher.fs.create_file("/var/dump/sonic_dump_random4.tar.gz")
+            patcher.fs.create_file("/var/dump/sonic_dump_random5.tar.gz")
+            ats.handle_techsupport_creation_event()
+            current_fs = os.listdir(ats.TS_DIR)
+            print(current_fs)
+            assert len(current_fs) == 2
+            assert "sonic_dump_random4.tar.gz" in current_fs
+            assert "sonic_dump_random5.tar.gz" in current_fs
             assert "sonic_dump_random1.tar.gz" not in current_fs
-        print(RedisHandle.data[ats.STATE_DB])
-        assert ats.AUTO_TS in RedisHandle.data[ats.STATE_DB], "STATE_DB entry should not be empty"
-        assert ats.PREV_TS_COUNT in RedisHandle.data[ats.STATE_DB][ats.AUTO_TS], "num_techsupports field can't be NULL"
-        assert int(RedisHandle.data[ats.STATE_DB][ats.AUTO_TS][ats.PREV_TS_COUNT]) == 2, "num_techsupports value should be updated after cleanup"
-        assert ats.LAST_TS in RedisHandle.data[ats.STATE_DB][ats.AUTO_TS], "last_techsupport_run field should've been created"
-        assert RedisHandle.data[ats.STATE_DB][ats.AUTO_TS][ats.LAST_TS] != creation_time, "last_techsupport_run should've been updated" 
-                       
+            assert "sonic_dump_random2.tar.gz" not in current_fs
+            assert "sonic_dump_random3.tar.gz" not in current_fs
+                      
     def test_no_cleanup(self):
         """ Scenario: Check TechSupport Cleanup is properly performed """
         clear_redis()
@@ -113,20 +102,11 @@ class TestTechsupportCreationEvent(unittest.TestCase):
         with Patcher() as patcher:
             patcher.fs.create_file("/var/dump/sonic_dump_random1.tar.gz")
             patcher.fs.create_file("/var/dump/sonic_dump_random2.tar.gz")
-            creation_time = str(time.monotonic())
-            RedisHandle.data[ats.STATE_DB] = {ats.AUTO_TS : {ats.PREV_TS_COUNT : "2", ats.LAST_TS : creation_time}}
-            time.sleep(0.01)
             patcher.fs.create_file("/var/dump/sonic_dump_random3.tar.gz") # Event Trigger
-            self.assert_clean_exit(ats.handle_techsupport_creation_event)
+            ats.handle_techsupport_creation_event()
             current_fs = os.listdir(ats.TS_DIR)
             print(current_fs)
             assert len(current_fs) == 3
             assert "sonic_dump_random2.tar.gz" in current_fs
             assert "sonic_dump_random3.tar.gz" in current_fs
             assert "sonic_dump_random1.tar.gz" in current_fs
-        print(RedisHandle.data[ats.STATE_DB])
-        assert ats.AUTO_TS in RedisHandle.data[ats.STATE_DB], "STATE_DB entry should not be empty"
-        assert ats.PREV_TS_COUNT in RedisHandle.data[ats.STATE_DB][ats.AUTO_TS], "num_techsupports field can't be NULL"
-        assert int(RedisHandle.data[ats.STATE_DB][ats.AUTO_TS][ats.PREV_TS_COUNT]) == 3, "num_techsupports value should be updated"
-        assert ats.LAST_TS in RedisHandle.data[ats.STATE_DB][ats.AUTO_TS], "last_techsupport_run field should've been created"
-        assert RedisHandle.data[ats.STATE_DB][ats.AUTO_TS][ats.LAST_TS] != creation_time, "last_techsupport_run should've been updated" 

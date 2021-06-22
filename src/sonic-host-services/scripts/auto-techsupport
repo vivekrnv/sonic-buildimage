@@ -21,17 +21,17 @@ CFG_DB = "CONFIG_DB"
 CFG_STATE = "state"
 CFG_MAX_TS = "max-techsupports"
 CFG_CORE_USAGE = "core-usage"
-STATE_DB = "STATE_DB"
-LAST_TS = "last_techsupport_run"
-PREV_TS_COUNT = "num_techsupports"
-CORE_FILE_LIST = "core_file_list"
+# STATE_DB = "STATE_DB"
+# LAST_TS = "last_techsupport_run"
+# PREV_TS_COUNT = "num_techsupports"
+# CORE_FILE_LIST = "core_file_list"
 TS_DIR = "/var/dump"
 CORE_DUMP_DIR = "/var/core"
 TS_PTRN = "sonic_dump_*.tar.gz"
 CORE_DUMP_PTRN = "*.core.gz"
-TS_WAIT_TIMEOUT = 300
+# TS_WAIT_TIMEOUT = 300
 
-DEFAULT_SCHEMA_STATE = {PREV_TS_COUNT : "", LAST_TS : "", CORE_FILE_LIST : ""} 
+# DEFAULT_SCHEMA_STATE = {PREV_TS_COUNT : "", LAST_TS : "", CORE_FILE_LIST : ""} 
 
 
 def main():
@@ -53,75 +53,48 @@ def handle_techsupport_creation_event():
     """ 
     This method is invoked notified when there is a notification from systemd when something is changed in /var/dump/ directory
     Only if the feature is enabled by the user, the Techsupport cleanup process will be initiated. 
-    The TS cleanup proces will delete the old techsupport dumps, when the actual number crosses the 'max-techsupports' limit configured by the user.
-    Otherwise, just the state-db info is updated i.e. last_techsupport_run & num_techsupports  
+    The TS cleanup proces will delete the old techsupport dumps, when the actual number crosses the 'max-techsupports' limit configured by the user. 
     """
-    last_ts = str(time.monotonic())
+#     last_ts = str(time.monotonic())
     
     curr_list = glob.glob(os.path.join(TS_DIR, TS_PTRN))
     curr_list.sort()
     num_cur_ts = len(curr_list)
-    
+    print("Reached Here...")
     if num_cur_ts == 0:
         syslog.syslog(syslog.LOG_DEBUG, "Ignoring the notification, as it wasn't because of the Techsupport dump creation")
-        sys.exit(0) 
+        return  
     
-    # Note: The notification can still be a spurious one, but we don't know it yet
-    # To determine this, we could use PREV_TS_COUNT in the state DB
-    state_db = SonicV2Connector(host="127.0.0.1")
-    state_db.connect(STATE_DB)
-        
-    if not state_db.exists(STATE_DB, AUTO_TS): # if the table doesn't exist, create one
-        # Since the table is not yet created, we've no previous state information.
-        # Thus, to find if the notification is not a spurious one, check if any relevant TS Dump has been created within the last 20 sec. 
-        if not verify_recent_file_creation(curr_list):
-            syslog.syslog(syslog.LOG_DEBUG, "Ignoring the notification, as it wasn't because of the Techsupport dump creation")
-            state_db.hmset(STATE_DB, AUTO_TS, {PREV_TS_COUNT : str(num_cur_ts), LAST_TS : "", CORE_FILE_LIST : ""})
-            sys.exit(0)
-        else: 
-            state_db.hmset(STATE_DB, AUTO_TS, {PREV_TS_COUNT : str(num_cur_ts-1), LAST_TS : "", CORE_FILE_LIST : ""})
-    else:
-        prev_ts_count = state_db.get(STATE_DB, AUTO_TS, PREV_TS_COUNT)
-        if prev_ts_count == num_cur_ts:
-            syslog.syslog(syslog.LOG_DEBUG, "Ignoring the notification, as it wasn't because of the Techsupport dump creation")
-            sys.exit(0)
-    
-    # If the program reached here, a new TS dump has been created  
-    ts_dump_name = curr_list[-1] 
-    state_db.set(STATE_DB, AUTO_TS, LAST_TS, last_ts, True) # Set the Last Techsupport Run time
-    state_db.set(STATE_DB, AUTO_TS, PREV_TS_COUNT, num_cur_ts, True) # Set the Number of Techsupport runs
-    syslog.syslog(syslog.LOG_INFO, "{} creation was made at monotonic time: {} sec".format(ts_dump_name, last_ts))
-    
+    if not verify_recent_file_creation(curr_list[-1]):
+        syslog.syslog(syslog.LOG_DEBUG, "Ignoring the notification, as it wasn't because of the Techsupport dump creation")    
+        return 
+
     cfg_db = SonicV2Connector(host="127.0.0.1")
     cfg_db.connect(CFG_DB)
     
     if cfg_db.get(CFG_DB, AUTO_TS, CFG_STATE) == "enabled":
         max_ts = cfg_db.get(CFG_DB, AUTO_TS, CFG_MAX_TS)
         if not max_ts:
-            syslog.syslog(syslog.LOG_INFO, "max-techsupports is not set. No TechSupport Cleanup Process is performed")
-            sys.exit(0) 
+            syslog.syslog(syslog.LOG_INFO, "max-techsupports is not set. No TechSupport Cleanup Process is needed to be performed, current number of dumps: {}".format(num_cur_ts))
+            return  
         max_ts = int(max_ts)
     else:
-        syslog.syslog(syslog.LOG_INFO, "AUTO_TECHSUPPORT is not enabled. No TechSupport Cleanup Process is performed")
-        sys.exit(0)
-    
+        syslog.syslog(syslog.LOG_INFO, "AUTO_TECHSUPPORT is not enabled. No TechSupport Cleanup Process is performed, current number of dumps: {}".format(num_cur_ts))
+        return 
+    print("Reached Here...")
     # Cleanup Checks
-    curr_list = glob.glob(os.path.join(TS_DIR, TS_PTRN))
-    curr_list.sort()
-    num_cur_ts = len(curr_list)
     num_del = num_cur_ts - max_ts
     if num_del <= 0:
-        sys.exit(0)
-   
+        return 
+    print("Reached Here...")
     # Perform Cleanup
     dumps_to_del = curr_list[0:num_del]
     syslog.syslog(syslog.LOG_DEBUG, "{} dumps will be deleted".format(dumps_to_del))
     for file in dumps_to_del:
         # TODO: Just as a sanity check, see if no other process is using this file
         os.remove(file)
-    cfg_db.set(STATE_DB, AUTO_TS, PREV_TS_COUNT, max_ts, True) # Update the number of TS Dumps
-    sys.exit(0)
-
+    syslog.syslog(syslog.LOG_INFO, "/var/dump/ cleanup is performed. {} old dumps are deleted, current size of /var/dump/ dir is {}".format(num_del, num_cur_ts))
+    return 
 
 
 ### Helper methods 
