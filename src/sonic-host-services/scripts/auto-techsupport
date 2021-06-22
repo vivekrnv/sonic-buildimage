@@ -29,6 +29,7 @@ TS_DIR = "/var/dump"
 CORE_DUMP_DIR = "/var/core"
 TS_PTRN = "sonic_dump_*.tar.gz"
 CORE_DUMP_PTRN = "*.core.gz"
+TIME_BUF = 20
 # TS_WAIT_TIMEOUT = 300
 
 # DEFAULT_SCHEMA_STATE = {PREV_TS_COUNT : "", LAST_TS : "", CORE_FILE_LIST : ""} 
@@ -60,7 +61,7 @@ def handle_techsupport_creation_event():
     curr_list = glob.glob(os.path.join(TS_DIR, TS_PTRN))
     curr_list.sort()
     num_cur_ts = len(curr_list)
-    print("Reached Here...")
+    
     if num_cur_ts == 0:
         syslog.syslog(syslog.LOG_DEBUG, "Ignoring the notification, as it wasn't because of the Techsupport dump creation")
         return  
@@ -81,12 +82,12 @@ def handle_techsupport_creation_event():
     else:
         syslog.syslog(syslog.LOG_INFO, "AUTO_TECHSUPPORT is not enabled. No TechSupport Cleanup Process is performed, current number of dumps: {}".format(num_cur_ts))
         return 
-    print("Reached Here...")
+    
     # Cleanup Checks
     num_del = num_cur_ts - max_ts
     if num_del <= 0:
         return 
-    print("Reached Here...")
+    
     # Perform Cleanup
     dumps_to_del = curr_list[0:num_del]
     syslog.syslog(syslog.LOG_DEBUG, "{} dumps will be deleted".format(dumps_to_del))
@@ -112,7 +113,7 @@ def subprocess_exec(cmd):
 def diff(li1, li2):
     return list(set(li1) - set(li2)) + list(set(li2) - set(li1))
 
-def verify_recent_file_creation(file_path, in_last_sec=20):
+def verify_recent_file_creation(file_path, in_last_sec=TIME_BUF):
     curr = time.time()
     try:
         was_created_on = os.path.getmtime(file_path)

@@ -31,7 +31,11 @@ def clear_redis():
 class TestTechsupportCreationEvent(unittest.TestCase):
     
     def setUp(self):
-        pass
+        self.orig_time_buf = ats.TIME_BUF
+        ats.TIME_BUF = 1 # Path the buf to 1 sec
+    
+    def tearDown(self):
+        ats.TIME_BUF = self.orig_time_buf
     
     def assert_clean_exit(self, func, *args, **kwargs):
         with pytest.raises(SystemExit) as exc:
@@ -40,6 +44,7 @@ class TestTechsupportCreationEvent(unittest.TestCase):
     
     def test_spurious_invoc(self):
         """ Scenario: Event Notification by the systemd is not because of techsupport dump. """
+        clear_redis()
         with Patcher() as patcher:
             patcher.fs.create_file('/var/dump/random.txt')
             ats.handle_techsupport_creation_event()
@@ -110,3 +115,44 @@ class TestTechsupportCreationEvent(unittest.TestCase):
             assert "sonic_dump_random2.tar.gz" in current_fs
             assert "sonic_dump_random3.tar.gz" in current_fs
             assert "sonic_dump_random1.tar.gz" in current_fs
+    
+    def test_spurious_invoc_with_prev_dump(self):
+        """ Scenario: Spurious Event with previous TS Dumps """
+        clear_redis()
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_MAX_TS : "3"}} 
+        print(RedisHandle.data[ats.CFG_DB])
+        
+        with Patcher() as patcher:
+            patcher.fs.create_file("/var/dump/sonic_dump_random1.tar.gz")
+            patcher.fs.create_file("/var/dump/sonic_dump_random2.tar.gz")
+            patcher.fs.create_file("/var/dump/sonic_dump_random3.tar.gz") 
+            time.sleep(1)
+            patcher.fs.create_file("/var/dump/sonic_dump.txt") # Spurious Event
+            ats.handle_techsupport_creation_event()
+            current_fs = os.listdir(ats.TS_DIR)
+            print(current_fs)
+            assert "sonic_dump_random2.tar.gz" in current_fs
+            assert "sonic_dump_random3.tar.gz" in current_fs
+            assert "sonic_dump_random1.tar.gz" in current_fs
+        ats.TIME_BUF = 20
+    
+    def tes_deletion_event(self):
+        """ Scenario: TS Dump Deletion Event. Basically, Nothing should happen """
+        clear_redis()
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_MAX_TS : "2"}} 
+        print(RedisHandle.data[ats.CFG_DB])
+        ats.TIME_BUF = 1 # Patch the buf to 1 sec
+        with Patcher() as patcher:
+            patcher.fs.create_file("/var/dump/sonic_dump_random1.tar.gz")
+            patcher.fs.create_file("/var/dump/sonic_dump_random2.tar.gz")
+            patcher.fs.create_file("/var/dump/sonic_dump_random3.tar.gz") 
+            time.sleep(1)
+            patcher.fs.delete_file("/var/dump/sonic_dump_random2.tar.gz") # Spurious Event
+            ats.handle_techsupport_creation_event()
+            current_fs = os.listdir(ats.TS_DIR)
+            print(current_fs)
+            assert "sonic_dump_random3.tar.gz" not in current_fs
+            assert "sonic_dump_random3.tar.gz" in current_fs
+            assert "sonic_dump_random1.tar.gz" in current_fs
+        ats.TIME_BUF = 20
+        
