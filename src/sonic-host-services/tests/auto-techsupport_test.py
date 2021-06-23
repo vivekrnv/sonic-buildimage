@@ -156,21 +156,6 @@ class TestTechsupportCreationEvent(unittest.TestCase):
             assert "sonic_dump_random3.tar.gz" in current_fs
             assert "sonic_dump_random1.tar.gz" in current_fs
         ats.TIME_BUF = 20
-
-class FSPatcher:
-    fs_patcher = None
-    
-    @staticmethod
-    def setUp():
-        fs_patcher = Patcher()
-        fs_patcher.setUp()
-    
-    @staticmethod
-    
-    
-    @staticmethod
-    def tearDown():
-        fs_patcher.tearDown()
     
 class TestCoreDumpCreation(unittest.TestCase):
     
