@@ -5,7 +5,7 @@ import pytest
 import unittest
 import pyfakefs 
 from pyfakefs.fake_filesystem_unittest import Patcher
-from mock import patch
+from mock import patch, create_autospec
 from sonic_py_common.general import load_module_from_source
 import swsssdk
 from .mock_connector import MockConnector, RedisSingleton
@@ -21,6 +21,7 @@ sys.path.insert(0, modules_path)
 # Load the file under test
 ats_path = os.path.join(scripts_path, 'auto-techsupport')
 ats = load_module_from_source('auto-techsupport', ats_path)
+
 
 # Handle to Check the Updates made by the script
 RedisHandle = RedisSingleton.getInstance()
@@ -139,7 +140,7 @@ class TestTechsupportCreationEvent(unittest.TestCase):
     def tes_deletion_event(self):
         """ Scenario: TS Dump Deletion Event. Basically, Nothing should happen """
         clear_redis()
-        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_MAX_TS : "2"}} 
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_MAX_TS : "3"}} 
         print(RedisHandle.data[ats.CFG_DB])
         ats.TIME_BUF = 1 # Patch the buf to 1 sec
         with Patcher() as patcher:
@@ -155,4 +156,87 @@ class TestTechsupportCreationEvent(unittest.TestCase):
             assert "sonic_dump_random3.tar.gz" in current_fs
             assert "sonic_dump_random1.tar.gz" in current_fs
         ats.TIME_BUF = 20
+
+class FSPatcher:
+    fs_patcher = None
+    
+    @staticmethod
+    def setUp():
+        fs_patcher = Patcher()
+        fs_patcher.setUp()
+    
+    @staticmethod
+    
+    
+    @staticmethod
+    def tearDown():
+        fs_patcher.tearDown()
+    
+class TestCoreDumpCreation(unittest.TestCase):
+    
+    def setUp(self):
+        self.orig_time_buf = ats.TIME_BUF
+        self.orig_mock_exec = ats.subprocess_exec
+        ats.TIME_BUF = 1 # Patch the buf to 1 sec
         
+    def tearDown(self):
+        ats.TIME_BUF = self.orig_time_buf
+        ats.subprocess_exec = self.orig_mock_exec
+    
+    def test_spurious_invoc(self):
+        clear_redis()
+        with Patcher() as patcher:
+            patcher.fs.create_file("/var/dump/random.txt")
+            ats.handle_core_dump_creation_event()
+    
+    def test_invoc_ts_without_cooloff(self):
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled"}}
+        with Patcher() as patcher:
+            def mock_ts_invoc(cmd):
+                cmd_str = " ".join(cmd)
+                assert cmd_str == "show techsupport" 
+                patcher.fs.create_file("/var/dump/sonic_dump_random999.tar.gz")
+                return 0, "", ""
+            ats.subprocess_exec = mock_ts_invoc
+            patcher.fs.create_file("/var/core/random.12345.123.core.gz")
+            ats.handle_core_dump_creation_event()
+            assert "sonic_dump_random999.tar.gz" in os.listdir(ats.TS_DIR)
+            assert "random.12345.123.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
+    
+    def test_cooloff_active(self):
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_COOLOFF : "5"}}
+        with Patcher() as patcher:
+            def mock_ts_invoc(cmd): 
+                patcher.fs.create_file("/var/dump/sonic_dump_random999.tar.gz")
+                return 0, "", ""
+            ats.subprocess_exec = mock_ts_invoc
+            patcher.fs.create_file("/var/dump/sonic_dump_random998.tar.gz")
+            patcher.fs.create_file("/var/core/random.12345.123.core.gz")
+            ats.handle_core_dump_creation_event()
+            assert "sonic_dump_random999.tar.gz" not in os.listdir(ats.TS_DIR)
+            assert "sonic_dump_random998.tar.gz" in os.listdir(ats.TS_DIR)
+            assert "random.12345.123.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
+    
+    def test_invoc_ts_after_cooloff(self):
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_COOLOFF : "1"}}
+        with Patcher() as patcher:
+            def mock_ts_invoc(cmd):
+                cmd_str = " ".join(cmd)
+                assert cmd_str == "show techsupport" 
+                patcher.fs.create_file("/var/dump/sonic_dump_random999.tar.gz")
+                return 0, "", ""
+            ats.subprocess_exec = mock_ts_invoc
+            patcher.fs.create_file("/var/dump/sonic_dump_random998.tar.gz")
+            patcher.fs.create_file("/var/core/random.12345.123.core.gz")
+            time.sleep(1) #Wait for the cooloff
+            ats.handle_core_dump_creation_event()
+            assert "sonic_dump_random999.tar.gz" in os.listdir(ats.TS_DIR)
+            assert "sonic_dump_random998.tar.gz" in os.listdir(ats.TS_DIR)
+            assert "random.12345.123.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
+        
+    def test_core_cleanup(self):
+        pass
+    
+    
+    
+    

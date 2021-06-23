@@ -13,27 +13,24 @@ import time
 import argparse
 import subprocess
 import syslog
+import shutil
+import math
 from swsssdk import SonicV2Connector
+from functools import cmp_to_key
 
 
 AUTO_TS = "AUTO_TECHSUPPORT|global"
 CFG_DB = "CONFIG_DB"
 CFG_STATE = "state"
 CFG_MAX_TS = "max-techsupports"
+CFG_COOLOFF = "cooloff"
 CFG_CORE_USAGE = "core-usage"
-# STATE_DB = "STATE_DB"
-# LAST_TS = "last_techsupport_run"
-# PREV_TS_COUNT = "num_techsupports"
-# CORE_FILE_LIST = "core_file_list"
 TS_DIR = "/var/dump"
 CORE_DUMP_DIR = "/var/core"
 TS_PTRN = "sonic_dump_*.tar.gz"
 CORE_DUMP_PTRN = "*.core.gz"
 TIME_BUF = 20
 # TS_WAIT_TIMEOUT = 300
-
-# DEFAULT_SCHEMA_STATE = {PREV_TS_COUNT : "", LAST_TS : "", CORE_FILE_LIST : ""} 
-
 
 def main():
     parser = argparse.ArgumentParser(description='Auto Techsupport Invocation and Management Script')
@@ -46,18 +43,55 @@ def main():
         handle_core_dump_creation_event()
     else:
         handle_techsupport_creation_event()
-    
+
 def handle_core_dump_creation_event():
-    pass
+    """ 
+    This method is invoked notified when there is a notification from systemd when something is changed in /var/core/ directory
+   
+    """  
+    curr_list = glob.glob(os.path.join(CORE_DUMP_DIR, CORE_DUMP_PTRN))
+    curr_list = sorted(curr_list, key=cmp_to_key(lambda item1, item2: epoch(item1) - epoch(item2)))
+    num_cur_core = len(curr_list)
+    
+    if num_cur_core == 0:
+        syslog.syslog(syslog.LOG_DEBUG, "Ignoring the notification, as it wasn't because of the core dump creation")
+        return  
+    
+    if not verify_recent_file_creation(curr_list[-1]):
+        syslog.syslog(syslog.LOG_DEBUG, "Ignoring the notification, as it wasn't because of the core dump creation")    
+        return 
+    
+    cfg_db = SonicV2Connector(host="127.0.0.1")
+    cfg_db.connect(CFG_DB)
+    
+    if cfg_db.get(CFG_DB, AUTO_TS, CFG_STATE) == "enabled":
+        cooloff = cfg_db.get(CFG_DB, AUTO_TS, CFG_COOLOFF)
+        if not cooloff:
+            syslog.syslog(syslog.LOG_DEBUG, "No cooloff is configured")
+            cooloff = -1
+        else:
+            cooloff = int(cooloff)
+    else:
+        syslog.syslog(syslog.LOG_INFO, "AUTO_TECHSUPPORT is not enabled. No Techsupport Invocation and /var/core cleanup is performed")
+        return 
+    
+    invoke_ts_cmd(cooloff)
+    
+    core_usage_limit = cfg_db.get(CFG_DB, AUTO_TS, CFG_CORE_USAGE)
+    if not core_usage_limit:
+        syslog.syslog(syslog.LOG_DEBUG, "No Cleanup process is initiated since the core-usage param is not configured")
+        return 
+    
+    core_usage_limit = int(core_usage_limit)
+    cleanup_process(core_usage_limit)
+    return
 
 def handle_techsupport_creation_event():
     """ 
     This method is invoked notified when there is a notification from systemd when something is changed in /var/dump/ directory
     Only if the feature is enabled by the user, the Techsupport cleanup process will be initiated. 
     The TS cleanup proces will delete the old techsupport dumps, when the actual number crosses the 'max-techsupports' limit configured by the user. 
-    """
-#     last_ts = str(time.monotonic())
-    
+    """    
     curr_list = glob.glob(os.path.join(TS_DIR, TS_PTRN))
     curr_list.sort()
     num_cur_ts = len(curr_list)
@@ -94,13 +128,65 @@ def handle_techsupport_creation_event():
     for file in dumps_to_del:
         # TODO: Just as a sanity check, see if no other process is using this file
         os.remove(file)
-    syslog.syslog(syslog.LOG_INFO, "/var/dump/ cleanup is performed. {} old dumps are deleted, current size of /var/dump/ dir is {}".format(num_del, num_cur_ts))
+    syslog.syslog(syslog.LOG_INFO, "/var/dump/ cleanup is performed. {} old dumps are deleted, current number of Techsuppory Dumps are {}".format(num_del, num_cur_ts))
     return 
 
 
 ### Helper methods 
 def wait_until_fd_is_free():
     pass
+
+def get_dir_stats(dir_ptrn):
+    core_dumps = glob.glob(dir_ptrn)
+    core_dump_stats = []
+    total_size = 0
+    for path in core_dumps:
+        path_size = os.path.getsize(path)
+        core_dump_stats.append((os.path.getmtime(path), path_size, path))
+        total_size += path_size
+    # Sort by the Descending order of file_creation_time, size_of_file
+    core_dump_state = sorted(core_dump_state, key = lambda sub: (-sub[0], sub[1], sub[2]))
+    return core_dump_stats, total_size
+
+def cleanup_process(core_usage_limit):
+    if not(1 <= core_usage_limit and core_usage_limit<= 100):
+        syslog.syslog(syslog.LOG_ERR, "core_usage_limit can only be between 1 and 100, whereas the configured value is: {}".format(core_usage_limit))
+    
+    fs_stats, total_core_dumps_size = get_dir_size(glob.glob(os.path.join(CORE_DUMP_DIR, CORE_DUMP_PTRN)))
+    orig_dumps = len(fs_stats)
+    disk_stats = shutil.disk_usage(CORE_DUMP_DIR) 
+    max_limit_bytes = math.floor((core_usage_limit*disk_stats.total/100))
+    if total_core_dumps_size <= max_limit_bytes:
+        return 
+    
+    num_bytes_to_del = total_core_dumps_size - max_limit_bytes
+    num_deleted = 0
+    while num_deleted <= num_bytes_to_del:
+        stat = fs_stats[-1]
+        # TODO: Just as a sanity check, see if no other process is using this file
+        os.remove(stat[2])
+        num_deleted += stat[1]
+        fs_stats.pop()
+    remaining_core_dumps = len(fs_stats)
+    syslog.syslog(syslog.LOG_INFO, "{} bytes deleted from /var/core/, {} core dumps deleted".format(num_deleted, orig_dumps-remaining_core_dumps))
+        
+def epoch(name):
+    return int(name.split(".")[1]) #<process_name>.<epoch>.<pid>.core.gz
+
+def invoke_ts_cmd(cooloff):
+    curr_list = glob.glob(os.path.join(TS_DIR, TS_PTRN))
+    curr_list.sort()
+    if len(curr_list) != 0:
+        last_ts_dump_creation = os.path.getmtime(curr_list[-1])
+        if time.time() - last_ts_dump_creation < cooloff:
+            syslog.syslog(syslog.LOG_INFO, "Techsupport is not created, as the cooloff period is not passed yet")
+            return
+    
+    rv, out, err = subprocess_exec(["show", "techsupport"]) 
+    if rv != 0:
+        syslog.syslog(syslog.LOG_ERR, "'show techsupport' Auto invocation cmd failed with return code: {}, err :{}".format(rv, err))
+    return 
+
 
 def subprocess_exec(cmd):
     output = subprocess.run(
@@ -119,9 +205,11 @@ def verify_recent_file_creation(file_path, in_last_sec=TIME_BUF):
         was_created_on = os.path.getmtime(file_path)
     except:
         return False
-    
     if curr - was_created_on < in_last_sec:
         return True 
     else:
         return False
+
+if __name__ == "__main__":
+    main()
     
