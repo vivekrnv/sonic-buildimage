@@ -220,7 +220,49 @@ class TestCoreDumpCreation(unittest.TestCase):
             assert "random.12345.123.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
         
     def test_core_cleanup(self):
-        pass
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_CORE_USAGE : "5"}}
+        with Patcher() as patcher:
+            patcher.fs.set_disk_usage(5000, path="/var/core/")
+            def mock_ts_invoc(cmd):
+                cmd_str = " ".join(cmd)
+                assert cmd_str == "show techsupport" 
+                patcher.fs.create_file("/var/dump/sonic_dump_random999.tar.gz")
+                return 0, "", ""
+            ats.subprocess_exec = mock_ts_invoc
+            patcher.fs.create_file("/var/core/sflowmgrd.1624582972.161.core.gz", st_size=80)
+            patcher.fs.create_file("/var/core/caclmgrd.1624582976.22344.core.gz", st_size=80)
+            patcher.fs.create_file("/var/core/portsyncd.1624582977.113.core.gz", st_size=80)
+            patcher.fs.create_file("/var/core/python3.1624582800.34567.core.gz", st_size=80)
+            ats.handle_core_dump_creation_event()
+            assert "sonic_dump_random999.tar.gz" in os.listdir(ats.TS_DIR) 
+            assert "sflowmgrd.1624582972.161.core.gz" not in os.listdir(ats.CORE_DUMP_DIR)
+            assert "caclmgrd.1624582976.22344.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
+            assert "portsyncd.1624582977.113.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
+            assert "python3.1624582800.34567.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
+    
+    def test_core_cleanup_with_cooloff(self):
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_CORE_USAGE : "20", ats.CFG_COOLOFF : "5"}}
+        with Patcher() as patcher:
+            patcher.fs.set_disk_usage(1000, path="/var/core/")
+            def mock_ts_invoc(cmd):
+                cmd_str = " ".join(cmd)
+                assert cmd_str == "show techsupport" 
+                patcher.fs.create_file("/var/dump/sonic_dump_random999.tar.gz")
+                return 0, "", ""
+            ats.subprocess_exec = mock_ts_invoc
+            patcher.fs.create_file("/var/core/portsyncd.1624582970.113.core.gz", st_size=60)
+            patcher.fs.create_file("/var/core/sflowmgrd.1624582972.161.core.gz", st_size=60)
+            patcher.fs.create_file("/var/core/caclmgrd.1624582976.22344.core.gz", st_size=60)
+            patcher.fs.create_file("/var/core/python3.1624582800.34567.core.gz", st_size=60)
+            patcher.fs.create_file("/var/dump/sonic_dump_random998.tar.gz")
+            time.sleep(1)
+            ats.handle_core_dump_creation_event()
+            assert "sonic_dump_random999.tar.gz" not in os.listdir(ats.TS_DIR)
+            assert "sonic_dump_random998.tar.gz" in os.listdir(ats.TS_DIR)
+            assert "sflowmgrd.1624582972.161.core.gz"  in os.listdir(ats.CORE_DUMP_DIR)
+            assert "caclmgrd.1624582976.22344.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
+            assert "portsyncd.1624582970.113.core.gz" not in os.listdir(ats.CORE_DUMP_DIR)
+            assert "python3.1624582800.34567.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
     
     
     
