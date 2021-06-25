@@ -1,0 +1,11 @@
+[Unit]
+Description=Invokes the auto-techsupport script when triggered by the techsupport-monit.path
+After=database.service
+Requires=database.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/auto-techsupport techsupport
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Triggers the coredump-monit service when a coredump is found.
+After=database.service
+Requires=database.service
+
+[Path]
+PathChanged=/var/core/
+Unit=coredump-monit.service
+
+[Install]
+WantedBy=multi-user.target

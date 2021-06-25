@@ -1,0 +1,11 @@
+[Unit]
+Description=Triggers the auto-techsupport service when a techsupport dump is found.
+After=database.service
+Requires=database.service
+
+[Path]
+PathChanged=/var/dump/
+Unit=techsupport-monit.service
+
+[Install]
+WantedBy=multi-user.target
