@@ -135,7 +135,6 @@ class TestTechsupportCreationEvent(unittest.TestCase):
             assert "sonic_dump_random2.tar.gz" in current_fs
             assert "sonic_dump_random3.tar.gz" in current_fs
             assert "sonic_dump_random1.tar.gz" in current_fs
-        ats.TIME_BUF = 20
     
     def tes_deletion_event(self):
         """ Scenario: TS Dump Deletion Event. Basically, Nothing should happen """
@@ -155,7 +154,6 @@ class TestTechsupportCreationEvent(unittest.TestCase):
             assert "sonic_dump_random3.tar.gz" not in current_fs
             assert "sonic_dump_random3.tar.gz" in current_fs
             assert "sonic_dump_random1.tar.gz" in current_fs
-        ats.TIME_BUF = 20
     
 class TestCoreDumpCreation(unittest.TestCase):
     
@@ -175,6 +173,7 @@ class TestCoreDumpCreation(unittest.TestCase):
             ats.handle_core_dump_creation_event()
     
     def test_invoc_ts_without_cooloff(self):
+        clear_redis()
         RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled"}}
         with Patcher() as patcher:
             def mock_ts_invoc(cmd):
@@ -189,6 +188,7 @@ class TestCoreDumpCreation(unittest.TestCase):
             assert "random.12345.123.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
     
     def test_cooloff_active(self):
+        clear_redis()
         RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_COOLOFF : "5"}}
         with Patcher() as patcher:
             def mock_ts_invoc(cmd): 
@@ -203,6 +203,7 @@ class TestCoreDumpCreation(unittest.TestCase):
             assert "random.12345.123.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
     
     def test_invoc_ts_after_cooloff(self):
+        clear_redis()
         RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_COOLOFF : "1"}}
         with Patcher() as patcher:
             def mock_ts_invoc(cmd):
@@ -220,6 +221,7 @@ class TestCoreDumpCreation(unittest.TestCase):
             assert "random.12345.123.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
         
     def test_core_cleanup(self):
+        clear_redis()
         RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_CORE_USAGE : "5"}}
         with Patcher() as patcher:
             patcher.fs.set_disk_usage(5000, path="/var/core/")
@@ -241,6 +243,7 @@ class TestCoreDumpCreation(unittest.TestCase):
             assert "python3.1624582800.34567.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
     
     def test_core_cleanup_with_cooloff(self):
+        clear_redis()
         RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_CORE_USAGE : "20", ats.CFG_COOLOFF : "5"}}
         with Patcher() as patcher:
             patcher.fs.set_disk_usage(1000, path="/var/core/")
@@ -264,6 +267,35 @@ class TestCoreDumpCreation(unittest.TestCase):
             assert "portsyncd.1624582970.113.core.gz" not in os.listdir(ats.CORE_DUMP_DIR)
             assert "python3.1624582800.34567.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
     
-    
-    
+    def test_core_and_techsupport_events(self):
+        clear_redis()
+        RedisHandle.data[ats.CFG_DB] = {ats.AUTO_TS : {ats.CFG_STATE : "enabled", ats.CFG_CORE_USAGE : "20", 
+                                                       ats.CFG_COOLOFF : "1", ats.CFG_MAX_TS : "3"}}
+        
+        with Patcher() as patcher:
+            patcher.fs.set_disk_usage(1000, path="/var/core/")
+            def mock_ts_invoc(cmd):
+                cmd_str = " ".join(cmd)
+                assert cmd_str == "show techsupport" 
+                patcher.fs.create_file("/var/dump/sonic_dump_random999.tar.gz")
+                return 0, "", ""
+            ats.subprocess_exec = mock_ts_invoc
+            patcher.fs.create_file("/var/dump/sonic_dump_random996.tar.gz")
+            patcher.fs.create_file("/var/dump/sonic_dump_random997.tar.gz")
+            patcher.fs.create_file("/var/dump/sonic_dump_random998.tar.gz")
+            patcher.fs.create_file("/var/core/portsyncd.1624582970.113.core.gz", st_size=60)
+            patcher.fs.create_file("/var/core/sflowmgrd.1624582972.161.core.gz", st_size=60)
+            patcher.fs.create_file("/var/core/caclmgrd.1624582976.22344.core.gz", st_size=60)
+            patcher.fs.create_file("/var/core/python3.1624582800.34567.core.gz", st_size=60)
+            time.sleep(1)
+            ats.handle_core_dump_creation_event()
+            assert "sonic_dump_random999.tar.gz" in os.listdir(ats.TS_DIR)
+            ats.handle_techsupport_creation_event()
+            assert "sonic_dump_random998.tar.gz" in os.listdir(ats.TS_DIR)
+            assert "sonic_dump_random997.tar.gz" in os.listdir(ats.TS_DIR)
+            assert "sonic_dump_random996.tar.gz" not in os.listdir(ats.TS_DIR)
+            assert "sflowmgrd.1624582972.161.core.gz"  in os.listdir(ats.CORE_DUMP_DIR)
+            assert "caclmgrd.1624582976.22344.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
+            assert "portsyncd.1624582970.113.core.gz" not in os.listdir(ats.CORE_DUMP_DIR)
+            assert "python3.1624582800.34567.core.gz" in os.listdir(ats.CORE_DUMP_DIR)
     
