@@ -7,11 +7,11 @@ import pyfakefs
 from pyfakefs.fake_filesystem_unittest import Patcher
 from mock import patch, create_autospec
 from sonic_py_common.general import load_module_from_source
-import swsssdk
+from swsscommon import swsscommon
 from .mock_connector import MockConnector, RedisSingleton
 
 # Mock the SonicV2Connector
-swsssdk.SonicV2Connector = MockConnector
+swsscommon.SonicV2Connector = MockConnector
 
 test_path = os.path.dirname(os.path.abspath(__file__))
 modules_path = os.path.dirname(test_path)
@@ -22,8 +22,6 @@ sys.path.insert(0, modules_path)
 ats_path = os.path.join(scripts_path, 'auto-techsupport')
 ats = load_module_from_source('auto-techsupport', ats_path)
 
-
-# Handle to Check the Updates made by the script
 RedisHandle = RedisSingleton.getInstance()
 
 def clear_redis():
