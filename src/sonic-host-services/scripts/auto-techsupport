@@ -15,7 +15,7 @@ import subprocess
 import syslog
 import shutil
 import math
-from swsscommon.swsscommon import SonicV2Connector
+from swsssdk import SonicV2Connector
 from functools import cmp_to_key
 
 
