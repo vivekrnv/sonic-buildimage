@@ -863,7 +863,7 @@
                 "2x50G[40G,25G,10G,1G]": ["etp31a", "etp31b"]
             }
         }, 
-        "Etherne124": {
+        "Ethernet124": {
             "index": "32,32,32,32", 
             "lanes": "248,249,250,251", 
             "breakout_modes": {
