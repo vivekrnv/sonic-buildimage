@@ -1041,10 +1041,18 @@
                 "trap_ids": "ip2me",
                 "trap_group": "queue1_group1"
             }
+        },
+        "AUTO_TECHSUPPORT": {
+            "global": {
+                "state" : "enabled",
+                "cooloff" : "180",
+                "max_techsupport_size" : "10",
+                "core_usage" : "5",
+                "since" : "2 days ago"
+            }
         }
 
     },
-
     "SAMPLE_CONFIG_DB_UNKNOWN": {
         "UNKNOWN_TABLE": {
             "Error": "This Table is for testing, This Table does not have YANG models."
