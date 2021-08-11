@@ -29,5 +29,41 @@
                 } 
             }
         }
-    }
+    },
+    "AUTO_TECHSUPPORT_OUT_OF_RANGE_DECIMAL": {
+        "sonic-auto_techsupport:sonic-auto_techsupport": {
+            "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
+                "global": {
+                    "core_usage" : "100.00"                
+                } 
+            }
+        }
+    },
+    "AUTO_TECHSUPPORT_VALID_DECIMAL_VALUE": {
+        "sonic-auto_techsupport:sonic-auto_techsupport": {
+            "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
+                "global": {
+                    "max_techsupport_size" : "11.23"                
+                } 
+            }
+        }
+    },
+    "AUTO_TECHSUPPORT_INVALID_FRACTION_DIGITS": {
+        "sonic-auto_techsupport:sonic-auto_techsupport": {
+            "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
+                "global": {
+                    "max_techsupport_size" : "11.111"                
+                } 
+            }
+        }
+    },
+    "AUTO_TECHSUPPORT_INTEGER_TYPE_FOR_DECIMAL": {
+        "sonic-auto_techsupport:sonic-auto_techsupport": {
+            "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
+                "global": {
+                    "core_usage" : "11"                
+                } 
+            }
+        }
+    } 
 }

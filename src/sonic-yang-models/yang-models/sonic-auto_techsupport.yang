@@ -44,7 +44,10 @@ module sonic-auto_techsupport {
                         When the limit is crossed, the older core files are incrementally deleted
                         Configure '0' to explicitly disable
                         */
-                        type string;
+                        type decimal64 {
+                            fraction-digits 2;
+                            range 0..99.99; 
+                        }
                         default "10";
                     }
 
@@ -57,7 +60,10 @@ module sonic-auto_techsupport {
                         When the limit is crossed, the older core files are deleted
                         Configure '0' to explicitly disable
                         */
-                        type string;
+                        type decimal64 {
+                            fraction-digits 2;
+                            range 0..99.99; 
+                        }
                         default "5";
                     }
                     
