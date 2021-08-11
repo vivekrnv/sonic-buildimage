@@ -935,6 +935,7 @@ $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
 	export include_restapi="$(INCLUDE_RESTAPI)"
 	export include_nat="$(INCLUDE_NAT)"
 	export include_sflow="$(INCLUDE_SFLOW)"
+	export enable_auto_tech_support="$(ENABLE_AUTO_TECH_SUPPORT)"
 	export include_macsec="$(INCLUDE_MACSEC)"
 	export include_mgmt_framework="$(INCLUDE_MGMT_FRAMEWORK)"
 	export include_iccpd="$(INCLUDE_ICCPD)"
