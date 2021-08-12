@@ -53,8 +53,7 @@
             "high_mem_alert": "disabled",
 {%- if enable_auto_tech_support == "y" %}
             "auto_techsupport" : "enabled", {% else %}
-            "auto_techsupport" : "disabled"
-{% endif %}
+            "auto_techsupport" : "disabled", {% endif %}
             "cooloff"  : "300" 
         }{% if not loop.last %},{% endif -%}
 {% endfor %}
