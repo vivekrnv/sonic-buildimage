@@ -46,7 +46,7 @@ module sonic-auto_techsupport {
                         */
                         type decimal64 {
                             fraction-digits 2;
-                            range 0..99.99; 
+                            range 0.00..99.99; 
                         }
                         default "10";
                     }

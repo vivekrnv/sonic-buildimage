@@ -1046,8 +1046,8 @@
             "global": {
                 "state" : "enabled",
                 "cooloff" : "180",
-                "max_techsupport_size" : "10",
-                "core_usage" : "5",
+                "max_techsupport_size" : "10.0",
+                "core_usage" : "5.0",
                 "since" : "2 days ago"
             }
         }
