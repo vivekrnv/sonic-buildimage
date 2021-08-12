@@ -50,19 +50,26 @@
 {%- if feature in ["lldp", "pmon", "radv", "snmp", "telemetry"] %}
             "set_owner": "kube", {% else %}
             "set_owner": "local", {% endif %} {% endif %}
-            "high_mem_alert": "disabled"
+            "high_mem_alert": "disabled",
+{%- if enable_auto_tech_support == "y" %}
+            "auto_techsupport" : "enabled", {% else %}
+            "auto_techsupport" : "disabled"
+{% endif %}
+            "cooloff"  : "300" 
         }{% if not loop.last %},{% endif -%}
 {% endfor %}
     },
-    {%- if enable_auto_tech_support == "y" %}
     AUTO_TECHSUPPORT : {
         "global": {
-            "state" : "enabled",
+         {%- if enable_auto_tech_support == "y" %}
+            "state" : "enabled", {% else %}
+            "state" : "disabled", 
+         {% endif %}
             "cooloff" : "180",
-            "max_techsupport_size" : "10",
-            "core_usage" : "5",
+            "max_techsupport_size" : "10.0",
+            "core_usage" : "5.0",
             "since" : "2 days ago"
         }
     }
-    {% endif %}
+    
 }
