@@ -56,14 +56,5 @@
                 } 
             }
         }
-    },
-    "AUTO_TECHSUPPORT_INTEGER_TYPE_FOR_DECIMAL": {
-        "sonic-auto_techsupport:sonic-auto_techsupport": {
-            "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
-                "global": {
-                    "core_usage" : "11"                
-                } 
-            }
-        }
-    } 
+    }
 }

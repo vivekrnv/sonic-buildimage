@@ -21,8 +21,5 @@
     "AUTO_TECHSUPPORT_INVALID_FRACTION_DIGITS": {
             "desc" : "Configure a value for max_techsupport_size inside the range [0, 100) but with 3 fractional digits",
             "eStrKey": "InvalidValue" 
-    },
-    "AUTO_TECHSUPPORT_INTEGER_TYPE_FOR_DECIMAL": {
-            "desc" : "Configure a value for core_usage inside the range [0, 100) but with no fractional digits"
-    }   
+    }
 }
