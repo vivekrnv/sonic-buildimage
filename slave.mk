@@ -151,6 +151,10 @@ ifeq ($(SONIC_INCLUDE_MACSEC),y)
 INCLUDE_MACSEC = y
 endif
 
+ifeq ($(ENABLE_AUTO_TECH_SUPPORT),y)
+ENABLE_AUTO_TECH_SUPPORT = y
+endif
+
 include $(RULES_PATH)/functions
 
 ifeq ($(SONIC_USE_PDDF_FRAMEWORK),y)
