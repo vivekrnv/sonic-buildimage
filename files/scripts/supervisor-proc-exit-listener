@@ -9,9 +9,10 @@ import sys
 import syslog
 import time
 from collections import defaultdict
+import subprocess
+from swsscommon.swsscommon import DBConnector
 
 import swsssdk
-
 from supervisor import childutils
 
 # Each line of this file should specify either one critical process or one
@@ -30,6 +31,48 @@ SELECT_TIMEOUT_SECS = 1.0
 
 # Alerting message will be written into syslog in the following interval
 ALERTING_INTERVAL_SECS = 60
+
+# Saves the mapping between PID and the command/executable name
+PID_COMM_FILE_MAP = dict()
+
+
+def subprocess_exec(cmd):
+    output = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True
+    )
+    return output.returncode, output.stdout, output.stderr
+
+
+def handle_proc_event(dbconn, event, supervisor_proc_name, pid, container_name):
+    """
+    @summary:
+    1) Set/Del the entry in the AUTO_TECHSUPPORT|PROC_EXIT_EVENTS table of STATE DB
+    2) Update the PID_COMM_FILE_MAP dict
+    Table Schema:
+    key = "AUTO_TECHSUPPORT|PROC_EXIT_EVENTS"
+    <feature_name;supervisor_proc_name> = <pid:comm>
+    """
+    try:
+        if event == "PROCESS_STATE_EXITED":
+            comm_name = PID_COMM_FILE_MAP.get(pid, "")
+            if not comm_name:
+                comm_name = "<unknown>"
+            # Create an entry in the Table
+            field = "{};{}".format(container_name, supervisor_proc_name)
+            value = "{};{}".format(pid, comm_name)
+            dbconn.hset("AUTO_TECHSUPPORT|PROC_EXIT_EVENTS", field, value)
+            del PID_COMM_FILE_MAP[pid]
+        elif event == "PROCESS_STATE_RUNNING":
+            rc, stdout, stderr = subprocess_exec(["cat", "/proc/{}/comm".format(pid)])
+            if not rc:
+                PID_COMM_FILE_MAP[pid] = stdout.strip() # Update the comm<->pid map
+            # Delete the Event Entry, since the process has restarted
+            field = "{};{}".format(container_name, supervisor_proc_name)
+            dbconn.hdel("AUTO_TECHSUPPORT|PROC_EXIT_EVENTS", field)
+    except Exception as e:
+        syslog.syslog(syslog.LOG_NOTICE, "handle_proc_event method failed, ERR: {}".format(e))
 
 
 def get_critical_group_and_process_list():
@@ -124,20 +167,26 @@ def main(argv):
     # Transition from ACKNOWLEDGED to READY
     childutils.listener.ready()
 
+    # STATE_DB dbconnector
+    dbconn = DBConnector('STATE_DB', 0)
+
     while True:
         file_descriptor_list = select.select([sys.stdin], [], [], SELECT_TIMEOUT_SECS)[0]
         if len(file_descriptor_list) > 0:
             line = file_descriptor_list[0].readline()
             headers = childutils.get_headers(line)
             payload = sys.stdin.read(int(headers['len']))
+            payload_headers, payload_data = childutils.eventdata(payload + '\n')
+            process_name = payload_headers['processname']
+            group_name = payload_headers['groupname']
+            pid = payload_headers['pid']
+
+            if process_name in critical_process_list or group_name in critical_group_list:
+                handle_proc_event(dbconn, headers['eventname'], process_name, pid, container_name)
 
             # Handle the PROCESS_STATE_EXITED event
             if headers['eventname'] == 'PROCESS_STATE_EXITED':
-                payload_headers, payload_data = childutils.eventdata(payload + '\n')
-
                 expected = int(payload_headers['expected'])
-                process_name = payload_headers['processname']
-                group_name = payload_headers['groupname']
 
                 if (process_name in critical_process_list or group_name in critical_group_list) and expected == 0:
                     is_auto_restart = get_autorestart_state(container_name)
@@ -152,9 +201,6 @@ def main(argv):
 
             # Handle the PROCESS_STATE_RUNNING event
             elif headers['eventname'] == 'PROCESS_STATE_RUNNING':
-                payload_headers, payload_data = childutils.eventdata(payload + '\n')
-                process_name = payload_headers['processname']
-
                 if process_name in process_under_alerting:
                     process_under_alerting.pop(process_name)
 
