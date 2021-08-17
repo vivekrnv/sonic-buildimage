@@ -61,8 +61,13 @@
     "AUTO_TECHSUPPORT" : {
         "global": {
          {%- if enable_auto_tech_support == "y" %}
-            "state" : "enabled", {% else %}
-            "state" : "disabled", 
+            "auto_invoke_ts" : "enabled",
+            "coredump_cleanup" : "enabled",
+            "techsupport_cleanup" : "enabled",
+        {% else %} 
+            "auto_invoke_ts" : "disabled",
+            "coredump_cleanup" : "disabled",
+            "techsupport_cleanup" : "disabled",
          {% endif %}
             "cooloff" : "180",
             "max_techsupport_size" : "10.0",

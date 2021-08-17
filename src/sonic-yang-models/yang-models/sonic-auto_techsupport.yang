@@ -19,13 +19,28 @@ module sonic-auto_techsupport {
                 
                 container global {
                
-                    leaf state {
-                        /* AUTO_TECHSUPPORT status */
+                    leaf auto_invoke_ts {
+                        /* Enable this to make the Techsupport Invocation event driven based on core-dump generation*/
                         type enumeration {
                             enum disabled;
                             enum enabled;
                         }
-                        default enabled;
+                    }
+
+                    leaf coredump_cleanup {
+                        /* Enable Core dump cleanup based on core_usage argument */
+                        type enumeration {
+                            enum disabled;
+                            enum enabled;
+                        }
+                    }
+
+                    leaf techsupport_cleanup  {
+                        /* Enable Techsupport Dump cleanup based on max_techsupport_size argument */
+                        type enumeration {
+                            enum disabled;
+                            enum enabled;
+                        }
                     }
 
                     leaf cooloff {

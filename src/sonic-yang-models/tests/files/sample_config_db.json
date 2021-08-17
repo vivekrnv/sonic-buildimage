@@ -1044,7 +1044,9 @@
         },
         "AUTO_TECHSUPPORT": {
             "global": {
-                "state" : "enabled",
+                "auto_invoke_ts" : "enabled",
+                "coredump_cleanup" : "enabled",
+                "techsupport_cleanup" : "enabled",
                 "cooloff" : "180",
                 "max_techsupport_size" : "10.0",
                 "core_usage" : "5.0",

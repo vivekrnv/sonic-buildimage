@@ -3,7 +3,9 @@
         "sonic-auto_techsupport:sonic-auto_techsupport": {
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "global": {
-                    "state" : "enabled",
+                    "auto_invoke_ts" : "enabled",
+                    "coredump_cleanup" : "enabled",
+                    "techsupport_cleanup" : "enabled",
                     "cooloff" : "180",
                     "max_techsupport_size" : "10",
                     "core_usage" : "5",
@@ -12,11 +14,11 @@
             }
         }
     },
-    "AUTO_TECHSUPPORT_WRONG_STATE_VALUE": {
+    "AUTO_TECHSUPPORT_WRONG_AUTO_INVOKE_TS_VALUE": {
         "sonic-auto_techsupport:sonic-auto_techsupport": {
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "global": {
-                    "state" : "start"                
+                    "auto_invoke_ts" : "start"                
                 } 
             }
         }
