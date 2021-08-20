@@ -48,10 +48,10 @@ def subprocess_exec(cmd):
 def handle_proc_event(dbconn, event, supervisor_proc_name, pid, container_name):
     """
     @summary:
-    1) Set/Del the entry in the AUTO_TECHSUPPORT|PROC_EXIT_EVENTS table of STATE DB
+    1) Set/Del the entry in the AUTO_TECHSUPPORT|FEATURE_PROC_INFO table of STATE DB
     2) Update the PID_COMM_FILE_MAP dict
     Table Schema:
-    key = "AUTO_TECHSUPPORT|PROC_EXIT_EVENTS"
+    key = "AUTO_TECHSUPPORT|FEATURE_PROC_INFO"
     <feature_name;supervisor_proc_name> = <pid:comm>
     """
     try:
@@ -62,15 +62,15 @@ def handle_proc_event(dbconn, event, supervisor_proc_name, pid, container_name):
             # Create an entry in the Table
             field = "{};{}".format(container_name, supervisor_proc_name)
             value = "{};{}".format(pid, comm_name)
-            dbconn.hset("AUTO_TECHSUPPORT|PROC_EXIT_EVENTS", field, value)
+            dbconn.hset("AUTO_TECHSUPPORT|FEATURE_PROC_INFO", field, value)
             del PID_COMM_FILE_MAP[pid]
         elif event == "PROCESS_STATE_RUNNING":
             rc, stdout, stderr = subprocess_exec(["cat", "/proc/{}/comm".format(pid)])
             if not rc:
-                PID_COMM_FILE_MAP[pid] = stdout.strip() # Update the comm<->pid map
+                PID_COMM_FILE_MAP[pid] = stdout.strip()  # Update the comm<->pid map
             # Delete the Event Entry, since the process has restarted
             field = "{};{}".format(container_name, supervisor_proc_name)
-            dbconn.hdel("AUTO_TECHSUPPORT|PROC_EXIT_EVENTS", field)
+            dbconn.hdel("AUTO_TECHSUPPORT|FEATURE_PROC_INFO", field)
     except Exception as e:
         syslog.syslog(syslog.LOG_NOTICE, "handle_proc_event method failed, ERR: {}".format(e))
 
