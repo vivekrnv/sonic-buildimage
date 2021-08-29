@@ -11,43 +11,41 @@ module sonic-auto_techsupport {
         description "First Revision";
     }
 
+    typedef enable-knob {
+        type enumeration {
+            enum disabled;
+            enum enabled;
+        }
+    }
+
     container sonic-auto_techsupport {
 
         container AUTO_TECHSUPPORT {
 
                 description "AUTO_TECHSUPPORT part of config_db.json";
                 
-                container global {
+                container GLOBAL {
                
                     leaf auto_invoke_ts {
                         /* Enable this to make the Techsupport Invocation event driven based on core-dump generation*/
-                        type enumeration {
-                            enum disabled;
-                            enum enabled;
-                        }
+                        type enable-knob;
                     }
 
                     leaf coredump_cleanup {
                         /* Enable Core dump cleanup based on core_usage argument */
-                        type enumeration {
-                            enum disabled;
-                            enum enabled;
-                        }
+                        type enable-knob;
                     }
 
                     leaf techsupport_cleanup  {
                         /* Enable Techsupport Dump cleanup based on max_techsupport_size argument */
-                        type enumeration {
-                            enum disabled;
-                            enum enabled;
-                        }
+                        type enable-knob;
                     }
 
-                    leaf cooloff {
+                    leaf rate_limit_interval  {
                         /* Minimum Time in seconds, between two successive techsupport invocations by the script. 
                         Configure '0' to explicitly disable */
+                        mandatory true;
                         type uint16;
-                        default "180";
                     }
 
                     leaf max_techsupport_size {
@@ -59,14 +57,14 @@ module sonic-auto_techsupport {
                         When the limit is crossed, the older core files are incrementally deleted
                         Configure '0' to explicitly disable
                         */
+                        mandatory true;
                         type decimal64 {
                             fraction-digits 2;
                             range 0.00..99.99; 
                         }
-                        default "10";
                     }
 
-                    leaf core_usage {
+                    leaf max_core_size {
                         /*
                         A value between [0,100) should be specified.
                         Upto two decimal places will be used in the calculation
@@ -75,11 +73,11 @@ module sonic-auto_techsupport {
                         When the limit is crossed, the older core files are deleted
                         Configure '0' to explicitly disable
                         */
+                        mandatory true;
                         type decimal64 {
                             fraction-digits 2;
                             range 0..99.99; 
                         }
-                        default "5";
                     }
                     
                     leaf since {
@@ -89,10 +87,9 @@ module sonic-auto_techsupport {
                         can be used. If this value is not explicitly configured or a non-valid string is provided, a default value of "2 days ago" is used
                         */
                         type string;
-                        default "2 days ago";
                     }
               }
-              /* end of container global */
+              /* end of container GLOBAL */
         }
         /* end of container AUTO_TECHSUPPORT */
     }
