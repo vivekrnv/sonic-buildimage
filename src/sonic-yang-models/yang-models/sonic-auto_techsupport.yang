@@ -44,7 +44,6 @@ module sonic-auto_techsupport {
                     leaf rate_limit_interval  {
                         /* Minimum Time in seconds, between two successive techsupport invocations by the script. 
                         Configure '0' to explicitly disable */
-                        mandatory true;
                         type uint16;
                     }
 
@@ -55,12 +54,11 @@ module sonic-auto_techsupport {
                         This signifies maximum Size to which the techsupport dumps in /var/dump directory can be grown until 
                         The actual value in bytes is calculate based on the available space in the filesystem hosting /var/dump
                         When the limit is crossed, the older core files are incrementally deleted
-                        Configure '0' to explicitly disable
+                        Configure '0.0' to explicitly disable
                         */
-                        mandatory true;
                         type decimal64 {
                             fraction-digits 2;
-                            range 0.00..99.99; 
+                            range 0.0..99.99; 
                         }
                     }
 
@@ -71,12 +69,11 @@ module sonic-auto_techsupport {
                         This signifies maximum Size to which the core dumps in /var/core directory can be grown until
                         The actual value in bytes is calculated based on the available space in the filesystem hosting /var/core
                         When the limit is crossed, the older core files are deleted
-                        Configure '0' to explicitly disable
+                        Configure '0.0' to explicitly disable
                         */
-                        mandatory true;
                         type decimal64 {
                             fraction-digits 2;
-                            range 0..99.99; 
+                            range 0.0..99.99; 
                         }
                     }
                     

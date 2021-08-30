@@ -1058,7 +1058,7 @@
                 "techsupport_cleanup" : "enabled",
                 "rate_limit_interval" : "180",
                 "max_techsupport_size" : "10.0",
-                "max_core_size" : "0",
+                "max_core_size" : "0.0",
                 "since" : "2 days ago"
             }
         },

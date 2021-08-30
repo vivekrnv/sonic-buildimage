@@ -52,28 +52,29 @@
             "set_owner": "local", {% endif %} {% endif %}
             "high_mem_alert": "disabled",
 {%- if enable_auto_tech_support == "y" %}
-            "auto_techsupport" : "enabled", {% else %}
-            "auto_techsupport" : "disabled", {% endif %}
-            "cooloff"  : "300" 
+            "auto_techsupport" : "enabled" {% else %}
+            "auto_techsupport" : "disabled" {% endif %}
         }{% if not loop.last %},{% endif -%}
 {% endfor %}
     },
-    "AUTO_TECHSUPPORT" : {
-        "global": {
-         {%- if enable_auto_tech_support == "y" %}
+    "AUTO_TECHSUPPORT": {
+        "GLOBAL": {
+{%- if enable_auto_tech_support == "y" %}
             "auto_invoke_ts" : "enabled",
             "coredump_cleanup" : "enabled",
-            "techsupport_cleanup" : "enabled",
-        {% else %} 
+            "techsupport_cleanup" : "enabled", {% else %}
             "auto_invoke_ts" : "disabled",
             "coredump_cleanup" : "disabled",
-            "techsupport_cleanup" : "disabled",
-         {% endif %}
-            "cooloff" : "180",
+            "techsupport_cleanup" : "disabled, {% endif %}
+            "rate_limit_interval" : "180",
             "max_techsupport_size" : "10.0",
-            "core_usage" : "5.0",
+            "max_core_size" : "5.0",
             "since" : "2 days ago"
+        },
+        "RATE_LIMIT_INTERVAL": {
+{%- for feature, state, has_timer, autorestart in features %}
+            "{{feature}}": "600"{%if not loop.last %},{% endif -%}
+{% endfor %} 
         }
     }
-    
 }
