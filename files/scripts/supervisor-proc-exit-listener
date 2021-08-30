@@ -35,14 +35,18 @@ ALERTING_INTERVAL_SECS = 60
 # Saves the mapping between PID and the command/executable name
 PID_COMM_FILE_MAP = dict()
 
+# STATE_DB
+STATE_DB = "STATE_DB"
+
 
 def subprocess_exec(cmd):
-    output = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True
-    )
-    return output.returncode, output.stdout, output.stderr
+    rc, stdout, stderr = 0, "", ""
+    try:
+        stdout = subprocess.check_output(cmd).decode("utf-8").strip()
+    except CalledProcessError as err:
+        rc = err.returncode
+        stderr = err.output.decode("utf-8").strip()
+    return rc, stdout, stderr
 
 
 def handle_proc_event(dbconn, event, supervisor_proc_name, pid, container_name):
@@ -54,25 +58,23 @@ def handle_proc_event(dbconn, event, supervisor_proc_name, pid, container_name):
     key = "AUTO_TECHSUPPORT|FEATURE_PROC_INFO"
     <feature_name;supervisor_proc_name> = <pid:comm>
     """
+    field = "{};{}".format(container_name, supervisor_proc_name)
+    table = "AUTO_TECHSUPPORT|FEATURE_PROC_INFO"
     try:
         if event == "PROCESS_STATE_EXITED":
-            comm_name = PID_COMM_FILE_MAP.get(pid, "")
-            if not comm_name:
-                comm_name = "<unknown>"
+            comm_name = PID_COMM_FILE_MAP.get(pid, "<unknown>")
             # Create an entry in the Table
-            field = "{};{}".format(container_name, supervisor_proc_name)
             value = "{};{}".format(pid, comm_name)
-            dbconn.hset("AUTO_TECHSUPPORT|FEATURE_PROC_INFO", field, value)
+            dbconn.hset(table, field, value)
             del PID_COMM_FILE_MAP[pid]
         elif event == "PROCESS_STATE_RUNNING":
             rc, stdout, stderr = subprocess_exec(["cat", "/proc/{}/comm".format(pid)])
             if not rc:
-                PID_COMM_FILE_MAP[pid] = stdout.strip()  # Update the comm<->pid map
-            # Delete the Event Entry, since the process has restarted
-            field = "{};{}".format(container_name, supervisor_proc_name)
-            dbconn.hdel("AUTO_TECHSUPPORT|FEATURE_PROC_INFO", field)
+                PID_COMM_FILE_MAP[pid] = stdout  # Update the comm<->pid map
+            # Delete the Event Entry, since the process has started
+            dbconn.hdel(table, field)
     except Exception as e:
-        syslog.syslog(syslog.LOG_NOTICE, "handle_proc_event method failed, ERR: {}".format(e))
+        syslog.syslog(syslog.LOG_ERR, "handle_proc_event method failed, ERR: {}".format(e))
 
 
 def get_critical_group_and_process_list():
@@ -168,7 +170,7 @@ def main(argv):
     childutils.listener.ready()
 
     # STATE_DB dbconnector
-    dbconn = DBConnector('STATE_DB', 0)
+    dbconn = DBConnector(STATE_DB, 0)
 
     while True:
         file_descriptor_list = select.select([sys.stdin], [], [], SELECT_TIMEOUT_SECS)[0]
