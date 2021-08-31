@@ -18,6 +18,13 @@ module sonic-auto_techsupport {
         }
     }
 
+    typedef decimal-repr {
+        type decimal64 {
+            fraction-digits 2;
+            range 0.0..99.99; 
+        }
+    }
+
     container sonic-auto_techsupport {
 
         container AUTO_TECHSUPPORT {
@@ -54,10 +61,7 @@ module sonic-auto_techsupport {
                         When the limit is crossed, the older core files are incrementally deleted
                         */
                         description "Maximum Size to which the techsupport dumps in /var/dump directory can be grown until";
-                        type decimal64 {
-                            fraction-digits 2;
-                            range 0.1..99.99; 
-                        }
+                        type decimal-repr;
                     }
 
                     leaf max_core_size {
@@ -68,10 +72,7 @@ module sonic-auto_techsupport {
                         When the limit is crossed, the older core files are deleted
                         */
                         description "Maximum Size to which the core dumps in /var/core directory can be grown until";
-                        type decimal64 {
-                            fraction-digits 2;
-                            range 0.0..99.99; 
-                        }
+                        type decimal-repr;
                     }
                     
                     leaf since {
@@ -89,3 +90,4 @@ module sonic-auto_techsupport {
     }
     /* end of top level container */
 }
+
