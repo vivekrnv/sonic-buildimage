@@ -3,25 +3,23 @@
         "sonic-auto_techsupport:sonic-auto_techsupport": {
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "sonic-auto_techsupport:GLOBAL": {
-                    "auto_invoke_ts" : "enabled",
-                    "coredump_cleanup" : "enabled",
-                    "techsupport_cleanup" : "enabled",
+                    "state" : "enabled",
                     "rate_limit_interval" : "180",
-                    "max_techsupport_size" : "10",
-                    "max_core_size" : "5",
+                    "max_techsupport_size" : "10.0",
+                    "max_core_size" : "5.0",
                     "since" : "2 days ago"
                 } 
             }
         }
     },
-    "AUTO_TECHSUPPORT_WRONG_AUTO_INVOKE_TS_VALUE": {
+    "AUTO_TECHSUPPORT_WRONG_STATE_VALUE": {
         "sonic-auto_techsupport:sonic-auto_techsupport": {
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "sonic-auto_techsupport:GLOBAL": {
-                    "auto_invoke_ts" : "start",
+                    "state" : "start",
                     "rate_limit_interval" : "180",
-                    "max_techsupport_size" : "10",
-                    "max_core_size" : "5",
+                    "max_techsupport_size" : "10.0",
+                    "max_core_size" : "5.0",
                     "since" : "2 days ago"                
                 } 
             }
@@ -31,9 +29,7 @@
         "sonic-auto_techsupport:sonic-auto_techsupport": {
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "sonic-auto_techsupport:GLOBAL": {
-                    "rate_limit_interval" : "whatever",
-                    "max_techsupport_size" : "10",
-                    "max_core_size" : "5"               
+                    "rate_limit_interval" : "whatever"
                 } 
             }
         }
@@ -42,7 +38,6 @@
         "sonic-auto_techsupport:sonic-auto_techsupport": {
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "sonic-auto_techsupport:GLOBAL": {
-                    "max_techsupport_size" : "10.00",
                     "max_core_size" : "100.00",
                     "rate_limit_interval" : "180"
                 } 
@@ -54,8 +49,7 @@
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "sonic-auto_techsupport:GLOBAL": {
                     "max_techsupport_size" : "11.23",
-                    "max_core_size" : "99.99",
-                    "rate_limit_interval" : "180"                
+                    "max_core_size" : "99.99"
                 } 
             }
         }
@@ -65,8 +59,7 @@
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "sonic-auto_techsupport:GLOBAL": {
                     "max_techsupport_size" : "11.111",
-                    "max_core_size" : "99.99",
-                    "rate_limit_interval" : "180"                
+                    "max_core_size" : "99.99"
                 } 
             }
         }

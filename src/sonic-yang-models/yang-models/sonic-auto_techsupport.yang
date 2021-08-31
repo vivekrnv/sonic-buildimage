@@ -11,12 +11,6 @@ module sonic-auto_techsupport {
         description "First Revision";
     }
 
-    typedef enable-knob {
-        type enumeration {
-            enum disabled;
-            enum enabled;
-        }
-    }
 
     typedef decimal-repr {
         type decimal64 {
@@ -33,19 +27,12 @@ module sonic-auto_techsupport {
                 
                 container GLOBAL {
                
-                    leaf auto_invoke_ts {
+                    leaf state {
                         description "Knob to make techsupport invocation event-driven based on core-dump generation";
-                        type enable-knob;
-                    }
-
-                    leaf coredump_cleanup {
-                        description "Knob to enable coredump cleanup";
-                        type enable-knob;
-                    }
-
-                    leaf techsupport_cleanup  {
-                        description "Knob to enable techsupport dump cleanup";
-                        type enable-knob;
+                        type enumeration {
+                            enum disabled;
+                            enum enabled;
+                        }
                     }
 
                     leaf rate_limit_interval  {
@@ -60,7 +47,7 @@ module sonic-auto_techsupport {
                         The actual value in bytes is calculate based on the available space in the filesystem hosting /var/dump
                         When the limit is crossed, the older core files are incrementally deleted
                         */
-                        description "Maximum Size to which the techsupport dumps in /var/dump directory can be grown until";
+                        description "Max Size to which the dumps in /var/dump dir can be grown until. No cleanup is performed if the value is not congiured or set to 0.0";
                         type decimal-repr;
                     }
 
@@ -71,16 +58,16 @@ module sonic-auto_techsupport {
                         The actual value in bytes is calculated based on the available space in the filesystem hosting /var/core
                         When the limit is crossed, the older core files are deleted
                         */
-                        description "Maximum Size to which the core dumps in /var/core directory can be grown until";
+                        description "Max Size to which the coredumps in /var/core directory can be grown until. No cleanup is performed if the value is not congiured or set to 0.0";
                         type decimal-repr;
                     }
                     
                     leaf since {
                         /*
                         Any valid date string of the formats specified here (https://www.gnu.org/software/coreutils/manual/html_node/Date-input-formats.html) 
-                        can be used. If this value is not explicitly configured or a non-valid string is provided, a default value of "2 days ago" is used
+                        can be used. 
                         */
-                        description "Limits the auto-invoked techsupport to only collect the logs & core-dumps generated since the time provided";
+                        description "Only collect the logs & core-dumps generated since the time provided. A default value of '2 days ago' is used if this value is not set explicitly or a non-valid string is provided";
                         type string;
                     }
               }

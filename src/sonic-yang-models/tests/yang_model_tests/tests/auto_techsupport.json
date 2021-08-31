@@ -2,7 +2,7 @@
     "AUTO_TECHSUPPORT_TEST":{
 	       "desc": "Configure auto techsupport params in AUTO_TECHSUPPORT Table"
     },
-    "AUTO_TECHSUPPORT_WRONG_AUTO_INVOKE_TS_VALUE": {
+    "AUTO_TECHSUPPORT_WRONG_STATE_VALUE": {
            "desc": "Configure state key with invalid value",
            "eStrKey": "InvalidValue"
     },
