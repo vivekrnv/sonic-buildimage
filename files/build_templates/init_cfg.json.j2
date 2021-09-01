@@ -50,10 +50,7 @@
 {%- if feature in ["lldp", "pmon", "radv", "snmp", "telemetry"] %}
             "set_owner": "kube", {% else %}
             "set_owner": "local", {% endif %} {% endif %}
-            "high_mem_alert": "disabled",
-{%- if enable_auto_tech_support == "y" %}
-            "auto_techsupport" : "enabled" {% else %}
-            "auto_techsupport" : "disabled" {% endif %}
+            "high_mem_alert": "disabled"
         }{% if not loop.last %},{% endif -%}
 {% endfor %}
     },
@@ -66,11 +63,16 @@
             "max_techsupport_size" : "10.0",
             "max_core_size" : "5.0",
             "since" : "2 days ago"
-        },
-        "RATE_LIMIT_INTERVAL": {
-{%- for feature, state, has_timer, autorestart in features %}
-            "{{feature}}": "600"{%if not loop.last %},{% endif -%}
-{% endfor %} 
         }
+    },
+    "AUTO_TECHSUPPORT_FEATURE": {
+{%- for feature, _, _, _ in features %}
+        "{{feature}}": {
+{%- if enable_auto_tech_support == "y" %}
+            "state" : "enabled", {% else %}
+            "state" : "disabled", {% endif %}
+            "rate_limit_interval" : "600"
+        }{%if not loop.last %},{% endif -%}
+{% endfor %} 
     }
 }
