@@ -60,12 +60,8 @@
     "AUTO_TECHSUPPORT": {
         "GLOBAL": {
 {%- if enable_auto_tech_support == "y" %}
-            "auto_invoke_ts" : "enabled",
-            "coredump_cleanup" : "enabled",
-            "techsupport_cleanup" : "enabled", {% else %}
-            "auto_invoke_ts" : "disabled",
-            "coredump_cleanup" : "disabled",
-            "techsupport_cleanup" : "disabled, {% endif %}
+            "state" : "enabled", {% else %}
+            "state" : "disabled", {% endif %}
             "rate_limit_interval" : "180",
             "max_techsupport_size" : "10.0",
             "max_core_size" : "5.0",
