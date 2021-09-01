@@ -20,5 +20,8 @@
     "AUTO_TECHSUPPORT_INVALID_FRACTION_DIGITS": {
             "desc" : "Configure a value for max_techsupport_size inside the range [0, 100) but with 3 fractional digits",
             "eStrKey": "InvalidValue" 
+    },
+    "AUTO_TECHSUPPORT_RATE_LIMIT_INTERVAL_TEST": {
+            "desc" : "Configure and test the valid configuration"
     }
 }

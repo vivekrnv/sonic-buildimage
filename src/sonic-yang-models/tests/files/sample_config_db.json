@@ -1060,6 +1060,24 @@
                 "since" : "2 days ago"
             }
         },
+        "AUTO_TECHSUPPORT_FEATURE": {
+            "bgp" :{
+                "state" : "disabled",
+                "rate_limit_interval" : "600"
+            },
+            "swss" : {
+                "state" : "enabled",
+                "rate_limit_interval" : "600"
+            },
+            "snmp" : {
+                "state" : "enabled",
+                "rate_limit_interval" : "500"
+            },
+            "dhcp_relay" : {
+                "state" : "disabled",
+                "rate_limit_interval" : "1000"
+            }
+        },
         "LLDP": {
             "GLOBAL": {
                 "mode": "TRANSMIT",

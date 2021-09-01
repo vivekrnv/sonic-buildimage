@@ -11,6 +11,12 @@ module sonic-auto_techsupport {
         description "First Revision";
     }
 
+    typedef enable-knob {
+        type enumeration {
+            enum disabled;
+            enum enabled;
+        }
+    }
 
     typedef decimal-repr {
         type decimal64 {
@@ -29,10 +35,7 @@ module sonic-auto_techsupport {
                
                     leaf state {
                         description "Knob to make techsupport invocation event-driven based on core-dump generation";
-                        type enumeration {
-                            enum disabled;
-                            enum enabled;
-                        }
+                        type enable-knob;
                     }
 
                     leaf rate_limit_interval  {
@@ -70,10 +73,39 @@ module sonic-auto_techsupport {
                         description "Only collect the logs & core-dumps generated since the time provided. A default value of '2 days ago' is used if this value is not set explicitly or a non-valid string is provided";
                         type string;
                     }
-              }
-              /* end of container GLOBAL */
+            }
+            /* end of container GLOBAL */
         }
         /* end of container AUTO_TECHSUPPORT */
+            
+        container AUTO_TECHSUPPORT_FEATURE {
+
+            description "AUTO_TECHSUPPORT_FEATURE part of config_db.json";
+
+            list AUTO_TECHSUPPORT_FEATURE_LIST {
+
+                key "feature_name";
+
+                leaf feature_name {
+                    description "The name of this feature";
+                    /* TODO: Leafref once the FEATURE YANG is added*/
+                    type string;
+                }
+
+                leaf state {
+                    description "Enable auto techsupport invocation on the critical processes running inside this feature";
+                    type enable-knob;
+                }
+
+                leaf rate_limit_interval {
+                    description "Rate limit interval for the corresponding feature. Configure 0 to explicitly disable";
+                    type uint16;
+                }
+
+            }
+            /* end of AUTO_TECHSUPPORT_FEATURE_LIST */
+        }
+        /* end of container AUTO_TECHSUPPORT_FEATURE */
     }
     /* end of top level container */
 }
