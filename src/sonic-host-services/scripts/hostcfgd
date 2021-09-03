@@ -9,7 +9,8 @@ import syslog
 
 import jinja2
 from sonic_py_common import device_info
-from swsscommon.swsscommon import ConfigDBConnector
+from swsscommon.swsscommon import SubscriberStateTable, DBConnector, Select
+from swsscommon.swsscommom import ConfigDBConnector, TableConsumable
 
 # FILE
 PAM_AUTH_CONF = "/etc/pam.d/common-auth-sonic"
@@ -35,6 +36,11 @@ RADIUS_SERVER_RETRANSMIT_DEFAULT = "3"
 RADIUS_SERVER_TIMEOUT_DEFAULT = "5"
 RADIUS_SERVER_AUTH_TYPE_DEFAULT = "pap"
 RADIUS_PAM_AUTH_CONF_DIR = "/etc/pam_radius_auth.d/"
+
+# MISC Constants
+CFG_DB = "CONFIG_DB"
+PRIO_INIT = 10
+SELECT_TIMEOUT = 1000
 
 
 def run_cmd(cmd, log_err=True, raise_exception=False):
@@ -725,18 +731,18 @@ class KdumpCfg(object):
                                 "memory": "0M-2G:256M,2G-4G:320M,4G-8G:384M,8G-:448M",
                                 "num_dumps": "3" }
 
-    def load(self, kdump_table):
-        syslog.syslog(syslog.LOG_INFO, "KdumpCfg load ...")
-        data = {}
+    def init(self, kdump_table):
+        """
+        Set the KDUMP table in CFG DB to kdump_defaults and load
+        """
+        syslog.syslog(syslog.LOG_INFO, "KdumpCfg init ...")
         kdump_conf = kdump_table.get("config", {})
         for row in self.kdump_defaults:
             value = self.kdump_defaults.get(row)
             if kdump_conf.get(row) is not None:
                 value = kdump_conf.get(row)
             else:
-                self.config_db.mod_entry("KDUMP", "config", { row : value})
-            data[row] = value
-        self.kdump_update("config", data, True)
+                self.config_db.mod_entry("KDUMP", "config", {row : value})
 
     def kdump_update(self, key, data, isLoad):
         syslog.syslog(syslog.LOG_INFO, "Kdump global configuration update")
@@ -788,7 +794,7 @@ class NtpCfg(object):
             return
 
         # check only the intf configured as source interface
-        if (len(self.ntp_global) == 0):
+        if not self.ntp_global:
             return
 
         if 'src_intf' not in self.ntp_global:
@@ -812,14 +818,14 @@ class NtpCfg(object):
         if 'vrf' in data:
             new_vrf = data['vrf']
 
-        if (len(self.ntp_global) != 0):
-
+        if not self.ntp_global:
             if 'src_intf' in self.ntp_global:
                 orig_src = self.ntp_global['src_intf']
 
             if 'vrf' in self.ntp_global:
                 orig_vrf = self.ntp_global['vrf']
 
+        # Update the Local Cache
         self.ntp_global = data
 
         # during initial load of ntp configuration, ntp server configuration decides if to restart ntp-config
@@ -845,7 +851,7 @@ class NtpCfg(object):
                 run_cmd(cmd)
 
     def ntp_server_update(self, key, data, isLoad):
-        syslog.syslog(syslog.LOG_INFO, 'ntp server update key {} data {}'.format(key, data))
+        syslog.syslog(syslog.LOG_INFO, 'ntp server update key {} data {}'.format(key, op, data))
 
         # during load, restart ntp-config regardless if ntp server is configured or not
         if isLoad == True:
@@ -868,9 +874,16 @@ class NtpCfg(object):
 
 class HostConfigDaemon:
     def __init__(self):
+        # Just a sanity check to verify if the CONFIG_DB has been initialized
+        # before moving forward
         self.config_db = ConfigDBConnector()
         self.config_db.connect(wait_for_init=True, retry_on=True)
+        self.dbconn = DBConnector(CFG_DB, 0)
         syslog.syslog(syslog.LOG_INFO, 'ConfigDB connect success')
+
+        self.select = Select()
+        self.callbacks = dict()
+        self.subscriber_map = dict()
 
         # Load DEVICE metadata configurations
         self.device_config = {}
@@ -886,8 +899,13 @@ class HostConfigDaemon:
 
         # Load Kdump configuration
         self.kdumpCfg = KdumpCfg(self.config_db)
-        self.kdumpCfg.load(self.config_db.get_table('KDUMP'))
+        self.kdumpCfg.init(self.config_db.get_table('KDUMP'))
 
+        # Update all feature states once upon starting
+        # self.feature_handler.update_all_features_config()
+
+        # Defer load until subscribe
+        # self.load()
 
     def load(self):
         aaa = self.config_db.get_table('AAA')
@@ -915,81 +933,81 @@ class HostConfigDaemon:
         # Update AAA with the hostname
         self.aaacfg.hostname_update(self.hostname_cache)
 
-    def aaa_handler(self, key, data):
-        self.aaacfg.aaa_update(key, data)
+        
 
-    def tacacs_server_handler(self, key, data):
-        self.aaacfg.tacacs_server_update(key, data)
+    def aaa_handler(self, key, op, data):
+        self.aaacfg.aaa_update(key, op, data)
+
+    def tacacs_server_handler(self, key, op, data):
+        self.aaacfg.tacacs_server_update(key, op, data)
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
         syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
 
-    def tacacs_global_handler(self, key, data):
-        self.aaacfg.tacacs_global_update(key, data)
+    def tacacs_global_handler(self, key, op, data):
+        self.aaacfg.tacacs_global_update(key, op, data)
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
         syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
 
-    def radius_server_handler(self, key, data):
-        self.aaacfg.radius_server_update(key, data)
+    def radius_server_handler(self, key, op, data):
+        self.aaacfg.radius_server_update(key, op, data)
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
         syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
 
-    def radius_global_handler(self, key, data):
-        self.aaacfg.radius_global_update(key, data)
+    def radius_global_handler(self, key, op, data):
+        self.aaacfg.radius_global_update(key, op, data)
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
         syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
 
-    def mgmt_intf_handler(self, key, data):
+    def mgmt_intf_handler(self, key, op, data):
         self.aaacfg.handle_radius_source_intf_ip_chg(key)
         self.aaacfg.handle_radius_nas_ip_chg(key)
 
-    def lpbk_handler(self, key, data):
+    def lpbk_handler(self, key, op, data):
         key = ConfigDBConnector.deserialize_key(key)
-        # Check if delete operation by fetch existing keys
-        keys = self.config_db.get_keys('LOOPBACK_INTERFACE')
-        if key in keys:
-            add = True
-        else:
+        if op == "DEL":
             add = False
+        else:
+            add = True
 
         self.iptables.iptables_handler(key, data, add)
         self.ntpcfg.handle_ntp_source_intf_chg(key)
         self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
-    def vlan_intf_handler(self, key, data):
+    def vlan_intf_handler(self, key, op, data):
         key = ConfigDBConnector.deserialize_key(key)
         self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
-    def vlan_sub_intf_handler(self, key, data):
+    def vlan_sub_intf_handler(self, key, op, data):
         key = ConfigDBConnector.deserialize_key(key)
         self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
-    def portchannel_intf_handler(self, key, data):
+    def portchannel_intf_handler(self, key, op, data):
         key = ConfigDBConnector.deserialize_key(key)
         self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
-    def phy_intf_handler(self, key, data):
+    def phy_intf_handler(self, key, op, data):
         key = ConfigDBConnector.deserialize_key(key)
         self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
-    def ntp_server_handler (self, key, data):
+    def ntp_server_handler (self, key, op, data):
         syslog.syslog(syslog.LOG_INFO, 'NTP server handler...')
         ntp_server_db = self.config_db.get_table('NTP_SERVER')
         data = ntp_server_db
         self.ntpcfg.ntp_server_update(key, data, False)
 
-    def ntp_global_handler (self, key, data):
+    def ntp_global_handler (self, key, op, data):
         syslog.syslog(syslog.LOG_INFO, 'NTP global handler...')
         self.ntpcfg.ntp_global_update(key, data, False)
 
-    def kdump_handler (self, key, data):
+    def kdump_handler (self, key, op, data):
         syslog.syslog(syslog.LOG_INFO, 'Kdump handler...')
         self.kdumpCfg.kdump_update(key, data, False)
 
@@ -1000,36 +1018,60 @@ class HostConfigDaemon:
         systemctl_cmd = "sudo systemctl is-system-running --wait --quiet"
         subprocess.call(systemctl_cmd, shell=True)
 
-    def start(self):
-        self.config_db.subscribe('AAA', lambda table, key, data: self.aaa_handler(key, data))
-        self.config_db.subscribe('TACPLUS_SERVER', lambda table, key, data: self.tacacs_server_handler(key, data))
-        self.config_db.subscribe('TACPLUS', lambda table, key, data: self.tacacs_global_handler(key, data))
-        self.config_db.subscribe('RADIUS_SERVER', lambda table, key, data: self.radius_server_handler(key, data))
-        self.config_db.subscribe('RADIUS', lambda table, key, data: self.radius_global_handler(key, data))
-        self.config_db.subscribe('MGMT_INTERFACE', lambda table, key, data: self.mgmt_intf_handler(key, data))
-        self.config_db.subscribe('LOOPBACK_INTERFACE', lambda table, key, data: self.lpbk_handler(key, data))
-        self.config_db.subscribe('FEATURE', lambda table, key, data: self.feature_handler.handle(key, data))
-        self.config_db.subscribe('VLAN_INTERFACE', lambda table, key, data: self.vlan_intf_handler(key, data))
-        self.config_db.subscribe('VLAN_SUB_INTERFACE', lambda table, key, data: self.vlan_sub_intf_handler(key, data))
-        self.config_db.subscribe('PORTCHANNEL_INTERFACE', lambda table, key, data: self.portchannel_intf_handler(key, data))
-        self.config_db.subscribe('INTERFACE', lambda table, key, data: self.phy_intf_handler(key, data))
-        self.config_db.subscribe('NTP_SERVER', lambda table, key, data: self.ntp_server_handler(key, data))
-        self.config_db.subscribe('NTP', lambda table, key, data: self.ntp_global_handler(key, data))
-        self.config_db.subscribe('KDUMP', lambda table, key, data: self.kdump_handler(key, data))
+    def subscribe(self, table, callback, pri):
+        if table not in self.callbacks:
+            self.callbacks[table] = []
+            subscriber = self.SubscriberStateTable(self.dbconn, table, TableConsumable.DEFAULT_POP_BATCH_SIZE, pri)
+            self.selector.addSelectable(subscriber) # Add to the Selector
+            self.subscriber_map[subscriber.getFd()] = (subscriber, table) # Maintain a mapping b/w subscriber & fd
 
+        self.callbacks[table].append(callback)
+
+    def start(self):
+        self.subscribe('KDUMP', lambda table, key, op, data: self.kdump_handler(key, op, data), PRIO_INIT)
+        # Handle Global NTP updated before NTP_SERVER updates
+        self.subscribe('NTP', lambda table, key, op, data: self.ntp_global_handler(key, op, data), PRIO_INIT-1)
+        self.subscribe('NTP_SERVER', lambda table, key, op, data: self.ntp_server_handler(key, op, data), PRIO_INIT-2)
+        # Handle FEATURE updates before other tables
+        self.subscribe('FEATURE', lambda table, key, op, data: self.feature_handler.handle(key, op, data), PRIO_INIT-3)
+        # Handle AAA, TACACS and RADIUS tables first
+        self.subscribe('AAA', lambda table, key, op, data: self.aaa_handler(key, op, data), PRIO_INIT-4)
+        self.subscribe('TACPLUS', lambda table, key, op, data: self.tacacs_global_handler(key, op, data), PRIO_INIT-4)
+        self.subscribe('TACPLUS_SERVER', lambda table, key, op, data: self.tacacs_server_handler(key, op, data), PRIO_INIT-4)
+        self.subscribe('RADIUS', lambda table, key, op, data: self.radius_global_handler(key, op, data), PRIO_INIT-4)
+        self.subscribe('RADIUS_SERVER', lambda table, key, op, data: self.radius_server_handler(key, op, data), PRIO_INIT-4)
+        self.subscribe('MGMT_INTERFACE', lambda table, key, op, data: self.mgmt_intf_handler(key, op, data), PRIO_INIT-5)
+        self.subscribe('LOOPBACK_INTERFACE', lambda table, key, op, data: self.lpbk_handler(key, op, data), PRIO_INIT-5)
+        self.subscribe('VLAN_INTERFACE', lambda table, key, op, data: self.vlan_intf_handler(key, op, data), PRIO_INIT-5)
+        self.subscribe('VLAN_SUB_INTERFACE', lambda table, key, op, data: self.vlan_sub_intf_handler(key, op, data), PRIO_INIT-5)
+        self.subscribe('PORTCHANNEL_INTERFACE', lambda table, key, op, data: self.portchannel_intf_handler(key, op, data), PRIO_INIT-5)
+        self.subscribe('INTERFACE', lambda table, key, op, data: self.phy_intf_handler(key, op, data), PRIO_INIT-5)
+        
         syslog.syslog(syslog.LOG_INFO,
                       "Waiting for systemctl to finish initialization")
         self.wait_till_system_init_done()
         syslog.syslog(syslog.LOG_INFO,
                       "systemctl has finished initialization -- proceeding ...")
 
-        # Update all feature states once upon starting
-        self.feature_handler.update_all_features_config()
+        while True:
+            state, selectable_ = self.selector.select(SELECT_TIMEOUT)
+            if state == self.selector.TIMEOUT:
+                continue
+            elif state == self.selector.ERROR:
+                raise Exception("Received error from select")
 
-        # Defer load until subscribe
-        self.load()
-
-        self.config_db.listen()
+            fd = selectable_.getFd()
+            # Get the Corresponding subscriber & table
+            subscriber, table = subscriber_map.get(fd, (None, ""))
+            if not subscriber:
+                syslog.syslog(syslog.LOG_ERR,
+                        "No Subscriber object found for fd: {}, subscriber map: {}".format(fd. subscriber_map))
+                continue
+            key, op, fvs = subscriber.pop()
+            # Get the registered callback
+            callback = self.callbacks.get(table, None)
+            if callback:
+                callback(key, op dict(fvs))
 
 
 def main():
@@ -1039,3 +1081,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# self.cfgdb = DBConnector(CFG_DB, 0)
+#         syslog.syslog(syslog.LOG_INFO, 'ConfigDB connect success')
+
+#         self.select = Select()
+#         self.callbacks = {}
+#         self.subscribers = set()
