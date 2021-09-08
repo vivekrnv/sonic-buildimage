@@ -11,6 +11,43 @@ import jinja2
 from sonic_py_common import device_info
 from swsscommon.swsscommon import SubscriberStateTable, DBConnector, Select
 from swsscommon.swsscommom import ConfigDBConnector, TableConsumable
+from jsondiff import diff
+
+
+def is_true_cb(val):
+    return is_true(val)
+
+
+def cfg_diff(cached, xcvd, callbacks={}):
+    """
+    Returns the diff as formatted by jsondiff
+
+    parameters:
+    cached: saved config
+    xcvd: modified config
+    callbacks: Mutate the values in xcvd for comparison
+
+    returns:
+    df: diff as returned by jsondiff
+    xcvd_copy: recieved config mutated by callbacks
+    """
+    if not cached and not xcvd:
+        return True
+    if isinstance(cached, dict) != isinstance(xcvd, dict):
+        return False
+
+    cached_copy = copy.deepcopy(cached)
+    xcvd_copy = copy.deepcopy(xcvd)
+    for key in xcvd_copy:
+        func = callbacks.get(key, None)
+        if func and key in xcvd_copy:
+            try:
+                xcvd_copy[key] = func(xcvd_copy[key])
+            except:
+                continue
+    df = diff(cached_copy, xcvd_copy)
+    return df, xcvd_copy
+
 
 # FILE
 PAM_AUTH_CONF = "/etc/pam.d/common-auth-sonic"
@@ -386,6 +423,7 @@ class Iptables(object):
                 syslog.syslog(syslog.LOG_ERR, "'{}' failed. RC: {}, output: {}"
                               .format(err.cmd, err.returncode, err.output))
 
+
 class AaaCfg(object):
     def __init__(self):
         self.auth_default = {
@@ -433,14 +471,16 @@ class AaaCfg(object):
         self.modify_conf_file()
 
     def aaa_update(self, key, data, modify_conf=True):
-        if key == 'authentication':
-            self.auth = data
-            if 'failthrough' in data:
-                self.auth['failthrough'] = is_true(data['failthrough'])
-            if 'debug' in data:
-                self.debug = is_true(data['debug'])
-        if modify_conf:
+        if key.lower() != 'authentication':
+            return False
+        cbs = {'failthrough': is_true_cb}
+        df, data_modified = cfg_diff(self.auth, data, cbs)
+        self.auth = data_modified
+        if 'debug' in self.auth:
+            self.debug = is_true_cb(data['debug'])
+        if modify_conf and df:
             self.modify_conf_file()
+        return True if df not False
 
     def pick_src_intf_ipaddrs(self, keys, src_intf):
         new_ipv4_addr = ""
@@ -466,30 +506,29 @@ class AaaCfg(object):
         return(new_ipv4_addr, new_ipv6_addr)
 
     def tacacs_global_update(self, key, data, modify_conf=True):
-        if key == 'global':
-            self.tacplus_global = data
-            if modify_conf:
-                self.modify_conf_file()
+        if key.lower() != 'global':
+            return False
+        df, data_modified = cfg_diff(self.tacplus_global, data, {})
+        self.tacplus_global = data_modified
+        if modify_conf and df:
+            self.modify_conf_file()
+        return True if df not False
 
     def tacacs_server_update(self, key, data, modify_conf=True):
-        if data == {}:
-            if key in self.tacplus_servers:
-                del self.tacplus_servers[key]
-        else:
-            self.tacplus_servers[key] = data
-
-        if modify_conf:
+        cached_data = self.tacplus_servers.get(key, {})
+        df, data_modified = cfg_diff(cached_data, data, {})
+        self.tacplus_servers[key] = data_modified
+        if modify_conf and df:
             self.modify_conf_file()
+        return True if df not False
 
     def handle_radius_source_intf_ip_chg(self, key):
-        modify_conf=False
-        if 'src_intf' in self.radius_global:
-            if key[0] == self.radius_global['src_intf']:
-                modify_conf=True
+        modify_conf = False
+        if key == self.radius_global.get('src_intf', ""):
+            modify_conf = True
         for addr in self.radius_servers:
-            if ('src_intf' in self.radius_servers[addr]) and \
-                    (key[0] == self.radius_servers[addr]['src_intf']):
-                modify_conf=True
+            if key == self.radius_servers.get(addr, {}).get('src_intf', ""):
+                modify_conf = True
                 break
 
         if not modify_conf:
@@ -514,21 +553,19 @@ class AaaCfg(object):
         self.modify_conf_file()
 
     def radius_global_update(self, key, data, modify_conf=True):
-        if key == 'global':
-            self.radius_global = data
-            if 'statistics' in data:
-                self.radius_global['statistics'] = is_true(data['statistics'])
-            if modify_conf:
-                self.modify_conf_file()
+        if key.lower() != 'global':
+            return None
+        cbs = {'statistics': is_true_cb}
+        df, data_modified = cfg_diff(self.radius_global, data, cbs)
+        self.radius_global = data_modified
+        if modify_conf and df:
+            self.modify_conf_file()
 
     def radius_server_update(self, key, data, modify_conf=True):
-        if data == {}:
-            if key in self.radius_servers:
-                del self.radius_servers[key]
-        else:
-            self.radius_servers[key] = data
-
-        if modify_conf:
+        cached_data = self.radius_servers.get(key, {})
+        df, data_modified = cfg_diff(cached_data, data, {})
+        self.radius_servers[key] = data_modified
+        if modify_conf and df:
             self.modify_conf_file()
 
     def hostname_update(self, hostname, modify_conf=True):
@@ -733,7 +770,7 @@ class KdumpCfg(object):
 
     def init(self, kdump_table):
         """
-        Set the KDUMP table in CFG DB to kdump_defaults and load
+        Set the KDUMP table in CFG DB to kdump_defaults if npt set by the user
         """
         syslog.syslog(syslog.LOG_INFO, "KdumpCfg init ...")
         kdump_conf = kdump_table.get("config", {})
@@ -851,7 +888,7 @@ class NtpCfg(object):
                 run_cmd(cmd)
 
     def ntp_server_update(self, key, data, isLoad):
-        syslog.syslog(syslog.LOG_INFO, 'ntp server update key {} data {}'.format(key, op, data))
+        syslog.syslog(syslog.LOG_INFO, 'ntp server update key {} data {}'.format(key, data))
 
         # during load, restart ntp-config regardless if ntp server is configured or not
         if isLoad == True:
@@ -901,11 +938,15 @@ class HostConfigDaemon:
         self.kdumpCfg = KdumpCfg(self.config_db)
         self.kdumpCfg.init(self.config_db.get_table('KDUMP'))
 
-        # Update all feature states once upon starting
-        # self.feature_handler.update_all_features_config()
-
-        # Defer load until subscribe
-        # self.load()
+        try:
+            dev_meta = self.config_db.get_table('DEVICE_METADATA')
+            if 'localhost' in dev_meta:
+                if 'hostname' in dev_meta['localhost']:
+                    self.hostname_cache = dev_meta['localhost']['hostname']
+        except Exception as e:
+            pass
+        # Update AAA with the hostname
+        self.aaacfg.hostname_update(self.hostname_cache)
 
     def load(self):
         aaa = self.config_db.get_table('AAA')
@@ -923,48 +964,46 @@ class HostConfigDaemon:
         ntp_global = self.config_db.get_table('NTP')
         self.ntpcfg.load(ntp_global, ntp_server)
 
-        try:
-            dev_meta = self.config_db.get_table('DEVICE_METADATA')
-            if 'localhost' in dev_meta:
-                if 'hostname' in dev_meta['localhost']:
-                    self.hostname_cache = dev_meta['localhost']['hostname']
-        except Exception as e:
-            pass
-        # Update AAA with the hostname
-        self.aaacfg.hostname_update(self.hostname_cache)
-
-        
-
     def aaa_handler(self, key, op, data):
-        self.aaacfg.aaa_update(key, op, data)
+        cfg_change = self.aaacfg.aaa_update(key, data)
+        if cfg_change:
+            syslog.syslog(syslog.LOG_INFO, 'AAA Update: key: {}, op: {}, data: {}'.format(key, op, data))
 
     def tacacs_server_handler(self, key, op, data):
-        self.aaacfg.tacacs_server_update(key, op, data)
+        cfg_change = self.aaacfg.tacacs_server_update(key, data)
+        if not cfg_change:
+            return
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
-        syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
+        syslog.syslog(syslog.LOG_INFO, 'TACPLUS_SERVER update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def tacacs_global_handler(self, key, op, data):
-        self.aaacfg.tacacs_global_update(key, op, data)
+        cfg_change = self.aaacfg.tacacs_global_update(key, op, data)
+        if not cfg_change:
+            return
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
-        syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
+        syslog.syslog(syslog.LOG_INFO, 'TACPLUS Global update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def radius_server_handler(self, key, op, data):
-        self.aaacfg.radius_server_update(key, op, data)
+        cfg_change = self.aaacfg.radius_server_update(key, op, data)
+        if not cfg_change:
+            return
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
-        syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
+        syslog.syslog(syslog.LOG_INFO, 'RADIUS_SERVER update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def radius_global_handler(self, key, op, data):
-        self.aaacfg.radius_global_update(key, op, data)
+        cfg_change = self.aaacfg.radius_global_update(key, op, data)
+        if not cfg_change:
+            return
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
-        syslog.syslog(syslog.LOG_INFO, 'value of {} changed to {}'.format(key, log_data))
+        syslog.syslog(syslog.LOG_INFO, 'RADIUS Global update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def mgmt_intf_handler(self, key, op, data):
         self.aaacfg.handle_radius_source_intf_ip_chg(key)
@@ -1029,19 +1068,21 @@ class HostConfigDaemon:
 
     def start(self):
         self.subscribe('KDUMP', lambda table, key, op, data: self.kdump_handler(key, op, data), PRIO_INIT)
-        # Handle Global NTP updated before NTP_SERVER updates
-        self.subscribe('NTP', lambda table, key, op, data: self.ntp_global_handler(key, op, data), PRIO_INIT-1)
-        self.subscribe('NTP_SERVER', lambda table, key, op, data: self.ntp_server_handler(key, op, data), PRIO_INIT-2)
         # Handle FEATURE updates before other tables
-        self.subscribe('FEATURE', lambda table, key, op, data: self.feature_handler.handle(key, op, data), PRIO_INIT-3)
-        # Handle AAA, TACACS and RADIUS tables first
-        self.subscribe('AAA', lambda table, key, op, data: self.aaa_handler(key, op, data), PRIO_INIT-4)
-        self.subscribe('TACPLUS', lambda table, key, op, data: self.tacacs_global_handler(key, op, data), PRIO_INIT-4)
-        self.subscribe('TACPLUS_SERVER', lambda table, key, op, data: self.tacacs_server_handler(key, op, data), PRIO_INIT-4)
-        self.subscribe('RADIUS', lambda table, key, op, data: self.radius_global_handler(key, op, data), PRIO_INIT-4)
-        self.subscribe('RADIUS_SERVER', lambda table, key, op, data: self.radius_server_handler(key, op, data), PRIO_INIT-4)
+        self.subscribe('FEATURE', lambda table, key, op, data: self.feature_handler.handle(key, op, data), PRIO_INIT-1)
+        # Handle AAA, TACACS and RADIUS related tables
+        self.subscribe('AAA', lambda table, key, op, data: self.aaa_handler(key, op, data), PRIO_INIT-2)
+        self.subscribe('TACPLUS', lambda table, key, op, data: self.tacacs_global_handler(key, op, data), PRIO_INIT-2)
+        self.subscribe('TACPLUS_SERVER', lambda table, key, op, data: self.tacacs_server_handler(key, op, data), PRIO_INIT-2)
+        self.subscribe('RADIUS', lambda table, key, op, data: self.radius_global_handler(key, op, data), PRIO_INIT-2)
+        self.subscribe('RADIUS_SERVER', lambda table, key, op, data: self.radius_server_handler(key, op, data), PRIO_INIT-2)
+        # Handle IPTables configuration
+        self.subscribe('LOOPBACK_INTERFACE', lambda table, key, op, data: self.lpbk_handler(key, op, data), PRIO_INIT-3)
+        # Handle NTP & NTP_SERVER updates
+        self.subscribe('NTP', lambda table, key, op, data: self.ntp_global_handler(key, op, data), PRIO_INIT-4)
+        self.subscribe('NTP_SERVER', lambda table, key, op, data: self.ntp_server_handler(key, op, data), PRIO_INIT-4)
+        # Handle updates to src intf changes in radius
         self.subscribe('MGMT_INTERFACE', lambda table, key, op, data: self.mgmt_intf_handler(key, op, data), PRIO_INIT-5)
-        self.subscribe('LOOPBACK_INTERFACE', lambda table, key, op, data: self.lpbk_handler(key, op, data), PRIO_INIT-5)
         self.subscribe('VLAN_INTERFACE', lambda table, key, op, data: self.vlan_intf_handler(key, op, data), PRIO_INIT-5)
         self.subscribe('VLAN_SUB_INTERFACE', lambda table, key, op, data: self.vlan_sub_intf_handler(key, op, data), PRIO_INIT-5)
         self.subscribe('PORTCHANNEL_INTERFACE', lambda table, key, op, data: self.portchannel_intf_handler(key, op, data), PRIO_INIT-5)
@@ -1071,7 +1112,7 @@ class HostConfigDaemon:
             # Get the registered callback
             callback = self.callbacks.get(table, None)
             if callback:
-                callback(key, op dict(fvs))
+                callback(key, op, dict(fvs))
 
 
 def main():
@@ -1082,9 +1123,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-# self.cfgdb = DBConnector(CFG_DB, 0)
-#         syslog.syslog(syslog.LOG_INFO, 'ConfigDB connect success')
-
-#         self.select = Select()
-#         self.callbacks = {}
-#         self.subscribers = set()
