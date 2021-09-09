@@ -10,9 +10,8 @@ from .test_vectors import HOSTCFGD_TEST_VECTOR
 from tests.common.mock_configdb import MockConfigDb
 
 from pyfakefs.fake_filesystem_unittest import patchfs
+from deepdiff import DeepDiff
 
-
-swsscommon.swsscommon.ConfigDBConnector = MockConfigDb
 test_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 modules_path = os.path.dirname(test_path)
 scripts_path = os.path.join(modules_path, "scripts")
@@ -21,6 +20,7 @@ sys.path.insert(0, modules_path)
 # Load the file under test
 hostcfgd_path = os.path.join(scripts_path, 'hostcfgd')
 hostcfgd = load_module_from_source('hostcfgd', hostcfgd_path)
+hostcfgd.ConfigDBConnector = MockConfigDb
 
 
 class TestHostcfgd(TestCase):
@@ -40,18 +40,9 @@ class TestHostcfgd(TestCase):
             Returns:
                 None
         """
-        is_equal = len(table) == len(expected_table)
-        if is_equal:
-            for key, fields in expected_table.items():
-                is_equal = is_equal and key in table and len(fields) == len(table[key])
-                if is_equal:
-                    for field, value in fields.items():
-                        is_equal = is_equal and value == table[key][field]
-                        if not is_equal:
-                            break;
-                else:
-                    break
-        return is_equal
+        ddiff = DeepDiff(table, expected_table, ignore_order=True)
+        print("DIFF:", ddiff)
+        return True if not ddiff else False
 
     def __verify_fs(self, table):
         """
@@ -82,9 +73,9 @@ class TestHostcfgd(TestCase):
 
     @parameterized.expand(HOSTCFGD_TEST_VECTOR)
     @patchfs
-    def test_hostcfgd(self, test_name, test_data, fs):
+    def test_hostcfgd_feature_handler(self, test_name, test_data, fs):
         """
-            Test hostcfd daemon initialization
+            Test feature config capability in the hostcfd
 
             Args:
                 test_name(str): test name
@@ -101,9 +92,21 @@ class TestHostcfgd(TestCase):
             attrs = test_data["popen_attributes"]
             popen_mock.configure_mock(**attrs)
             mocked_subprocess.Popen.return_value = popen_mock
+            hostcfgd.is_multi_npu = mock.Mock(return_value=False)
+            hostcfgd.get_num_npus = mock.Mock(return_value=1)
 
-            host_config_daemon = hostcfgd.HostConfigDaemon()
-            host_config_daemon.feature_handler.update_all_features_config()
+            # Initialize Feature Handler
+            device_config = {}
+            device_config['DEVICE_METADATA'] = MockConfigDb.CONFIG_DB['DEVICE_METADATA']
+            feature_handler = hostcfgd.FeatureHandler(MockConfigDb(), device_config)
+
+            # sync the state field and Handle Feature Updates
+            feature_handler.sync_state_field()
+            features = MockConfigDb.CONFIG_DB['FEATURE']
+            for key, fvs in features.items():
+                feature_handler.handle(key, fvs)
+
+            # Verify if the updates are properly updated
             assert self.__verify_table(
                 MockConfigDb.get_config_db()["FEATURE"],
                 test_data["expected_config_db"]["FEATURE"]

@@ -28,6 +28,7 @@ setup(
         'PyGObject',
         'sonic-py-common',
         'systemd-python',
+        'jsondiff'
     ],
     setup_requires = [
         'pytest-runner',
@@ -37,7 +38,9 @@ setup(
         'parameterized',
         'pytest',
         'pyfakefs',
-        'sonic-py-common'
+        'sonic-py-common',
+        'jsondiff',
+        'deepdiff'
     ],
     classifiers = [
         'Development Status :: 3 - Alpha',

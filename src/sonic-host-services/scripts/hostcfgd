@@ -8,9 +8,9 @@ import subprocess
 import syslog
 
 import jinja2
-from sonic_py_common import device_info
+from sonic_py_common.device_info import is_multi_npu, get_num_npus
 from swsscommon.swsscommon import SubscriberStateTable, DBConnector, Select
-from swsscommon.swsscommom import ConfigDBConnector, TableConsumable
+from swsscommon.swsscommon import ConfigDBConnector, TableConsumable
 from jsondiff import diff
 
 
@@ -129,9 +129,9 @@ class Feature(object):
         self.name = feature_name
         self.state = self._get_target_state(feature_cfg.get('state'), device_config or {})
         self.auto_restart = feature_cfg.get('auto_restart', 'disabled')
-        self.has_timer = ast.literal_eval(feature_cfg.get('has_timer', 'False'))
-        self.has_global_scope = ast.literal_eval(feature_cfg.get('has_global_scope', 'True'))
-        self.has_per_asic_scope = ast.literal_eval(feature_cfg.get('has_per_asic_scope', 'False'))
+        self.has_timer = self.__safe_eval_bool(feature_cfg.get('has_timer', 'False'))
+        self.has_global_scope = self.__safe_eval_bool(feature_cfg.get('has_global_scope', 'True'))
+        self.has_per_asic_scope = self.__safe_eval_bool(feature_cfg.get('has_per_asic_scope', 'False'))
 
     def _get_target_state(self, state_configuration, device_config):
         """ Returns the target state for the feature by rendering the state field as J2 template.
@@ -152,6 +152,22 @@ class Feature(object):
             raise ValueError('Invalid state rendered for feature {}: {}'.format(self.name, target_state))
         return target_state
 
+    def __safe_eval_bool(self, val):
+        """ Safely evaluate the boolean expression, without raising an exception """
+        try:
+            ret = ast.literal_eval(val)
+        except Exception as e:
+            ret = False
+        return ret
+
+    def compare_state(self, feature_name, feature_cfg):
+        if self.name != feature_name or not isinstance(feature_cfg, dict):
+            return False
+
+        if self.state != feature_cfg.get('state', ''):
+            return False
+        return True
+
 
 class FeatureHandler(object):
     """ Handles FEATURE table updates. """
@@ -163,7 +179,7 @@ class FeatureHandler(object):
         self._config_db = config_db
         self._device_config = device_config
         self._cached_config = {}
-        self.is_multi_npu = device_info.is_multi_npu()
+        self.is_multi_npu_device = is_multi_npu()
 
     def handle(self, feature_name, feature_cfg):
         if not feature_cfg:
@@ -179,8 +195,17 @@ class FeatureHandler(object):
         # the next called self.update_feature_state will start it again. If it will fail
         # again the auto restart will kick-in. Another order may leave it in failed state
         # and not auto restart.
-        if self._cached_config[feature_name].auto_restart != feature.auto_restart:
+
+        dir_name = self.SYSTEMD_SERVICE_CONF_DIR.format(feature_name)
+        auto_restart_conf = os.path.join(dir_name, 'auto_restart.conf')
+        updated_auto_restart = False
+        if not os.path.exists(auto_restart_conf):  # if the auto_restart_conf file is not found, set it
             self.update_feature_auto_restart(feature)
+            updated_auto_restart = True
+
+        if self._cached_config[feature_name].auto_restart != feature.auto_restart:
+            if not updated_auto_restart:
+                self.update_feature_auto_restart(feature)
             self._cached_config[feature_name].auto_restart = feature.auto_restart
 
         # Enable/disable the container service if the feature state was changed from its previous state.
@@ -190,7 +215,12 @@ class FeatureHandler(object):
             else:
                 self.resync_feature_state(self._cached_config[feature_name])
 
-    def update_all_features_config(self):
+    def sync_state_field(self):
+        """
+        Summary:
+        Updates the state field in the FEATURE|* tables as the state field
+        might have to to be rendered based on DEVICE_METADATA table
+        """
         feature_table = self._config_db.get_table('FEATURE')
         for feature_name in feature_table.keys():
             if not feature_name:
@@ -198,12 +228,8 @@ class FeatureHandler(object):
                 continue
 
             feature = Feature(feature_name, feature_table[feature_name], self._device_config)
-            self._cached_config.setdefault(feature_name, feature)
-
-            self.update_feature_auto_restart(feature)
-
-            self.update_feature_state(feature)
-            self.resync_feature_state(feature)
+            if not feature.compare_state(feature_name, feature_table.get(feature_name, {})):
+                self.resync_feature_state(feature)
 
     def update_feature_state(self, feature):
         cached_feature = self._cached_config[feature.name]
@@ -266,9 +292,9 @@ class FeatureHandler(object):
     def get_feature_attribute(self, feature):
         # Create feature name suffix depending feature is running in host or namespace or in both
         feature_names = (
-            ([feature.name] if feature.has_global_scope or not self.is_multi_npu else []) +
-            ([(feature.name + '@' + str(asic_inst)) for asic_inst in range(device_info.get_num_npus())
-                if feature.has_per_asic_scope and self.is_multi_npu])
+            ([feature.name] if feature.has_global_scope or not self.is_multi_npu_device else []) +
+            ([(feature.name + '@' + str(asic_inst)) for asic_inst in range(get_num_npus())
+                if feature.has_per_asic_scope and self.is_multi_npu_device])
         )
 
         if not feature_names:
@@ -291,7 +317,6 @@ class FeatureHandler(object):
 
         props = dict([line.split("=") for line in stdout.decode().strip().splitlines()])
         return props["UnitFileState"]
-
 
     def enable_feature(self, feature):
         cmds = []
@@ -476,7 +501,7 @@ class AaaCfg(object):
             self.debug = is_true_cb(data['debug'])
         if modify_conf and df:
             self.modify_conf_file()
-        return True if df not False
+        return True if df else False
 
     def pick_src_intf_ipaddrs(self, keys, src_intf):
         new_ipv4_addr = ""
@@ -508,7 +533,7 @@ class AaaCfg(object):
         self.tacplus_global = data_modified
         if modify_conf and df:
             self.modify_conf_file()
-        return True if df not False
+        return True if df else False
 
     def tacacs_server_update(self, key, data, modify_conf=True):
         cached_data = self.tacplus_servers.get(key, {})
@@ -516,7 +541,7 @@ class AaaCfg(object):
         self.tacplus_servers[key] = data_modified
         if modify_conf and df:
             self.modify_conf_file()
-        return True if df not False
+        return True if df else False
 
     def handle_radius_source_intf_ip_chg(self, key):
         modify_conf = False
@@ -808,11 +833,10 @@ class KdumpCfg(object):
                 run_cmd("sonic-kdump-config --num_dumps " + num_dumps)
 
 class NtpCfg(object):
-    def __init__(self, CfgDb):
-        self.config_db = CfgDb
+    def __init__(self):
         self.ntp_global = {}
         self.ntp_servers = set()
-        self.init_flag = True 
+        self.init_flag = True
 
     def handle_ntp_source_intf_chg(self, key):
         # if no ntp server configured, do nothing
@@ -895,9 +919,10 @@ class HostConfigDaemon:
         self.aaacfg = AaaCfg()
         self.iptables = Iptables()
         self.feature_handler = FeatureHandler(self.config_db, self.device_config)
-        self.ntpcfg = NtpCfg(self.config_db)
+        self.feature_handler.sync_state_field()
+        self.ntpcfg = NtpCfg()
 
-        self.is_multi_npu = device_info.is_multi_npu()
+        self.is_multi_npu_device = is_multi_npu()
 
         # Load Kdump configuration
         self.kdumpCfg = KdumpCfg(self.config_db)
@@ -1027,7 +1052,7 @@ class HostConfigDaemon:
     def start(self):
         self.subscribe('KDUMP', lambda table, key, op, data: self.kdump_handler(key, op, data), PRIO_INIT)
         # Handle FEATURE updates before other tables
-        self.subscribe('FEATURE', lambda table, key, op, data: self.feature_handler.handle(key, op, data), PRIO_INIT-1)
+        self.subscribe('FEATURE', lambda table, key, op, data: self.feature_handler.handle(key, data), PRIO_INIT-1)
         # Handle AAA, TACACS and RADIUS related tables
         self.subscribe('AAA', lambda table, key, op, data: self.aaa_handler(key, op, data), PRIO_INIT-2)
         self.subscribe('TACPLUS', lambda table, key, op, data: self.tacacs_global_handler(key, op, data), PRIO_INIT-2)
