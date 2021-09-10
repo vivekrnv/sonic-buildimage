@@ -11,6 +11,7 @@ from tests.common.mock_configdb import MockConfigDb
 
 from pyfakefs.fake_filesystem_unittest import patchfs
 from deepdiff import DeepDiff
+from unittest.mock import call
 
 test_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 modules_path = os.path.dirname(test_path)
@@ -104,7 +105,7 @@ class TestHostcfgd(TestCase):
             feature_handler.sync_state_field()
             features = MockConfigDb.CONFIG_DB['FEATURE']
             for key, fvs in features.items():
-                feature_handler.handle(key, fvs)
+                feature_handler.handle(key, "SET", fvs)
 
             # Verify if the updates are properly updated
             assert self.__verify_table(
@@ -142,3 +143,53 @@ class TestHostcfgd(TestCase):
         assert not swss_feature.has_timer
         assert swss_feature.has_global_scope
         assert not swss_feature.has_per_asic_scope
+
+
+class TesNtpCfgd(TestCase):
+    """
+        Test hostcfd daemon - NtpCfgd
+    """
+    def setUp(self):
+        MockConfigDb.CONFIG_DB['NTP'] = {'global': {'vrf': 'mgmt', 'src_intf': 'eth0'}}
+        MockConfigDb.CONFIG_DB['NTP_SERVER'] = {'0.debian.pool.ntp.org': {}}
+
+    def tearDown(self):
+        MockConfigDb.CONFIG_DB = {}
+
+    def test_ntp_global_update_with_no_servers(self):
+        with mock.patch("hostcfgd.subprocess") as mocked_subprocess:
+            popen_mock = mock.Mock()
+            attrs = {'communicate.return_value': ('output', 'error')}
+            popen_mock.configure_mock(**attrs)
+            mocked_subprocess.Popen.return_value = popen_mock
+
+            ntpcfgd = hostcfgd.NtpCfg()
+            ntpcfgd.ntp_global_update("global", MockConfigDb.CONFIG_DB['NTP']["global"])
+
+            mocked_subprocess.check_call.assert_not_called()
+
+    def test_ntp_global_update_ntp_servers(self):
+        with mock.patch("hostcfgd.subprocess") as mocked_subprocess:
+            popen_mock = mock.Mock()
+            attrs = {'communicate.return_value': ('output', 'error')}
+            popen_mock.configure_mock(**attrs)
+            mocked_subprocess.Popen.return_value = popen_mock
+
+            ntpcfgd = hostcfgd.NtpCfg()
+            ntpcfgd.ntp_global_update("global", MockConfigDb.CONFIG_DB['NTP']["global"])
+            ntpcfgd.ntp_server_update("0.debian.pool.ntp.org", "SET")
+            mocked_subprocess.check_call.assert_has_calls([call("systemctl restart ntp-config", shell=True)])
+
+    def test_loopback_update(self):
+        with mock.patch("hostcfgd.subprocess") as mocked_subprocess:
+            popen_mock = mock.Mock()
+            attrs = {'communicate.return_value': ('output', 'error')}
+            popen_mock.configure_mock(**attrs)
+            mocked_subprocess.Popen.return_value = popen_mock
+
+            ntpcfgd = hostcfgd.NtpCfg()
+            ntpcfgd.ntp_global = MockConfigDb.CONFIG_DB['NTP']["global"]
+            ntpcfgd.ntp_servers.add('0.debian.pool.ntp.org')
+
+            ntpcfgd.handle_ntp_source_intf_chg("eth0")
+            mocked_subprocess.check_call.assert_has_calls([call("systemctl restart ntp-config", shell=True)])

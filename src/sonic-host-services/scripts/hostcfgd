@@ -181,7 +181,7 @@ class FeatureHandler(object):
         self._cached_config = {}
         self.is_multi_npu_device = is_multi_npu()
 
-    def handle(self, feature_name, feature_cfg):
+    def handle(self, feature_name, op, feature_cfg):
         if not feature_cfg:
             self._cached_config.pop(feature_name)
             syslog.syslog(syslog.LOG_INFO, "Deregistering feature {}".format(feature_name))
@@ -442,7 +442,9 @@ class Iptables(object):
 
 
 class AaaCfg(object):
-    def __init__(self):
+    def __init__(self, cfg_db):
+        self.config_db = cfg_db
+
         self.auth_default = {
             'login': 'local',
         }
@@ -494,7 +496,7 @@ class AaaCfg(object):
         df, data_modified = cfg_diff(self.auth, data, cbs)
         self.auth = data_modified
         if 'debug' in data:
-            self.debug = is_true_cb(data['debug'])
+            self.debug = is_true(data['debug'])
         if modify_conf and df:
             self.modify_conf_file()
         return True if df else False
@@ -539,19 +541,19 @@ class AaaCfg(object):
             self.modify_conf_file()
         return True if df else False
 
-    def handle_radius_source_intf_ip_chg(self, key):
+    def handle_radius_source_intf_ip_chg(self, intf):
         modify_conf = False
-        if key == self.radius_global.get('src_intf', ''):
+        if intf == self.radius_global.get('src_intf', ''):
             modify_conf = True
         for addr in self.radius_servers:
-            if key == self.radius_servers.get(addr, {}).get('src_intf', ''):
+            if intf == self.radius_servers.get(addr, {}).get('src_intf', ''):
                 modify_conf = True
                 break
 
         if not modify_conf:
             return
 
-        syslog.syslog(syslog.LOG_INFO, 'RADIUS IP change - key:{}, current server info {}'.format(key, self.radius_servers))
+        syslog.syslog(syslog.LOG_INFO, 'RADIUS IP change - Interface:{}, current server info {}'.format(intf, self.radius_servers))
         self.modify_conf_file()
 
     def handle_radius_nas_ip_chg(self, key):
@@ -824,18 +826,24 @@ class KdumpCfg(object):
                 run_cmd("sonic-kdump-config --num_dumps " + num_dumps)
 
 class NtpCfg(object):
+    """
+    NtpCfg Config Daemon
+    1) ntp-config.service handles the configuration updates and then starts ntp.service
+    2) Both of them start after all the feature services start
+    3) Purpose of this daemon is to propagate runtime config changes in
+       NTP, NTP_SERVER and LOOPBACK_INTERFACE
+    """
     def __init__(self):
         self.ntp_global = {}
         self.ntp_servers = set()
-        self.init_flag = True
 
-    def handle_ntp_source_intf_chg(self, key):
+    def handle_ntp_source_intf_chg(self, intf_name):
         # if no ntp server configured, do nothing
         if not self.ntp_servers:
             return
 
         # check only the intf configured as source interface
-        if key != self.ntp_global.get('src_intf', ''):
+        if intf_name != self.ntp_global.get('src_intf', ''):
             return
         else:
             # just restart ntp config
@@ -845,29 +853,24 @@ class NtpCfg(object):
     def ntp_global_update(self, key, data):
         syslog.syslog(syslog.LOG_INFO, 'NTP GLOBAL Update')
         orig_src = self.ntp_global.get('src_intf', '')
+        orig_src_set = set(orig_src.split(";"))
         orig_vrf = self.ntp_global.get('vrf', '')
 
         new_src = data.get('src_intf', '')
+        new_src_set = set(new_src.split(";"))
         new_vrf = data.get('vrf', '')
         
         # Update the Local Cache
         self.ntp_global = data
 
-        # during init, restart ntp-config regardless if ntp server is configured or not
-        if self.init_flag:
-            syslog.syslog(syslog.LOG_INFO, "NtpCfg load ...")
-            run_cmd('systemctl restart ntp-config')
-            self.init_flag = False
-            return 
-
         # check if ntp server configured, if not, do nothing
-        if self.ntp_servers:
+        if not self.ntp_servers:
             syslog.syslog(syslog.LOG_INFO, "No ntp server when global config change, do nothing")
             return 
 
-        if new_src != orig_src:
+        if orig_src_set != new_src_set:
             syslog.syslog(syslog.LOG_INFO, "ntp global update for source intf old {} new {}, restarting ntp-config"
-                          .format(orig_src, new_src))
+                          .format(orig_src_set, new_src_set))
             cmd = 'systemctl restart ntp-config'
             run_cmd(cmd)
         elif new_vrf != orig_vrf:
@@ -877,17 +880,20 @@ class NtpCfg(object):
             run_cmd(cmd)
 
     def ntp_server_update(self, key, op):
-        syslog.syslog(syslog.LOG_INFO, 'ntp server update key {} data {}'.format(key, data))
+        syslog.syslog(syslog.LOG_INFO, 'ntp server update key {}'.format(key))
 
-        if op == "SET":
+        restart_config = False
+        if op == "SET" and key not in self.ntp_servers:
+            restart_config = True
             self.ntp_servers.add(key)
-        elif op == "DEL":
+        elif op == "DEL" and key in self.ntp_server:
+            restart_config = True
             self.ntp_servers.remove(key)
 
-        cmd = 'systemctl restart ntp-config'
-        syslog.syslog(syslog.LOG_INFO, 'ntp server update, restarting ntp-config, ntp servers configured {}'.format(self.ntp_servers))
-        run_cmd(cmd)
-
+        if restart_config:
+            cmd = 'systemctl restart ntp-config'
+            syslog.syslog(syslog.LOG_INFO, 'ntp server update, restarting ntp-config, ntp servers configured {}'.format(self.ntp_servers))
+            run_cmd(cmd)
 
 class HostConfigDaemon:
     def __init__(self):
@@ -906,18 +912,21 @@ class HostConfigDaemon:
         self.device_config = {}
         self.device_config['DEVICE_METADATA'] = self.config_db.get_table('DEVICE_METADATA')
 
-        self.hostname_cache=""
-        self.aaacfg = AaaCfg()
+        # Initialize KDump Config and set the config to default if nothing is provided
+        self.kdumpCfg = KdumpCfg(self.config_db)
+        self.kdumpCfg.init(self.config_db.get_table('KDUMP'))
+
+        # Initialize IpTables
         self.iptables = Iptables()
+
+        # Intialize Feature Handler
         self.feature_handler = FeatureHandler(self.config_db, self.device_config)
         self.feature_handler.sync_state_field()
+
+        # Initialize Ntp Config Handler
         self.ntpcfg = NtpCfg()
 
         self.is_multi_npu_device = is_multi_npu()
-
-        # Load Kdump configuration
-        self.kdumpCfg = KdumpCfg(self.config_db)
-        self.kdumpCfg.init(self.config_db.get_table('KDUMP'))
 
         try:
             dev_meta = self.config_db.get_table('DEVICE_METADATA')
@@ -926,6 +935,10 @@ class HostConfigDaemon:
                     self.hostname_cache = dev_meta['localhost']['hostname']
         except Exception as e:
             pass
+
+        # Initialize AAACfg
+        self.hostname_cache=""
+        self.aaacfg = AaaCfg(self.config_db)
         # Update AAA with the hostname
         self.aaacfg.hostname_update(self.hostname_cache)
 
@@ -940,10 +953,12 @@ class HostConfigDaemon:
         lpbk_table = self.config_db.get_table('LOOPBACK_INTERFACE')
         self.iptables.load(lpbk_table)
 
-        # Load NTP configurations
-        ntp_server = self.config_db.get_table('NTP_SERVER')
-        ntp_global = self.config_db.get_table('NTP')
-        self.ntpcfg.load(ntp_global, ntp_server)
+    def __get_intf_name(self, key):
+        if isinstance(key, tuple) and key:
+            intf = key[0]
+        else:
+            intf = key
+        return intf
 
     def aaa_handler(self, key, op, data):
         cfg_change = self.aaacfg.aaa_update(key, data)
@@ -987,35 +1002,47 @@ class HostConfigDaemon:
         syslog.syslog(syslog.LOG_INFO, 'RADIUS Global update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def mgmt_intf_handler(self, key, op, data):
-        self.aaacfg.handle_radius_source_intf_ip_chg(key)
-        self.aaacfg.handle_radius_nas_ip_chg(key)
+        key = ConfigDBConnector.deserialize_key(key)
+        mgmt_intf_name = self.__get_intf_name(key)
+        self.aaacfg.handle_radius_source_intf_ip_chg(mgmt_intf_name)
+        self.aaacfg.handle_radius_nas_ip_chg(mgmt_intf_name)
 
     def lpbk_handler(self, key, op, data):
+        key = ConfigDBConnector.deserialize_key(key)
         if op == "DEL":
             add = False
         else:
             add = True
 
         self.iptables.iptables_handler(key, data, add)
-        self.ntpcfg.handle_ntp_source_intf_chg(key)
-        self.aaacfg.handle_radius_source_intf_ip_chg(key)
+        lpbk_name = self.__get_intf_name(key)
+        self.ntpcfg.handle_ntp_source_intf_chg(lpbk_name)
+        self.aaacfg.handle_radius_source_intf_ip_chg(lpbk_name)
 
     def vlan_intf_handler(self, key, op, data):
-        self.aaacfg.handle_radius_source_intf_ip_chg(key)
+        key = ConfigDBConnector.deserialize_key(key)
+        vlan_name = self.__get_intf_name(key)
+        self.aaacfg.handle_radius_source_intf_ip_chg(vlan_name)
 
     def vlan_sub_intf_handler(self, key, op, data):
-        self.aaacfg.handle_radius_source_intf_ip_chg(key)
+        key = ConfigDBConnector.deserialize_key(key)
+        sub_intf_name = self.__get_intf_name(key)
+        self.aaacfg.handle_radius_source_intf_ip_chg(sub_intf_name)
 
     def portchannel_intf_handler(self, key, op, data):
-        self.aaacfg.handle_radius_source_intf_ip_chg(key)
+        key = ConfigDBConnector.deserialize_key(key)
+        lag_name = self.__get_intf_name(key)
+        self.aaacfg.handle_radius_source_intf_ip_chg(lag_name)
 
     def phy_intf_handler(self, key, op, data):
-        self.aaacfg.handle_radius_source_intf_ip_chg(key)
+        key = ConfigDBConnector.deserialize_key(key)
+        phy_intf_name = self.__get_intf_name(key)
+        self.aaacfg.handle_radius_source_intf_ip_chg(phy_intf_name)
 
-    def ntp_server_handler (self, key, op, data):
+    def ntp_server_handler(self, key, op, data):
         self.ntpcfg.ntp_server_update(key, op)
 
-    def ntp_global_handler (self, key, op, data):
+    def ntp_global_handler(self, key, op, data):
         self.ntpcfg.ntp_global_update(key, data)
 
     def kdump_handler (self, key, op, data):
@@ -1043,7 +1070,7 @@ class HostConfigDaemon:
     def start(self):
         self.subscribe('KDUMP', lambda table, key, op, data: self.kdump_handler(key, op, data), PRIO_INIT)
         # Handle FEATURE updates before other tables
-        self.subscribe('FEATURE', lambda table, key, op, data: self.feature_handler.handle(key, data), PRIO_INIT-1)
+        self.subscribe('FEATURE', lambda table, key, op, data: self.feature_handler.handle(key, op, data), PRIO_INIT-1)
         # Handle AAA, TACACS and RADIUS related tables
         self.subscribe('AAA', lambda table, key, op, data: self.aaa_handler(key, op, data), PRIO_INIT-2)
         self.subscribe('TACPLUS', lambda table, key, op, data: self.tacacs_global_handler(key, op, data), PRIO_INIT-2)
@@ -1068,6 +1095,7 @@ class HostConfigDaemon:
         syslog.syslog(syslog.LOG_INFO,
                       "systemctl has finished initialization -- proceeding ...")
 
+        init_load_flag = True
         while True:
             state, selectable_ = self.selector.select(SELECT_TIMEOUT)
             if state == self.selector.TIMEOUT:
@@ -1087,6 +1115,10 @@ class HostConfigDaemon:
             callback = self.callbacks.get(table, None)
             if callback:
                 callback(key, op, dict(fvs))
+            
+            if init_load_flag and table == "FEATURE" and key.lower() == "swss":
+                init_load_flag = False
+                self.load()
 
 
 def main():
