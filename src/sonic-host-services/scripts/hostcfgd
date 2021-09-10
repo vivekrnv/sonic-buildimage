@@ -438,11 +438,7 @@ class Iptables(object):
 
         for cmd in iptables_cmds:
             syslog.syslog(syslog.LOG_INFO, "Running cmd - {}".format(cmd))
-            try:
-                subprocess.check_call(cmd, shell=True)
-            except subprocess.CalledProcessError as err:
-                syslog.syslog(syslog.LOG_ERR, "'{}' failed. RC: {}, output: {}"
-                              .format(err.cmd, err.returncode, err.output))
+            run_cmd(cmd)
 
 
 class AaaCfg(object):
@@ -497,7 +493,7 @@ class AaaCfg(object):
         cbs = {'failthrough': is_true_cb}
         df, data_modified = cfg_diff(self.auth, data, cbs)
         self.auth = data_modified
-        if 'debug' in self.auth:
+        if 'debug' in data:
             self.debug = is_true_cb(data['debug'])
         if modify_conf and df:
             self.modify_conf_file()
@@ -775,12 +771,7 @@ class AaaCfg(object):
         else:
             cmd = 'service aaastatsd stop'
         syslog.syslog(syslog.LOG_INFO, "cmd - {}".format(cmd))
-        try:
-            subprocess.check_call(cmd, shell=True)
-        except subprocess.CalledProcessError as err:
-            syslog.syslog(syslog.LOG_ERR,
-                    "{} - failed: return code - {}, output:\n{}"
-                    .format(err.cmd, err.returncode, err.output))
+        run_cmd(cmd)
 
 class KdumpCfg(object):
     def __init__(self, CfgDb):
@@ -969,7 +960,7 @@ class HostConfigDaemon:
         syslog.syslog(syslog.LOG_INFO, 'TACPLUS_SERVER update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def tacacs_global_handler(self, key, op, data):
-        cfg_change = self.aaacfg.tacacs_global_update(key, op, data)
+        cfg_change = self.aaacfg.tacacs_global_update(key, data)
         if not cfg_change:
             return
         log_data = copy.deepcopy(data)
@@ -978,7 +969,7 @@ class HostConfigDaemon:
         syslog.syslog(syslog.LOG_INFO, 'TACPLUS Global update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def radius_server_handler(self, key, op, data):
-        cfg_change = self.aaacfg.radius_server_update(key, op, data)
+        cfg_change = self.aaacfg.radius_server_update(key, data)
         if not cfg_change:
             return
         log_data = copy.deepcopy(data)
@@ -987,7 +978,7 @@ class HostConfigDaemon:
         syslog.syslog(syslog.LOG_INFO, 'RADIUS_SERVER update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def radius_global_handler(self, key, op, data):
-        cfg_change = self.aaacfg.radius_global_update(key, op, data)
+        cfg_change = self.aaacfg.radius_global_update(key, data)
         if not cfg_change:
             return
         log_data = copy.deepcopy(data)

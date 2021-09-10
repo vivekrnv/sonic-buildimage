@@ -37,7 +37,7 @@ class TestHostcfgdRADIUS(TestCase):
         Test hostcfd daemon - RADIUS
     """
     def run_diff(self, file1, file2):
-        return subprocess.check_output('diff -uR {} {} || true'.format(file1, file2), shell=True)
+        return subprocess.check_output('diff -u {} {} || true'.format(file1, file2), shell=True).decode('utf-8').strip()
 
 
     @parameterized.expand(HOSTCFGD_TEST_RADIUS_VECTOR)
@@ -69,34 +69,42 @@ class TestHostcfgdRADIUS(TestCase):
         hostcfgd.ETC_PAMD_LOGIN = op_path + "/login"
         hostcfgd.RADIUS_PAM_AUTH_CONF_DIR = op_path + "/"
 
-        shutil.rmtree( op_path, ignore_errors=True)
-        os.mkdir( op_path)
+        shutil.rmtree(op_path, ignore_errors=True)
+        os.mkdir(op_path)
 
-        shutil.copyfile( sop_path + "/sshd.old", op_path + "/sshd")
-        shutil.copyfile( sop_path + "/login.old", op_path + "/login")
+        shutil.copyfile(sop_path + "/sshd.old", op_path + "/sshd")
+        shutil.copyfile(sop_path + "/login.old", op_path + "/login")
 
         MockConfigDb.set_config_db(test_data["config_db"])
-        host_config_daemon = hostcfgd.HostConfigDaemon()
-
-        aaa = host_config_daemon.config_db.get_table('AAA')
+        # host_config_daemon = hostcfgd.HostConfigDaemon()
+        aaacfg = hostcfgd.AaaCfg()
+        aaacfg.hostname_update(MockConfigDb.CONFIG_DB["DEVICE_METADATA"]["localhost"]["hostname"])
+        aaa = MockConfigDb().get_table('AAA')
 
         try:
-            radius_global = host_config_daemon.config_db.get_table('RADIUS')
+            radius_global = MockConfigDb().get_table('RADIUS')
         except:
-            radius_global = []
+            radius_global = {}
         try:
             radius_server = \
-                host_config_daemon.config_db.get_table('RADIUS_SERVER')
+                MockConfigDb().get_table('RADIUS_SERVER')
         except:
-            radius_server = []
+            radius_server = {}
 
-        host_config_daemon.aaacfg.load(aaa,[],[],radius_global,radius_server)
+        for key, fvs in aaa.items():
+            aaacfg.aaa_update(key, fvs)
+        for key, fvs in radius_global.items():
+            aaacfg.radius_global_update(key, fvs)
+        for key, fvs in radius_server.items():
+            aaacfg.radius_server_update(key, fvs)
+
         dcmp = filecmp.dircmp(sop_path, op_path)
         diff_output = ""
         for name in dcmp.diff_files:
             diff_output += \
                 "Diff: file: {} expected: {} output: {}\n".format(\
                     name, dcmp.left, dcmp.right)
+            print(diff_output)
             diff_output += self.run_diff( dcmp.left + "/" + name,\
                 dcmp.right + "/" + name)
         self.assertTrue(len(diff_output) == 0, diff_output)
