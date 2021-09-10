@@ -1,6 +1,7 @@
 import os
 import sys
-import swsscommon
+import swsscommon as swsscommon_package
+from swsscommon import swsscommon
 
 from parameterized import parameterized
 from sonic_py_common.general import load_module_from_source
@@ -89,7 +90,7 @@ class TestHostcfgd(TestCase):
             Returns:
                 None
         """
-        fs.add_real_paths(swsscommon.__path__)  # add real path of swsscommon for database_config.json
+        fs.add_real_paths(swsscommon_package.__path__)  # add real path of swsscommon for database_config.json
         fs.create_dir(hostcfgd.FeatureHandler.SYSTEMD_SYSTEM_DIR)
         MockConfigDb.set_config_db(test_data['config_db'])
         with mock.patch('hostcfgd.subprocess') as mocked_subprocess:
