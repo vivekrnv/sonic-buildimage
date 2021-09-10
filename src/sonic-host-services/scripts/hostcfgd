@@ -20,7 +20,7 @@ def is_true_cb(val):
 
 def cfg_diff(cached, xcvd, callbacks={}):
     """
-    Returns the diff as formatted by jsondiff
+    Returns the diff and
 
     parameters:
     cached: saved config
@@ -32,9 +32,9 @@ def cfg_diff(cached, xcvd, callbacks={}):
     xcvd_copy: recieved config mutated by callbacks
     """
     if not cached and not xcvd:
-        return True
-    if isinstance(cached, dict) != isinstance(xcvd, dict):
-        return False
+        return {}, xcvd
+    if not isinstance(cached, dict) or not isinstance(xcvd, dict):
+        return {}, xcvd
 
     cached_copy = copy.deepcopy(cached)
     xcvd_copy = copy.deepcopy(xcvd)
@@ -442,9 +442,7 @@ class Iptables(object):
 
 
 class AaaCfg(object):
-    def __init__(self, cfg_db):
-        self.config_db = cfg_db
-
+    def __init__(self):
         self.auth_default = {
             'login': 'local',
         }
@@ -490,16 +488,14 @@ class AaaCfg(object):
         self.modify_conf_file()
 
     def aaa_update(self, key, data, modify_conf=True):
-        if key.lower() != 'authentication':
-            return False
-        cbs = {'failthrough': is_true_cb}
-        df, data_modified = cfg_diff(self.auth, data, cbs)
-        self.auth = data_modified
-        if 'debug' in data:
-            self.debug = is_true(data['debug'])
-        if modify_conf and df:
+        if key == 'authentication':
+            self.auth = data
+            if 'failthrough' in data:
+                self.auth['failthrough'] = is_true(data['failthrough'])
+            if 'debug' in data:
+                self.debug = is_true(data['debug'])
+        if modify_conf:
             self.modify_conf_file()
-        return True if df else False
 
     def pick_src_intf_ipaddrs(self, keys, src_intf):
         new_ipv4_addr = ""
@@ -525,44 +521,45 @@ class AaaCfg(object):
         return(new_ipv4_addr, new_ipv6_addr)
 
     def tacacs_global_update(self, key, data, modify_conf=True):
-        if key.lower() != 'global':
-            return False
-        df, data_modified = cfg_diff(self.tacplus_global, data, {})
-        self.tacplus_global = data_modified
-        if modify_conf and df:
-            self.modify_conf_file()
-        return True if df else False
+        if key == 'global':
+            self.tacplus_global = data
+            if modify_conf:
+                self.modify_conf_file()
 
     def tacacs_server_update(self, key, data, modify_conf=True):
-        cached_data = self.tacplus_servers.get(key, {})
-        df, data_modified = cfg_diff(cached_data, data, {})
-        self.tacplus_servers[key] = data_modified
-        if modify_conf and df:
-            self.modify_conf_file()
-        return True if df else False
+        if data == {}:
+            if key in self.tacplus_servers:
+                del self.tacplus_servers[key]
+        else:
+            self.tacplus_servers[key] = data
 
-    def handle_radius_source_intf_ip_chg(self, intf):
-        modify_conf = False
-        if intf == self.radius_global.get('src_intf', ''):
-            modify_conf = True
+        if modify_conf:
+            self.modify_conf_file()
+
+    def handle_radius_source_intf_ip_chg(self, key):
+        modify_conf=False
+        if 'src_intf' in self.radius_global:
+            if key[0] == self.radius_global['src_intf']:
+                modify_conf=True
         for addr in self.radius_servers:
-            if intf == self.radius_servers.get(addr, {}).get('src_intf', ''):
-                modify_conf = True
+            if ('src_intf' in self.radius_servers[addr]) and \
+                    (key[0] == self.radius_servers[addr]['src_intf']):
+                modify_conf=True
                 break
 
         if not modify_conf:
             return
 
-        syslog.syslog(syslog.LOG_INFO, 'RADIUS IP change - Interface:{}, current server info {}'.format(intf, self.radius_servers))
+        syslog.syslog(syslog.LOG_INFO, 'RADIUS IP change - key:{}, current server info {}'.format(key, self.radius_servers))
         self.modify_conf_file()
 
     def handle_radius_nas_ip_chg(self, key):
-        modify_conf = False
+        modify_conf=False
         # Mgmt IP configuration affects only the default nas_ip
         if 'nas_ip' not in self.radius_global:
             for addr in self.radius_servers:
                 if 'nas_ip' not in self.radius_servers[addr]:
-                    modify_conf = True
+                    modify_conf=True
                     break
 
         if not modify_conf:
@@ -572,19 +569,21 @@ class AaaCfg(object):
         self.modify_conf_file()
 
     def radius_global_update(self, key, data, modify_conf=True):
-        if key.lower() != 'global':
-            return None
-        cbs = {'statistics': is_true_cb}
-        df, data_modified = cfg_diff(self.radius_global, data, cbs)
-        self.radius_global = data_modified
-        if modify_conf and df:
-            self.modify_conf_file()
+        if key == 'global':
+            self.radius_global = data
+            if 'statistics' in data:
+                self.radius_global['statistics'] = is_true(data['statistics'])
+            if modify_conf:
+                self.modify_conf_file()
 
     def radius_server_update(self, key, data, modify_conf=True):
-        cached_data = self.radius_servers.get(key, {})
-        df, data_modified = cfg_diff(cached_data, data, {})
-        self.radius_servers[key] = data_modified
-        if modify_conf and df:
+        if data == {}:
+            if key in self.radius_servers:
+                del self.radius_servers[key]
+        else:
+            self.radius_servers[key] = data
+
+        if modify_conf:
             self.modify_conf_file()
 
     def hostname_update(self, hostname, modify_conf=True):
@@ -594,7 +593,7 @@ class AaaCfg(object):
         self.hostname = hostname
 
         # Currently only used for RADIUS
-        if not self.radius_servers:
+        if len(self.radius_servers) == 0:
             return
 
         if modify_conf:
@@ -773,7 +772,13 @@ class AaaCfg(object):
         else:
             cmd = 'service aaastatsd stop'
         syslog.syslog(syslog.LOG_INFO, "cmd - {}".format(cmd))
-        run_cmd(cmd)
+        try:
+            subprocess.check_call(cmd, shell=True)
+        except subprocess.CalledProcessError as err:
+            syslog.syslog(syslog.LOG_ERR,
+                    "{} - failed: return code - {}, output:\n{}"
+                    .format(err.cmd, err.returncode, err.output))
+
 
 class KdumpCfg(object):
     def __init__(self, CfgDb):
@@ -931,7 +936,7 @@ class HostConfigDaemon:
 
         # Initialize AAACfg
         self.hostname_cache=""
-        self.aaacfg = AaaCfg(self.config_db)
+        self.aaacfg = AaaCfg()
         
 
     def load(self):
@@ -941,9 +946,6 @@ class HostConfigDaemon:
         radius_global = self.config_db.get_table('RADIUS')
         radius_server = self.config_db.get_table('RADIUS_SERVER')
         self.aaacfg.load(aaa, tacacs_global, tacacs_server, radius_global, radius_server)
-
-        lpbk_table = self.config_db.get_table('LOOPBACK_INTERFACE')
-        self.iptables.load(lpbk_table)
 
         try:
             dev_meta = self.config_db.get_table('DEVICE_METADATA')
@@ -964,41 +966,32 @@ class HostConfigDaemon:
         return intf
 
     def aaa_handler(self, key, op, data):
-        cfg_change = self.aaacfg.aaa_update(key, data)
-        if cfg_change:
-            syslog.syslog(syslog.LOG_INFO, 'AAA Update: key: {}, op: {}, data: {}'.format(key, op, data))
+        self.aaacfg.aaa_update(key, data)
+        syslog.syslog(syslog.LOG_INFO, 'AAA Update: key: {}, op: {}, data: {}'.format(key, op, data))
 
     def tacacs_server_handler(self, key, op, data):
-        cfg_change = self.aaacfg.tacacs_server_update(key, data)
-        if not cfg_change:
-            return
+        self.aaacfg.tacacs_server_update(key, data)
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
         syslog.syslog(syslog.LOG_INFO, 'TACPLUS_SERVER update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def tacacs_global_handler(self, key, op, data):
-        cfg_change = self.aaacfg.tacacs_global_update(key, data)
-        if not cfg_change:
-            return
+        self.aaacfg.tacacs_global_update(key, data)
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
         syslog.syslog(syslog.LOG_INFO, 'TACPLUS Global update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def radius_server_handler(self, key, op, data):
-        cfg_change = self.aaacfg.radius_server_update(key, data)
-        if not cfg_change:
-            return
+        self.aaacfg.radius_server_update(key, data)
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
         syslog.syslog(syslog.LOG_INFO, 'RADIUS_SERVER update: key: {}, op: {}, data: {}'.format(key, op, log_data))
 
     def radius_global_handler(self, key, op, data):
-        cfg_change = self.aaacfg.radius_global_update(key, data)
-        if not cfg_change:
-            return
+        self.aaacfg.radius_global_update(key, data)
         log_data = copy.deepcopy(data)
         if 'passkey' in log_data:
             log_data['passkey'] = obfuscate(log_data['passkey'])
@@ -1020,27 +1013,23 @@ class HostConfigDaemon:
         self.iptables.iptables_handler(key, data, add)
         lpbk_name = self.__get_intf_name(key)
         self.ntpcfg.handle_ntp_source_intf_chg(lpbk_name)
-        self.aaacfg.handle_radius_source_intf_ip_chg(lpbk_name)
+        self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
     def vlan_intf_handler(self, key, op, data):
         key = ConfigDBConnector.deserialize_key(key)
-        vlan_name = self.__get_intf_name(key)
-        self.aaacfg.handle_radius_source_intf_ip_chg(vlan_name)
+        self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
     def vlan_sub_intf_handler(self, key, op, data):
         key = ConfigDBConnector.deserialize_key(key)
-        sub_intf_name = self.__get_intf_name(key)
-        self.aaacfg.handle_radius_source_intf_ip_chg(sub_intf_name)
+        self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
     def portchannel_intf_handler(self, key, op, data):
         key = ConfigDBConnector.deserialize_key(key)
-        lag_name = self.__get_intf_name(key)
-        self.aaacfg.handle_radius_source_intf_ip_chg(lag_name)
+        self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
     def phy_intf_handler(self, key, op, data):
         key = ConfigDBConnector.deserialize_key(key)
-        phy_intf_name = self.__get_intf_name(key)
-        self.aaacfg.handle_radius_source_intf_ip_chg(phy_intf_name)
+        self.aaacfg.handle_radius_source_intf_ip_chg(key)
 
     def ntp_server_handler(self, key, op, data):
         self.ntpcfg.ntp_server_update(key, op)

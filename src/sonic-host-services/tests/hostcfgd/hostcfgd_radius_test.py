@@ -10,10 +10,10 @@ from swsscommon import swsscommon
 from parameterized import parameterized
 from unittest import TestCase, mock
 from tests.hostcfgd.test_radius_vectors import HOSTCFGD_TEST_RADIUS_VECTOR
-from tests.common.mock_configdb import MockConfigDb
+from tests.common.mock_configdb import MockConfigDb, MockSubscriberStateTable
+from tests.common.mock_configdb import MockSelect, MockDBConnector
 
 
-swsscommon.ConfigDBConnector = MockConfigDb
 test_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 modules_path = os.path.dirname(test_path)
 scripts_path = os.path.join(modules_path, "scripts")
@@ -31,24 +31,28 @@ hostcfgd = importlib.util.module_from_spec(spec)
 loader.exec_module(hostcfgd)
 sys.modules['hostcfgd'] = hostcfgd
 
+# Mock swsscommon classes
+hostcfgd.ConfigDBConnector = MockConfigDb
+hostcfgd.SubscriberStateTable = MockSubscriberStateTable
+hostcfgd.Select = MockSelect
+hostcfgd.DBConnector = MockDBConnector
+
 
 class TestHostcfgdRADIUS(TestCase):
     """
         Test hostcfd daemon - RADIUS
     """
     def run_diff(self, file1, file2):
-        return subprocess.check_output('diff -u {} {} || true'.format(file1, file2), shell=True).decode('utf-8').strip()
+        return subprocess.check_output('diff -uR {} {} || true'.format(file1, file2), shell=True)
 
 
     @parameterized.expand(HOSTCFGD_TEST_RADIUS_VECTOR)
     def test_hostcfgd_radius(self, test_name, test_data):
         """
             Test RADIUS hostcfd daemon initialization
-
             Args:
                 test_name(str): test name
                 test_data(dict): test data which contains initial Config Db tables, and expected results
-
             Returns:
                 None
         """
@@ -69,28 +73,28 @@ class TestHostcfgdRADIUS(TestCase):
         hostcfgd.ETC_PAMD_LOGIN = op_path + "/login"
         hostcfgd.RADIUS_PAM_AUTH_CONF_DIR = op_path + "/"
 
-        shutil.rmtree(op_path, ignore_errors=True)
-        os.mkdir(op_path)
+        shutil.rmtree( op_path, ignore_errors=True)
+        os.mkdir( op_path)
 
-        shutil.copyfile(sop_path + "/sshd.old", op_path + "/sshd")
-        shutil.copyfile(sop_path + "/login.old", op_path + "/login")
+        shutil.copyfile( sop_path + "/sshd.old", op_path + "/sshd")
+        shutil.copyfile( sop_path + "/login.old", op_path + "/login")
 
         MockConfigDb.set_config_db(test_data["config_db"])
+        host_config_daemon = hostcfgd.HostConfigDaemon()
 
-        aaacfg = hostcfgd.AaaCfg(MockConfigDb())
-        aaa = MockConfigDb().get_table('AAA')
+        aaa = host_config_daemon.config_db.get_table('AAA')
 
         try:
-            radius_global = MockConfigDb().get_table('RADIUS')
+            radius_global = host_config_daemon.config_db.get_table('RADIUS')
         except:
             radius_global = []
         try:
             radius_server = \
-                MockConfigDb().get_table('RADIUS_SERVER')
+                host_config_daemon.config_db.get_table('RADIUS_SERVER')
         except:
             radius_server = []
 
-        aaacfg.load(aaa,[],[],radius_global,radius_server)
+        host_config_daemon.aaacfg.load(aaa,[],[],radius_global,radius_server)
         dcmp = filecmp.dircmp(sop_path, op_path)
         diff_output = ""
         for name in dcmp.diff_files:
