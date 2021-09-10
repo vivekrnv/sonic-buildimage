@@ -784,7 +784,7 @@ class KdumpCfg(object):
 
     def load(self, kdump_table):
         """
-        Set the KDUMP table in CFG DB to kdump_defaults if npt set by the user
+        Set the KDUMP table in CFG DB to kdump_defaults if not set by the user
         """
         syslog.syslog(syslog.LOG_INFO, "KdumpCfg init ...")
         kdump_conf = kdump_table.get("config", {})
@@ -1118,7 +1118,6 @@ class HostConfigDaemon:
             # Get the registered callback
             cbs = self.callbacks.get(table, None)
             for callback in cbs:
-                print(table, key, op, dict(fvs))
                 callback(table, key, op, dict(fvs))
             
             if init_load_flag and table == "FEATURE" and key.lower() == "swss":
