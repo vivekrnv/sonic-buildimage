@@ -928,19 +928,10 @@ class HostConfigDaemon:
 
         self.is_multi_npu_device = is_multi_npu()
 
-        try:
-            dev_meta = self.config_db.get_table('DEVICE_METADATA')
-            if 'localhost' in dev_meta:
-                if 'hostname' in dev_meta['localhost']:
-                    self.hostname_cache = dev_meta['localhost']['hostname']
-        except Exception as e:
-            pass
-
         # Initialize AAACfg
         self.hostname_cache=""
         self.aaacfg = AaaCfg(self.config_db)
-        # Update AAA with the hostname
-        self.aaacfg.hostname_update(self.hostname_cache)
+        
 
     def load(self):
         aaa = self.config_db.get_table('AAA')
@@ -952,6 +943,17 @@ class HostConfigDaemon:
 
         lpbk_table = self.config_db.get_table('LOOPBACK_INTERFACE')
         self.iptables.load(lpbk_table)
+
+        try:
+            dev_meta = self.config_db.get_table('DEVICE_METADATA')
+            if 'localhost' in dev_meta:
+                if 'hostname' in dev_meta['localhost']:
+                    self.hostname_cache = dev_meta['localhost']['hostname']
+        except Exception as e:
+            pass
+        
+        # Update AAA with the hostname
+        self.aaacfg.hostname_update(self.hostname_cache)
 
     def __get_intf_name(self, key):
         if isinstance(key, tuple) and key:

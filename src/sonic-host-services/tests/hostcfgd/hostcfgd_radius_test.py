@@ -75,37 +75,28 @@ class TestHostcfgdRADIUS(TestCase):
         shutil.copyfile(sop_path + "/sshd.old", op_path + "/sshd")
         shutil.copyfile(sop_path + "/login.old", op_path + "/login")
 
-        with mock.patch("hostcfgd.subprocess") as mocked_subprocess:
-            popen_mock = mock.Mock()
-            attrs = {'communicate.return_value': ('output', 'error')}
-            popen_mock.configure_mock(**attrs)
-            mocked_subprocess.Popen.return_value = popen_mock
-            MockConfigDb.set_config_db(test_data["config_db"])
+        MockConfigDb.set_config_db(test_data["config_db"])
 
-            aaacfg = hostcfgd.AaaCfg()
-            aaacfg.hostname_update(MockConfigDb.CONFIG_DB["DEVICE_METADATA"]["localhost"]["hostname"])
-            aaa = MockConfigDb().get_table('AAA')
+        aaacfg = hostcfgd.AaaCfg(MockConfigDb())
+        aaa = MockConfigDb().get_table('AAA')
 
-            try:
-                radius_global = MockConfigDb().get_table('RADIUS')
-            except:
-                radius_global = []
-            try:
-                radius_server = \
-                    MockConfigDb().get_table('RADIUS_SERVER')
-            except:
-                radius_server = []
+        try:
+            radius_global = MockConfigDb().get_table('RADIUS')
+        except:
+            radius_global = []
+        try:
+            radius_server = \
+                MockConfigDb().get_table('RADIUS_SERVER')
+        except:
+            radius_server = []
 
-            aaacfg.load(aaa,[],[],radius_global,radius_server)
-            # print(aaacfg.auth, aaacfg.radius_global, aaacfg.radius_servers)
-            mocked_subprocess.check_call.assert_has_calls(test_data["expected_subprocess_calls"])
-            dcmp = filecmp.dircmp(sop_path, op_path)
-            diff_output = ""
-            for name in dcmp.diff_files:
-                diff_output += \
-                    "Diff: file: {} expected: {} output: {}\n".format(\
-                        name, dcmp.left, dcmp.right)
-                diff_output += self.run_diff( dcmp.left + "/" + name,\
-                    dcmp.right + "/" + name)
-                print(diff_output)
-            self.assertTrue(len(diff_output) == 0, diff_output)
+        aaacfg.load(aaa,[],[],radius_global,radius_server)
+        dcmp = filecmp.dircmp(sop_path, op_path)
+        diff_output = ""
+        for name in dcmp.diff_files:
+            diff_output += \
+                "Diff: file: {} expected: {} output: {}\n".format(\
+                    name, dcmp.left, dcmp.right)
+            diff_output += self.run_diff( dcmp.left + "/" + name,\
+                dcmp.right + "/" + name)
+        self.assertTrue(len(diff_output) == 0, diff_output)
