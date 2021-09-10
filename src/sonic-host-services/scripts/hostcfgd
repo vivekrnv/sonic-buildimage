@@ -11,43 +11,6 @@ import jinja2
 from sonic_py_common.device_info import is_multi_npu, get_num_npus
 from swsscommon.swsscommon import SubscriberStateTable, DBConnector, Select
 from swsscommon.swsscommon import ConfigDBConnector, TableConsumable
-from jsondiff import diff
-
-
-def is_true_cb(val):
-    return is_true(val)
-
-
-def cfg_diff(cached, xcvd, callbacks={}):
-    """
-    Returns the diff and
-
-    parameters:
-    cached: saved config
-    xcvd: modified config
-    callbacks: Mutate the values in xcvd for comparison
-
-    returns:
-    df: diff as returned by jsondiff
-    xcvd_copy: recieved config mutated by callbacks
-    """
-    if not cached and not xcvd:
-        return {}, xcvd
-    if not isinstance(cached, dict) or not isinstance(xcvd, dict):
-        return {}, xcvd
-
-    cached_copy = copy.deepcopy(cached)
-    xcvd_copy = copy.deepcopy(xcvd)
-    for key in xcvd_copy:
-        func = callbacks.get(key, None)
-        if func and key in xcvd_copy:
-            try:
-                xcvd_copy[key] = func(xcvd_copy[key])
-            except:
-                continue
-    df = diff(cached_copy, xcvd_copy)
-    return df, xcvd_copy
-
 
 # FILE
 PAM_AUTH_CONF = "/etc/pam.d/common-auth-sonic"
