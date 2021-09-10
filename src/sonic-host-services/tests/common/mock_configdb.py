@@ -115,4 +115,4 @@ class MockSubscriberStateTable():
 
 class MockDBConnector():
     def __init__(self, db, val):
-        pass 
+        pass
