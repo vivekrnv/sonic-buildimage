@@ -27,8 +27,7 @@ setup(
         'Jinja2>=2.10',
         'PyGObject',
         'sonic-py-common',
-        'systemd-python',
-        'jsondiff'
+        'systemd-python'
     ],
     setup_requires = [
         'pytest-runner',
@@ -39,7 +38,6 @@ setup(
         'pytest',
         'pyfakefs',
         'sonic-py-common',
-        'jsondiff',
         'deepdiff'
     ],
     classifiers = [
