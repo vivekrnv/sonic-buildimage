@@ -5,8 +5,8 @@
                 "sonic-auto_techsupport:GLOBAL": {
                     "state" : "enabled",
                     "rate_limit_interval" : "180",
-                    "max_techsupport_size" : "10.0",
-                    "max_core_size" : "5.0",
+                    "max_techsupport_limit" : "10.0",
+                    "max_core_limit" : "5.0",
                     "since" : "2 days ago"
                 } 
             }
@@ -18,8 +18,8 @@
                 "sonic-auto_techsupport:GLOBAL": {
                     "state" : "start",
                     "rate_limit_interval" : "180",
-                    "max_techsupport_size" : "10.0",
-                    "max_core_size" : "5.0",
+                    "max_techsupport_limit" : "10.0",
+                    "max_core_limit" : "5.0",
                     "since" : "2 days ago"                
                 } 
             }
@@ -38,7 +38,7 @@
         "sonic-auto_techsupport:sonic-auto_techsupport": {
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "sonic-auto_techsupport:GLOBAL": {
-                    "max_core_size" : "100.00",
+                    "max_core_limit" : "100.00",
                     "rate_limit_interval" : "180"
                 } 
             }
@@ -48,8 +48,8 @@
         "sonic-auto_techsupport:sonic-auto_techsupport": {
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "sonic-auto_techsupport:GLOBAL": {
-                    "max_techsupport_size" : "11.23",
-                    "max_core_size" : "99.99"
+                    "max_techsupport_limit" : "11.23",
+                    "max_core_limit" : "99.99"
                 } 
             }
         }
@@ -58,8 +58,8 @@
         "sonic-auto_techsupport:sonic-auto_techsupport": {
             "sonic-auto_techsupport:AUTO_TECHSUPPORT": {
                 "sonic-auto_techsupport:GLOBAL": {
-                    "max_techsupport_size" : "11.111",
-                    "max_core_size" : "99.99"
+                    "max_techsupport_limit" : "11.111",
+                    "max_core_limit" : "99.99"
                 } 
             }
         }

@@ -40,25 +40,25 @@ module sonic-auto_techsupport {
                         type uint16;
                     }
 
-                    leaf max_techsupport_size {
+                    leaf max_techsupport_limit {
                         /*
                         A value between (0,100) should be specified. 
                         Upto two decimal places will be used in the calculation
                         The actual value in bytes is calculate based on the available space in the filesystem hosting /var/dump
                         When the limit is crossed, the older core files are incrementally deleted
                         */
-                        description "Max Size to which the dumps in /var/dump dir can be grown until. No cleanup is performed if the value is not congiured or set to 0.0";
+                        description "Max Limit for the cummulative size of ts dumps. Provide % value upto two decimals. No cleanup is performed if the value isn't configured or is 0.0";
                         type decimal-repr;
                     }
 
-                    leaf max_core_size {
+                    leaf max_core_limit {
                         /*
                         A value between (0,100) should be specified.
                         Upto two decimal places will be used in the calculation
                         The actual value in bytes is calculated based on the available space in the filesystem hosting /var/core
                         When the limit is crossed, the older core files are deleted
                         */
-                        description "Max Size to which the coredumps in /var/core directory can be grown until. No cleanup is performed if the value is not congiured or set to 0.0";
+                        description "Max Limit for the cummulative size of core dumps.  Provide % value upto two decimals.  No cleanup is performed if the value isn't congiured or is 0.0";
                         type decimal-repr;
                     }
                     
