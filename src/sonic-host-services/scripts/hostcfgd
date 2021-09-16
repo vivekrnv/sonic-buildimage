@@ -134,7 +134,7 @@ class Feature(object):
         """ Safely evaluate the boolean expression, without raising an exception """
         try:
             ret = ast.literal_eval(val)
-        except Exception as e:
+        except ValueError:
             ret = False
         return ret
 
