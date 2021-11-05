@@ -23,7 +23,8 @@ setup(
     ],
     setup_requires = [
         'pytest-runner',
-        'wheel'
+        'wheel',
+        'deepdiff'
     ],
     tests_require = [
         'parameterized',
