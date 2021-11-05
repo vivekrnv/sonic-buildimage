@@ -6,6 +6,7 @@ import ipaddress
 import os
 import subprocess
 import syslog
+import signal 
 
 import jinja2
 from sonic_py_common import device_info
