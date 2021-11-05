@@ -24,13 +24,13 @@ setup(
     setup_requires = [
         'pytest-runner',
         'wheel',
-        'deepdiff'
     ],
     tests_require = [
         'parameterized',
         'pytest',
         'pyfakefs',
-        'sonic-py-common'
+        'sonic-py-common',
+        'deepdiff'
     ],
     classifiers = [
         'Development Status :: 3 - Alpha',

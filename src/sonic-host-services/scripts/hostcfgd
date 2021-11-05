@@ -6,7 +6,8 @@ import ipaddress
 import os
 import subprocess
 import syslog
-import signal 
+import signal
+import sys
 
 import jinja2
 from sonic_py_common import device_info
@@ -489,25 +490,6 @@ class HostConfigDaemon:
                     syslog.syslog(syslog.LOG_ERR, "Feature '{}' failed to be stopped and disabled".format(feature_name))
                     return
 
-    # def is_invariant_feature(self, feature_name, state, feature_cfg):
-    #     invariant_feature = self.cached_feature_states[feature_name] == "always_enabled" or \
-    #                         self.cached_feature_states[feature_name] == "always_disabled"
-    #     if invariant_feature:
-    #         invariant_state = self.cached_feature_states[feature_name]
-    #         if state != invariant_state:
-    #             syslog.syslog(syslog.LOG_INFO, "Feature '{}' service is '{}'"
-    #                           .format(feature_name, invariant_state))
-    #             entry = self.config_db.get_entry('FEATURE', feature_name)
-    #             entry['state'] = invariant_state
-    #             self.config_db.set_entry('FEATURE', feature_name, entry)
-
-    #         if state == "always_disabled":
-    #             feature_names, feature_suffixes = self.get_feature_attribute(feature_name, feature_table)
-    #             self.disable_feature(feature_names, feature_suffixes)
-    #             syslog.syslog(syslog.LOG_INFO, "Feature '{}' is stopped and disabled".format(feature_name))
-
-    #     return invariant_feature
-
     def update_feature_state(self, feature_name, state, feature_cfg):
         cached_feature_state = self.cached_feature_states.get(feature_name, None)
         enable = False
@@ -533,14 +515,14 @@ class HostConfigDaemon:
         else:
             syslog.syslog(syslog.LOG_INFO, "Feature {} service is {}".format(feature_name, cached_feature_state))
             return False
-        print("VIVEK", feature_name, state, enable, disable)
+
         if not enable and not disable:
             syslog.syslog(syslog.LOG_ERR, "Unexpected state value '{}' for feature {}"
                           .format(state, feature_name))
             return False
 
         feature_names, feature_suffixes = self.get_feature_attribute(feature_name, feature_cfg)
-        print(feature_names, feature_suffixes)
+
         if enable:
             self.enable_feature(feature_names, feature_suffixes)
             syslog.syslog(syslog.LOG_INFO, "Feature {} is enabled and started".format(feature_name))
