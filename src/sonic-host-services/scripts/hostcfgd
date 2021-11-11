@@ -4,10 +4,11 @@ import ast
 import copy
 import ipaddress
 import os
+import sys
 import subprocess
 import syslog
 import signal
-import sys
+
 
 import jinja2
 from sonic_py_common import device_info
@@ -31,6 +32,15 @@ CFG_DB = "CONFIG_DB"
 HOSTCFGD_MAX_PRI = 10  # Used to enforce ordering b/w daemons under Hostcfgd
 DEFAULT_SELECT_TIMEOUT = 1000
 
+def safe_eval(val, default_value=False):
+    """ Safely evaluate the expression, without raising an exception """
+    try:
+        ret = ast.literal_eval(val)
+    except ValueError:
+        ret = default_value
+    return ret
+
+
 def signal_handler(sig, frame):
     if sig == signal.SIGHUP:
         syslog.syslog(syslog.LOG_INFO, "HostCfgd: signal 'SIGHUP' is caught and ignoring..")
@@ -51,6 +61,7 @@ def run_cmd(cmd, log_err = True):
         if log_err:
             syslog.syslog(syslog.LOG_ERR, "{} - failed: return code - {}, output:\n{}"
                   .format(err.cmd, err.returncode, err.output))
+
 
 def is_true(val):
     if val == 'True' or val == 'true':
@@ -411,9 +422,9 @@ class HostConfigDaemon:
         self.aaacfg.load(aaa, tacacs_global, tacacs_server)
 
     def get_feature_attribute(self, feature_name, feature_cfg):
-        has_timer = ast.literal_eval(feature_cfg.get('has_timer', 'False'))
-        has_global_scope = ast.literal_eval(feature_cfg.get('has_global_scope', 'True'))
-        has_per_asic_scope = ast.literal_eval(feature_cfg.get('has_per_asic_scope', 'False'))
+        has_timer = safe_eval(feature_cfg.get('has_timer', 'False'))
+        has_global_scope = safe_eval(feature_cfg.get('has_global_scope', 'True'))
+        has_per_asic_scope = safe_eval(feature_cfg.get('has_per_asic_scope', 'False'))
 
         # Create feature name suffix depending feature is running in host or namespace or in both 
         feature_names = (
