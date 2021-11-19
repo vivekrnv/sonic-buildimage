@@ -154,7 +154,7 @@ RUN apt-get update && apt-get install -y \
         libtool-bin \
         libxml2-dev \
 # For BFN sdk build
-        libusb-1.0-0-dev \
+        libusb-1.0-0-dev:$arch \
         libcurl3-nss-dev \
         libunwind8-dev \
         telnet \
@@ -349,6 +349,10 @@ RUN apt-get update && apt-get install -y \
         googletest \
         libgtest-dev \
         libgcc-8-dev \
+{%- if CONFIGURED_ARCH == "arm64" %} 
+        libpopt-dev:$arch \ 
+        libfuse-dev:$arch \
+{%- endif %}
 # For sonic-host-services build
         libcairo2-dev \
         libdbus-1-dev \

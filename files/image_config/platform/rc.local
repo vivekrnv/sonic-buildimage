@@ -242,6 +242,16 @@ if [ -f $FIRST_BOOT_FILE ]; then
         platform=$aboot_platform
     elif [ -n "$onie_platform" ]; then
         platform=$onie_platform
+    elif [ -n "$bf_platform" ]; then
+        platform=$bf_platform
+    elif [ "$bf_machine" = "nvidia-bluefield" ]; then
+        platform=$(dmidecode -t 4 | grep "Part Number" | awk '{split($NF,a,"-"); print tolower(a[1])}')
+        if [ -z "$platform" ]; then
+            echo "Platform name for the nvidia-bluefield machine could not be inferred" 
+            firsttime_exit
+        fi
+        platform=arm64-nvda_bf-$platform
+        echo "bf_platform=${platform}" >> /host/machine.conf
     else
         echo "Unknown SONiC platform"
         firsttime_exit

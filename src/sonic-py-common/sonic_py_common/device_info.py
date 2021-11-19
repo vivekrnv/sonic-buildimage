@@ -106,6 +106,8 @@ def get_platform():
             return machine_info['onie_platform']
         elif 'aboot_platform' in machine_info:
             return machine_info['aboot_platform']
+        elif 'bf_platform' in machine_info:
+            return machine_info['bf_platform']
 
     # If we fail to read from machine.conf, we may be running inside a Docker
     # container in SONiC, where the /host directory is not mounted. In this

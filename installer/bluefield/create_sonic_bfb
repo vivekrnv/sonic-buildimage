@@ -1,0 +1,215 @@
+#!/bin/bash
+#
+# Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES.
+# Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+
+# Note:
+# 1) If the installation reaches this point, then it is expected that the ONIE_INSTALLER_PAYLOAD is already built.
+#    ONIE_INSTALLER_PAYLOAD should contain squashfs, dockerfs and /boot directory
+# 2) Purpose of this script is to create installer vmlinuz, initramfs and finally bfb
+# 3) The ONIE_INSTALLER_PAYLOAD is packed inside the installer initramfs/initrd itself
+
+set -e
+
+## Pre-conditions running this script: 
+# install.sh under the SDIR
+# install.bfb under the SDIR
+# $ONIE_INSTALLER_PAYLOAD under CDIR
+# non-onie.conf under CDIR
+
+## Result:
+# sonic_BFB under DDIR
+
+IMAGE_VER="SONIC_default"
+PLATFORM="bf2"
+verbose=0
+
+usage() {
+cat << EOF
+Usage: `basename $0` [ OPTIONS ]
+OPTIONS:
+-i, -install_bfb,   --install_bfb <BFB>           Installation BFB to be used as a basis for the target BFB. Default: $BFB
+-s, -sonic_version  --sonic_version <IMAGE_VER>   SONiC version to be installed
+-m, -machine        --machine  <PLATFORM>         Bluefield Platform String. Valid Strings: bf2, bf3 Default: bf2
+-v, -verbose,       --verbose                     Run script in verbose mode. Will print out each step of execution.
+-h, -help,          --help                        Display help
+EOF
+}
+
+
+options=$(getopt -l "install_bfb:,sonic_version:,platform:,help,verbose" -o "i:s:p:hv" -a -- "$@")
+
+eval set -- "$options"
+
+while true
+do
+        case $1 in
+                -h|--help)
+                    usage
+                    exit 0
+                    ;;
+                -i|--install_bfb)
+                        shift
+                        BFB=$1
+                        ;;
+                -s|--sonic_version)
+                        shift
+                        IMAGE_VER=$1
+                        ;;
+                -p|--platform)
+                        shift
+                        PLATFORM=$1
+                        ;;
+                -v|--verbose)
+                        verbose=1
+                        set -xv
+                        ;;
+                --)
+                    shift
+                    break;;
+        esac
+        shift
+done
+
+if [[ $PLATFORM != bf2 && $PLATFORM != bf3 ]]; then
+   echo "Unsupported bluefield machine type: $PLATFORM"
+   exit 1
+fi
+
+# Directory which has the non-onie-conf file and the sonic payload file
+CDIR=${CDIR:-/sonic/}
+# Source Directory which has the artifacts and scripts
+SDIR=${SDIR:-/sonic/installer/$PLATFORM}
+BFB=${BFB:-$SDIR/install.bfb}
+WDIR=${WDIR:-$SDIR/workspace/bfb}
+DDIR=${DDIR:-/sonic/}
+TARGET_MACHINE=nvidia-bluefield
+
+# Read the Configuration
+. $CDIR/onie-image-arm64.conf
+
+if [ ! -n "$OUTPUT_BFB_IMAGE" ]; then
+    echo "OUTPUT_BFB_IMAGE name not defined. Exiting.."
+    exit 1
+fi
+
+if [ ! -f "$CDIR/$ONIE_INSTALLER_PAYLOAD" ]; then
+    echo "$ONIE_INSTALLER_PAYLOAD not found. Exiting.."
+    exit 1
+fi
+
+sonic_BFB=$OUTPUT_BFB_IMAGE
+
+SCRIPTS_DIR=`dirname $0`
+
+echo "Work directory: $WDIR"
+
+mkbfb=`which mlx-mkbfb`
+
+if [ ! -x "${mkbfb}" ]; then
+	echo "- ERROR: mlx-mkbfb is required to build BFB image"
+	exit 1
+fi
+
+if [[ ! -n "${BFB}" || ! -e "${BFB}" ]]; then
+	echo "- ERROR: Reference BFB was not found, expected: ${BFB}"
+	exit 1
+fi
+
+mkdir -p ${WDIR}
+cd ${WDIR}
+rm -rf initramfs
+$mkbfb -x ${BFB}
+
+initramfs=`ls -1 *initramfs*`
+
+initramfs_type=`file $initramfs`
+case "${initramfs_type}" in
+	*LZMA*)
+		echo "Uncompressing initramfs: $initramfs_type"
+		mv ${initramfs} ${initramfs}.xz
+		xz -d ${initramfs}.xz
+		;;
+esac
+
+rm -rf ${WDIR}/initramfs
+
+echo "Rebuilding $initramfs"
+
+mkdir -p ${WDIR}/initramfs
+cd initramfs
+cpio -id < ../$initramfs
+
+mkdir -p debian
+
+# Replace the flags
+cp ${SDIR}/install.sh temp_install.sh
+sed -i -e "s/%%IMAGE_VERSION%%/$IMAGE_VER/g" temp_install.sh
+sed -i -e "s/%%INSTALLER_PAYLOAD%%/$ONIE_INSTALLER_PAYLOAD/g" temp_install.sh
+sed -i -e "s/%%FILESYSTEM_DOCKERFS%%/$FILESYSTEM_DOCKERFS/g" temp_install.sh
+sed -i -e "s/%%DOCKERFS_DIR%%/$DOCKERFS_DIR/g" temp_install.sh
+sed -i -e "s/%%FILESYSTEM_SQUASHFS%%/$FILESYSTEM_SQUASHFS/g" temp_install.sh
+sed -i -e "s/%%PLATFORM%%/$PLATFORM/g" temp_install.sh
+install -m 0755 temp_install.sh ./debian/install.sh
+
+# Copy the INSTALLER payload
+cp $CDIR/$ONIE_INSTALLER_PAYLOAD ./debian/
+rm -rf temp_install.sh
+
+cat > etc/init.d/install-debian << EOF
+#!/bin/sh
+
+echo
+echo "=================================" | tee /dev/kmsg
+echo "Installing SONiC. Please wait..." | tee /dev/kmsg
+echo "=================================" | tee /dev/kmsg
+
+sleep 5
+
+/bin/sh /debian/install.sh
+if [ \$? -eq 0 ]; then
+        echo "===================================" | tee /dev/kmsg
+        echo "Installation finished. Rebooting..." | tee /dev/kmsg
+        echo "===================================" | tee /dev/kmsg
+        echo
+        sleep 3
+        /sbin/shutdown -r 0
+else
+        echo "========================" | tee /dev/kmsg
+        echo "Failed to install SONiC" | tee /dev/kmsg
+        echo "========================" | tee /dev/kmsg
+fi
+EOF
+chmod 755 etc/init.d/install-debian
+ 
+ln -snf ../init.d/install-debian etc/rcS.d/S99install-debian
+
+# Make initramfs
+find . | cpio -H newc -o | gzip -9 > ../$initramfs
+
+# Make bfb
+cd ..
+CAPSULE=/lib/firmware/mellanox/boot/capsule/MmcBootCap
+if [ ! -e $CAPSULE ]; then
+	echo "ERROR: Capsule file $CAPSULE does not exist"
+	exit 1
+fi
+
+$PYTHON_EX $mkbfb --initramfs $initramfs --capsule $CAPSULE ${BFB} ${DDIR}/${sonic_BFB}
+
+echo "BFB is ready: `readlink -f ${DDIR}/${sonic_BFB}`"

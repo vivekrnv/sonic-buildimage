@@ -18,4 +18,6 @@ $(SONIC_UTILITIES_PY3)_DEBS_DEPENDS = $(LIBYANG) \
                                       $(LIBYANG_PY3) \
                                       $(LIBSWSSCOMMON) \
                                       $(PYTHON3_SWSSCOMMON)
+# FIXME: Tests are failing when cross compilation is used
+$(SONIC_UTILITIES_PY3)_TEST = n
 SONIC_PYTHON_WHEELS += $(SONIC_UTILITIES_PY3)

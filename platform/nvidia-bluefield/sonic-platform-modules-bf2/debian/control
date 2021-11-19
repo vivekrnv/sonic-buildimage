@@ -1,0 +1,11 @@
+Source: sonic-platform-modules-bluefield2
+Section: main
+Priority: extra
+Maintainer: Vivek Reddy Karri <vkarri@nvidia.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+
+Package: platform-modules-bf2
+Version: 1.0
+Architecture: arm64
+Description: kernel modules, udev rules for bluefield2 platform
