@@ -576,7 +576,7 @@ class HostConfigDaemon:
             intf = key
         return intf
 
-    def aaa_handler(self, key, data):
+    def aaa_handler(self, key, op, data):
         self.aaacfg.aaa_update(key, data)
 
     def tacacs_server_handler(self, key, op, data):
