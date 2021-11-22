@@ -578,6 +578,7 @@ class HostConfigDaemon:
 
     def aaa_handler(self, key, op, data):
         self.aaacfg.aaa_update(key, data)
+        syslog.syslog(syslog.LOG_INFO, 'AAA Update: key: {}, op: {}, data: {}'.format(key, op, data))
 
     def tacacs_server_handler(self, key, op, data):
         self.aaacfg.tacacs_server_update(key, data)
