@@ -240,12 +240,12 @@ menuentry '$demo_grub_entry' {
         search --no-floppy --label --set=root SONiC-OS
         if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
         echo 'Loading SONiC-OS Kernel'
-        linux   /$image_dir/boot/vmlinuz-4.19.0-12-2-arm64 root=$grub_cfg_root rw console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000 fixrtc \
+        linux   /$image_dir/boot/vmlinuz-5.10.0-8-2-arm64 root=$grub_cfg_root rw console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000 fixrtc \
                 loop=$image_dir/$FILESYSTEM_SQUASHFS loopfstype=squashfs                       \
                 systemd.unified_cgroup_hierarchy=0 \
                 apparmor=1 security=apparmor varlog_size=4096 systemd.unified_cgroup_hierarchy=0
         echo    'Loading SONiC-OS initial ramdisk ...'
-        initrd  /$image_dir/boot/initrd.img-4.19.0-12-2-arm64
+        initrd  /$image_dir/boot/initrd.img-5.10.0-8-2-arm64
 }
 EOF
 
