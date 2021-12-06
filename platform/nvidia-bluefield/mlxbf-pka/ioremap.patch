@@ -1,0 +1,24 @@
+diff --git a/pka_dev.c b/pka_dev.c
+index a084713..93032be 100644
+--- a/pka_dev.c
++++ b/pka_dev.c
+@@ -38,6 +38,7 @@
+ #include <linux/ioport.h>
+ #include <linux/timex.h>
+ #include <linux/vfio.h>
++#include <linux/version.h>
+ #else
+ #include <stdint.h>
+ #include <string.h>
+@@ -239,7 +240,11 @@ static int pka_dev_set_resource_config(pka_dev_shim_t *shim,
+             return -EPERM;
+         }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
++        res_ptr->ioaddr = ioremap(res_ptr->base, res_ptr->size);
++#else
+         res_ptr->ioaddr = ioremap_nocache(res_ptr->base, res_ptr->size);
++#endif
+     }
+ 
+     res_ptr->status = PKA_DEV_RES_STATUS_MAPPED;
