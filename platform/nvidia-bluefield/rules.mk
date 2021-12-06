@@ -41,6 +41,7 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/rshim.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bootimages.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bfscripts.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-modules-bf2.mk
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/mft.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/installer-image.mk
 
 # TODO: This deb has dependency issues, skipped for now

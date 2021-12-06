@@ -21,7 +21,7 @@ SONIC_BF2_IMAGE_BASE = sonic-nvidia-bluefield
 $(SONIC_BF2_IMAGE_BASE)_MACHINE = nvidia-bluefield
 
 # Install the packages during the build_debian phase
-$(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) $(LIBPKA_DEB) $(SYSTEMD_SONIC_GENERATOR) 
+$(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) $(LIBPKA_DEB) $(SYSTEMD_SONIC_GENERATOR) $(KERNEL_MFT) $(MFT_OEM) $(MFT)
 
 # Required Dockers
 # TODO: Add swss, syncd and pmon later
