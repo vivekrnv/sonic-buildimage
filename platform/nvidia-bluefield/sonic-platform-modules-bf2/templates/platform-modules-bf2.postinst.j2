@@ -11,8 +11,6 @@ modprobe {{ k_module.split(".")[0] }}
 
 sync
 
-systemctl restart ssh
-systemctl restart systemd-logind
 systemctl enable serial-getty@hvc0.service
 systemctl enable serial-getty@ttyAMA0.service
 systemctl enable serial-getty@ttyAMA1.service

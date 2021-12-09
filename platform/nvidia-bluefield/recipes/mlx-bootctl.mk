@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-MLX_BOOTCTL_DRIVER_VERSION = 1.3
+MLX_BOOTCTL_DRIVER_VERSION = 1.5
 MLX_BOOTCTL_DRIVER = mlx-bootctl.ko
 
 $(MLX_BOOTCTL_DRIVER)_SRC_PATH = $(PLATFORM_PATH)/mlx-bootctl

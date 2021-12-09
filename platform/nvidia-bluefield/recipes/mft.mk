@@ -26,7 +26,8 @@ SONIC_MAKE_DEBS += $(MFT)
 ifeq ($(BLDENV), bullseye)
 $(MFT)_DEPENDS += $(LINUX_HEADERS) $(LINUX_HEADERS_COMMON)
 
-KERNEL_MFT = kernel-mft-dkms-modules-$(KVERSION)_$(MFT_VERSION)_arm64.deb
+BUILD_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
+KERNEL_MFT = kernel-mft-dkms-modules-$(KVERSION)_$(MFT_VERSION)_$(BUILD_ARCH).deb
 $(eval $(call add_derived_package,$(MFT),$(KERNEL_MFT)))
 endif
 

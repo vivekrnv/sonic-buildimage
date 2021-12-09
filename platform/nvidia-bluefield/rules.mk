@@ -18,20 +18,18 @@
 RECIPE_DIR = recipes
 
 # Bluefied Software Distribution Version
-BSD_VER = "3.7.1"
+BSD_VER=3.8.0
 export BSD_VER
+
 
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/tmfifo.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-gige.mk
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/gpio-mlxbf.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/gpio-mlxbf2.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/i2c-mlxbf.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bluefield-edac.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/ipmb-dev-int.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/ipmb-host.mk
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/libpka.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-bootctl.mk
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-cpld.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-trio.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-bootctl.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-livefish.mk
@@ -42,8 +40,7 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/bootimages.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bfscripts.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-modules-bf2.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mft.mk
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-openipmi.mk
+# include $(PLATFORM_PATH)/$(RECIPE_DIR)/libpka.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/installer-image.mk
-
-# TODO: This deb has dependency issues, skipped for now
-# include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-openipmi.mk
 

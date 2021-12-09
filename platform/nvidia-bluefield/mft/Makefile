@@ -21,8 +21,9 @@ SHELL = /bin/bash
 MFT_NAME = mft-$(MFT_VERSION)-$(MFT_REVISION)-arm64-deb
 MFT_TGZ = $(MFT_NAME).tgz
 
+BUILD_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 SRC_DEB = kernel-mft-dkms_$(MFT_VERSION)-$(MFT_REVISION)_all.deb
-MOD_DEB = kernel-mft-dkms-modules-$(KVERSION)_$(MFT_VERSION)_arm64.deb
+MOD_DEB = kernel-mft-dkms-modules-$(KVERSION)_$(MFT_VERSION)_$(BUILD_ARCH).deb
 
 MAIN_TARGET = mft_$(MFT_VERSION)-$(MFT_REVISION)_arm64.deb
 DERIVED_TARGETS = $(MOD_DEB) mft-oem_$(MFT_VERSION)-$(MFT_REVISION)_arm64.deb

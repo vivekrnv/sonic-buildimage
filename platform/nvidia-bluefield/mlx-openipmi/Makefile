@@ -22,7 +22,10 @@ SHELL = /bin/bash
 MLX_OPENIPMI = mlx-OpenIPMI-${MLX_OPENIPMI_DRIVER_VERSION}
 MLX_OPENIPMI_TAR = ${MLX_OPENIPMI}.tar.gz
 
-$(addprefix $(DEST)/, $(MLX_OPENIPMI_DEB)): $(DEST)/% :
+MAIN_TARGET = $(MLX_OPENIPMI_DEB)
+DERIVED_TARGETS = $(MLX_OPENIPMI_SERVER_DEB)
+
+$(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf ${MLX_OPENIPMI} ${MLX_OPENIPMI_TAR} *.buildinfo *.changes *.deb
 	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLX_OPENIPMI_TAR)"
 	tar -z -f $(MLX_OPENIPMI_TAR) -x
@@ -31,10 +34,12 @@ $(addprefix $(DEST)/, $(MLX_OPENIPMI_DEB)): $(DEST)/% :
 
 	# Build the package
 ifeq ($(CROSS_BUILD_ENVIRON), y)	
-	CONFIG_SITE=/etc/dpkg-cross/cross-config.$(CONFIGURED_ARCH) LD_LIBRARY_PATH=$(CROSS_LIB_PATH) dpkg-buildpackage -rfakeroot -us -uc -b -a$(CONFIGURED_ARCH) -Pcross,nocheck -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	dpkg-buildpackage -rfakeroot -us -uc -b -d -a$(CONFIGURED_ARCH) -Pcross,nocheck -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 else
-	DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -rfakeroot -us -uc -b -d -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 endif
 	popd
 
 	mv $* $(DEST)/
+
+$(addprefix $(DEST)/, $(DERIVED_TARGETS)): $(DEST)/% : $(DEST)/$(MAIN_TARGET)

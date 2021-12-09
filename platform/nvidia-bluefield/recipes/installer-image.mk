@@ -21,14 +21,19 @@ SONIC_BF2_IMAGE_BASE = sonic-nvidia-bluefield
 $(SONIC_BF2_IMAGE_BASE)_MACHINE = nvidia-bluefield
 
 # Install the packages during the build_debian phase
-$(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) $(LIBPKA_DEB) $(SYSTEMD_SONIC_GENERATOR) $(KERNEL_MFT) $(MFT_OEM) $(MFT)
+$(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
+                                    $(LIBPKA_DEB) \
+                                    $(KERNEL_MFT) \
+                                    $(MFT_OEM) \
+                                    $(MFT) \
+                                    $(MLX_OPENIPMI_DEB) \
+                                    $(MLX_OPENIPMI_SERVER_DEB) \
+                                    $(BF2_PLATFORM_MODULE)
 
 # Required Dockers
 # TODO: Add swss, syncd and pmon later
 $(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(filter-out $(DOCKER_ORCHAGENT) $(DOCKER_PLATFORM_MONITOR),$(SONIC_INSTALL_DOCKER_IMAGES))
 
-# Platform Specific Packages
-$(SONIC_BF2_IMAGE_BASE)_LAZY_INSTALLS += $(BF2_PLATFORM_MODULE)
 
 # TODO:
 # INSTALLS: $(MLNX_BLUEFIELD_BUILD_SCRIPTS) $(MLXBF_BOOTCTL_DEB)
@@ -62,6 +67,4 @@ $(SONIC_BF2_IMAGE_BFB)_DEPENDS += $($(SONIC_BF2_IMAGE_BASE)_DEPENDS)
 $(SONIC_BF2_IMAGE_BFB)_DOCKERS += $($(SONIC_BF2_IMAGE_BASE)_DOCKERS)
 $(SONIC_BF2_IMAGE_BFB)_LAZY_INSTALLS += $($(SONIC_BF2_IMAGE_BASE)_LAZY_INSTALLS)
 
-SONIC_INSTALLERS += $(SONIC_BF2_IMAGE_PXE)
-SONIC_INSTALLERS += $(SONIC_BF2_IMAGE_BIN)
-SONIC_INSTALLERS += $(SONIC_BF2_IMAGE_BFB)
+SONIC_INSTALLERS += $(SONIC_BF2_IMAGE_PXE) $(SONIC_BF2_IMAGE_BIN) $(SONIC_BF2_IMAGE_BFB)
