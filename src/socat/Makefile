@@ -25,7 +25,7 @@ endif
 
 	# Build source and Debian packages
 	pushd socat-$(SOCAT_VERSION_ROOT)
-	# patch -p0 < ../enable_readline.patch
+	patch -p0 < ../enable_readline_$(SOCAT_VERSION_ROOT).patch
 	dpkg-buildpackage -rfakeroot -b -us -uc -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 	popd
 

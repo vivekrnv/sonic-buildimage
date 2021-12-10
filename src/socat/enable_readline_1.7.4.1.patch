@@ -1,0 +1,21 @@
+--- debian/rules.old	2021-12-10 04:24:30.382077596 +0000
++++ debian/rules	2021-12-10 04:25:00.750078342 +0000
+@@ -11,17 +11,9 @@
+ # upsteram maintains config.h.in manually
+ export AUTOHEADER = true
+ 
+-override_dh_auto_configure:
+-	dh_auto_configure -- --disable-readline
+-
+ override_dh_auto_test:
+-ifneq (, filter $(DEB_BUILD_ARCH_OS), kfreebsd hurd)
+-	dh_auto_test
+-else
+-	dh_auto_test || true
+-endif
+ 
+ %:
+ 	dh $@ --with=autoreconf
+ 
+-.PHONY: override_dh_auto_configure override_dh_auto_test
++.PHONY: override_dh_auto_test
