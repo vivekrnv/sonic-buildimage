@@ -33,7 +33,6 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-livefish.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-pmc.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-pka.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/rshim.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/bootimages.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bfscripts.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-modules-bf2.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mft.dep

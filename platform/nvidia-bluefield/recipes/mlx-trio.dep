@@ -1,6 +1,6 @@
 
 SPATH       := $($(MLX_TRIO_DRIVER)_SRC_PATH)
-DEP_FILES   := $(SONIC_COMMON_FILES_LIST) rules/mlx-trio.mk rules/mlx-trio.dep
+DEP_FILES   := $(SONIC_COMMON_FILES_LIST) $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-trio.mk $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-trio.dep
 DEP_FILES   += $(SONIC_COMMON_BASE_FILES_LIST)
 DEP_FILES   += $(shell git ls-files $(SPATH))
 

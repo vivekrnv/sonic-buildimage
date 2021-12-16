@@ -1,6 +1,6 @@
 
 SPATH       := $($(MLXBF_LIVEFISH_DRIVER)_SRC_PATH)
-DEP_FILES   := $(SONIC_COMMON_FILES_LIST) rules/mlxbf-livefish.mk rules/mlxbf-livefish.dep
+DEP_FILES   := $(SONIC_COMMON_FILES_LIST) $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-livefish.mk $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-livefish.dep
 DEP_FILES   += $(SONIC_COMMON_BASE_FILES_LIST)
 DEP_FILES   += $(shell git ls-files $(SPATH))
 

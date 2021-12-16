@@ -1,6 +1,6 @@
 
 SPATH       := $($(MLX_OPENIPMI_DEB)_SRC_PATH)
-DEP_FILES   := $(SONIC_COMMON_FILES_LIST) rules/mlx-openipmi.mk rules/mlx-openipmi.dep
+DEP_FILES   := $(SONIC_COMMON_FILES_LIST) $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-openipmi.mk $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-openipmi.dep
 DEP_FILES   += $(SONIC_COMMON_BASE_FILES_LIST)
 DEP_FILES   += $(shell git ls-files $(SPATH))
 
