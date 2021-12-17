@@ -8,9 +8,11 @@
 ln -sf /usr/share/sonic/device/$PLATFORM /usr/share/sonic/platform
 ln -sf /usr/share/sonic/device/$PLATFORM/$HWSKU /usr/share/sonic/hwsku
 
+SWITCH_TYPE=switch
 PLATFORM_CONF=platform.json
 if [[ $HWSKU == "Nvidia-MBF2H536C" ]]; then
-	PLATFORM_CONF=platform-nvda-bf.json
+    SWITCH_TYPE=dpu
+    PLATFORM_CONF=platform-nvda-bf.json
 fi
 
 pushd /usr/share/sonic/hwsku
@@ -38,7 +40,7 @@ mkdir -p /var/run/redis/sonic-db
 cp /etc/default/sonic-db/database_config.json /var/run/redis/sonic-db/
 
 SYSTEM_MAC_ADDRESS=$(ip link show eth0 | grep ether | awk '{print $2}')
-sonic-cfggen -t /usr/share/sonic/templates/init_cfg.json.j2 -a "{\"system_mac\": \"$SYSTEM_MAC_ADDRESS\"}" > /etc/sonic/init_cfg.json
+sonic-cfggen -t /usr/share/sonic/templates/init_cfg.json.j2 -a "{\"system_mac\": \"$SYSTEM_MAC_ADDRESS\", \"switch_type\": \"$SWITCH_TYPE\"}" > /etc/sonic/init_cfg.json
 
 if [[ -f /usr/share/sonic/virtual_chassis/default_config.json ]]; then
     sonic-cfggen -j /etc/sonic/init_cfg.json -j /usr/share/sonic/virtual_chassis/default_config.json --print-data > /tmp/init_cfg.json
@@ -64,7 +66,10 @@ else
     sed -i "s/up/down/g" /tmp/ports.json
     sonic-cfggen -j /etc/sonic/init_cfg.json $buffers_cmd $qos_cmd -j /tmp/ports.json --print-data > /etc/sonic/config_db.json
 fi
-sonic-cfggen -t /usr/share/sonic/templates/copp_cfg.j2 > /etc/sonic/copp_cfg.json
+
+if [ "$HWSKU" != "Nvidia-MBF2H536C" ]; then
+    sonic-cfggen -t /usr/share/sonic/templates/copp_cfg.j2 > /etc/sonic/copp_cfg.json
+fi
 
 if [ "$HWSKU" == "Mellanox-SN2700" ]; then
     cp /usr/share/sonic/hwsku/sai_mlnx.profile /usr/share/sonic/hwsku/sai.profile
