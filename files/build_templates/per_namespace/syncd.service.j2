@@ -2,7 +2,9 @@
 Description=syncd service
 Requires=database{% if multi_instance == 'true' %}@%i{% endif %}.service
 After=database{% if multi_instance == 'true' %}@%i{% endif %}.service
+{% if sonic_asic_platform != 'nvidia-bluefield' %}
 After=swss{% if multi_instance == 'true' %}@%i{% endif %}.service
+{% endif %}
 {% if multi_instance == 'true' and sonic_asic_platform == 'vs' %}
 Requires=topology.service
 After=topology.service
