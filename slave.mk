@@ -1166,7 +1166,7 @@ $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
 		rm sonic_debian_extension.sh,
 	)
 
-	chmod a+x $@
+	chmod a+x $@ || true
 	$(FOOTER)
 
 SONIC_TARGET_LIST += $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS))
