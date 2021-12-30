@@ -17,6 +17,6 @@
 BOOTIMAGES_VERSION = 3.8.0-11969
 
 BOOTIMAGES = mlxbf-bootimages_$(BOOTIMAGES_VERSION)_arm64.deb
-$(BOOTIMAGES)_URL = http://fit69.mtl.labs.mlnx/auto/sw_mc_soc_release/BlueField-$(BOOTIMAGES_VERSION)/DEBS/$(BOOTIMAGES_VERSION)
+$(BOOTIMAGES)_URL = http://fit69.mtl.labs.mlnx/auto/sw_mc_soc_release/BlueField-$(subst -,.,$(BFINSTALL_VERSION))/DEBS/$(BOOTIMAGES)
 
 SONIC_ONLINE_DEBS += $(BOOTIMAGES)
