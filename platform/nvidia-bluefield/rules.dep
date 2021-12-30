@@ -26,13 +26,13 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/i2c-mlxbf.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bluefield-edac.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/ipmb-dev-int.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/ipmb-host.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-bootctl.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-trio.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-bootctl.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-livefish.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-pmc.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-pka.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/rshim.dep
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/bootimages.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bfscripts.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-modules-bf2.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mft.dep

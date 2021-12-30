@@ -20,6 +20,10 @@
 SONIC_BF2_IMAGE_BASE = sonic-nvidia-bluefield
 $(SONIC_BF2_IMAGE_BASE)_MACHINE = nvidia-bluefield
 
+$(SONIC_BF2_IMAGE_BASE)_DEPENDS += $(MLXBF_BOOTCTL_DEB) \
+                                   $(BOOTIMAGES) \
+                                   $(MLNX_BLUEFIELD_BUILD_SCRIPTS)
+
 # Install the packages during the build_debian phase
 $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
                                     $(LIBPKA_DEB) \
@@ -40,7 +44,7 @@ $(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(filter-out $(DOCKER_ORCHAGENT) $(DOCKER_PLAT
 # DEPENDS: $(MLNX_BLUEFIELD_BUILD_SCRIPTS)
 # Add these to PXE and BFB image once they are working and ready
 
-# A compressed archive which contains individual files required for PXE boot 
+# A compressed archive which contains individual files required for PXE boot
 SONIC_BF2_IMAGE_PXE = $(SONIC_BF2_IMAGE_BASE).gz
 $(SONIC_BF2_IMAGE_PXE)_IMAGE_TYPE = pxe
 $(SONIC_BF2_IMAGE_PXE)_MACHINE = $($(SONIC_BF2_IMAGE_BASE)_MACHINE)
@@ -58,7 +62,7 @@ $(SONIC_BF2_IMAGE_BIN)_DEPENDS += $($(SONIC_BF2_IMAGE_BASE)_DEPENDS)
 $(SONIC_BF2_IMAGE_BIN)_DOCKERS += $($(SONIC_BF2_IMAGE_BASE)_DOCKERS)
 $(SONIC_BF2_IMAGE_BIN)_LAZY_INSTALLS += $($(SONIC_BF2_IMAGE_BASE)_LAZY_INSTALLS)
 
-# BFB (Bluefield BootStream) style image 
+# BFB (Bluefield BootStream) style image
 SONIC_BF2_IMAGE_BFB = $(SONIC_BF2_IMAGE_BASE).bfb
 $(SONIC_BF2_IMAGE_BFB)_IMAGE_TYPE = bfb
 $(SONIC_BF2_IMAGE_BFB)_MACHINE = $($(SONIC_BF2_IMAGE_BASE)_MACHINE)
@@ -66,5 +70,6 @@ $(SONIC_BF2_IMAGE_BFB)_INSTALLS += $($(SONIC_BF2_IMAGE_BASE)_INSTALLS)
 $(SONIC_BF2_IMAGE_BFB)_DEPENDS += $($(SONIC_BF2_IMAGE_BASE)_DEPENDS)
 $(SONIC_BF2_IMAGE_BFB)_DOCKERS += $($(SONIC_BF2_IMAGE_BASE)_DOCKERS)
 $(SONIC_BF2_IMAGE_BFB)_LAZY_INSTALLS += $($(SONIC_BF2_IMAGE_BASE)_LAZY_INSTALLS)
+$(SONIC_BF2_IMAGE_BFB)_FILES += $(BFINSTALL_FILE)
 
 SONIC_INSTALLERS += $(SONIC_BF2_IMAGE_PXE) $(SONIC_BF2_IMAGE_BIN) $(SONIC_BF2_IMAGE_BFB)

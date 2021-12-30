@@ -13,13 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-# Mellanox Bluefield build scripts
+BOOTIMAGES_VERSION = 3.8.0-11969
 
-MLNX_BOOTIMAGES_VERSION = 3.6
+BOOTIMAGES = mlxbf-bootimages_$(BOOTIMAGES_VERSION)_arm64.deb
+$(BOOTIMAGES)_URL = http://fit69.mtl.labs.mlnx/auto/sw_mc_soc_release/BlueField-$(BOOTIMAGES_VERSION)/DEBS/$(BOOTIMAGES_VERSION)
 
-MLNX_BOOTIMAGES_DEB = mlxbf-bootimages_3.7.1-11866_arm64.deb
-#TODO: Only works internally
-$(MLNX_BOOTIMAGES_DEB)_URL = http://fit69.mtl.labs.mlnx/auto/sw_mc_soc_release/BlueField-3.7.1.11866/DEBS/$(MLNX_BOOTIMAGES_DEB)
-SONIC_ONLINE_DEBS += $(MLNX_BOOTIMAGES_DEB)
+SONIC_ONLINE_DEBS += $(BOOTIMAGES)

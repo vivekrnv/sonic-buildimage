@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2016-2021 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,14 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-MLX_BOOTCTL_DRIVER_VERSION = 1.5
-MLX_BOOTCTL_DRIVER = mlx-bootctl.ko
+BFINSTALL_VERSION = 3.8.0-11969
 
-$(MLX_BOOTCTL_DRIVER)_SRC_PATH = $(PLATFORM_PATH)/mlx-bootctl
-$(MLX_BOOTCTL_DRIVER)_DEPENDS += $(LINUX_HEADERS) $(LINUX_HEADERS_COMMON)
-SONIC_MAKE_FILES += $(MLX_BOOTCTL_DRIVER)
+BFINSTALL_BASE_URL = "http://fit69.mtl.labs.mlnx/auto/sw_mc_soc_release/BlueField-$(BFINSTALL_VERSION)/DEBS/$(BFINSTALL_VERSION)"
+BFINSTALL_FILE = BlueField-$(subst -,.,$(BFINSTALL_VERSION))_install.bfb
+$(BFINSTALL_FILE)_URL = $(BFINSTALL_BASE_URL)/$(BFINSTALL_FILE)
 
-export MLX_BOOTCTL_DRIVER_VERSION
-export MLX_BOOTCTL_DRIVER
+SONIC_ONLINE_FILES += $(BFINSTALL_FILE)
+
+export BFINSTALL_FILE

@@ -22,6 +22,7 @@ BSD_VER=3.8.0
 export BSD_VER
 
 
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/bfinstall.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/tmfifo.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-gige.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/gpio-mlxbf2.mk
@@ -29,7 +30,6 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/i2c-mlxbf.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bluefield-edac.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/ipmb-dev-int.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/ipmb-host.mk
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-bootctl.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-trio.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-bootctl.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-livefish.mk

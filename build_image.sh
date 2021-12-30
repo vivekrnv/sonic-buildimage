@@ -294,18 +294,7 @@ elif [[ $IMAGE_TYPE = s2s && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
     generate_s2s_installer_image_bluefield
 
 elif [[ $IMAGE_TYPE == bfb && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
-    # if [[ $CROSS_BUILD_ENVIRON == y ]]; then
-    #     PYTHON_EX=$VENV_BIN/python3 /sonic/installer/bluefield/create_sonic_bfb --sonic_version $IMAGE_VERSION
-    # else
-    #     PYTHON_EX=/usr/bin/python3 /sonic/installer/bluefield/create_sonic_bfb --sonic_version $IMAGE_VERSION
-    # fi
-    # if [ $? -ne 0 ]; then
-    #     echo "create_sonic_bfb script failed with non-zero exit status"
-    #     exit 1
-    # fi
-    # Mote: Using this workaround, until the issue around bfb generation in the slave docker is resolved
-    echo "$ONIE_INSTALLER_PAYLOAD is available. To generate a bfb image, directly run the ./bfb-mk-demo.sh on the build server"
-    exit 0
+    sudo --preserve-env /sonic/installer/bluefield/create_sonic_bfb --sonic_version $IMAGE_VERSION
 
 elif [[ $IMAGE_TYPE == pxe && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
     echo "Not Yet Implemented"

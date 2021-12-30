@@ -1,0 +1,33 @@
+From 166464cec3d47fecb4f6ea164a674198eb71a7d8 Mon Sep 17 00:00:00 2001
+From: Oleksandr Ivantsiv <oivantsiv@nvidia.com>
+Date: Wed, 29 Dec 2021 17:03:32 +0000
+Subject: [PATCH] Ignore systemctl errors in postinstall script
+
+---
+ debian/postinst | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/debian/postinst b/debian/postinst
+index f0fd8e4..c2b302c 100755
+--- a/debian/postinst
++++ b/debian/postinst
+@@ -7,13 +7,13 @@ fi
+ 
+ if which deb-systemd-helper >/dev/null 2>/dev/null; then
+ 	if [ -z "$D" ]; then
+-		deb-systemd-helper daemon-reload
++		deb-systemd-helper daemon-reload || true
+ 	fi
+ 
+-	deb-systemd-helper "$OPTS" enable bfvcheck.service
++	deb-systemd-helper "$OPTS" enable bfvcheck.service || true
+ 
+ 	if [ -z "$D" ]; then
+-		deb-systemd-helper restart bfvcheck.service
++		deb-systemd-helper restart bfvcheck.service || true
+ 	fi
+ fi
+ 
+-- 
+2.25.1
+
