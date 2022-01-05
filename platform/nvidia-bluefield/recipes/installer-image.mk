@@ -26,6 +26,7 @@ $(SONIC_BF2_IMAGE_BASE)_DEPENDS += $(MLXBF_BOOTCTL_DEB) \
 
 # Install the packages during the build_debian phase
 $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
+                                    $(SYSTEMD_SONIC_GENERATOR) \
                                     $(LIBPKA_DEB) \
                                     $(KERNEL_MFT) \
                                     $(MFT_OEM) \
