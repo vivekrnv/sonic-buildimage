@@ -37,6 +37,4 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
 	popd
 
-	mv $* $(DEST)/
-
-$(addprefix $(DEST)/, $(DERIVED_TARGETS)): $(DEST)/% : $(DEST)/$(MAIN_TARGET)
+	mv $* $(DERIVED_TARGETS) $(DEST)/
