@@ -295,6 +295,7 @@ elif [[ $IMAGE_TYPE = s2s && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
 
 elif [[ $IMAGE_TYPE == bfb && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
     sudo --preserve-env /sonic/installer/bluefield/create_sonic_bfb --sonic_version $IMAGE_VERSION
+    sudo chown $USER ./$OUTPUT_BFB_IMAGE
 
 elif [[ $IMAGE_TYPE == pxe && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
     echo "Not Yet Implemented"
