@@ -32,11 +32,7 @@ $(addprefix $(DEST)/, $(MLXBF_I2C_DRIVER)): $(DEST)/% :
 	patch -p1 < ../ioremap.patch
 
 	# Build the package
-ifeq ($(CROSS_BUILD_ENVIRON), y)
-	CONFIG_SITE=/etc/dpkg-cross/cross-config.$(CONFIGURED_ARCH) LD_LIBRARY_PATH=$(CROSS_LIB_PATH) KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -a$(CONFIGURED_ARCH) -Pcross,nocheck -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
-else
 	DEB_BUILD_OPTIONS=nocheck KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
-endif
 
 	mv $* $(DEST)/
 

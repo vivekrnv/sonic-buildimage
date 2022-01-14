@@ -33,11 +33,7 @@ $(addprefix $(DEST)/, $(MLXBF_PKA_DRIVER)): $(DEST)/% :
 	patch -p1 < ../ioremap.patch
 
 	# Build the package
-ifeq ($(CROSS_BUILD_ENVIRON), y)
-	make -C /lib/modules/$(KVERSION)/build ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- M=$(MODULE_DIR)
-else
 	make -C /lib/modules/$(KVERSION)/build M=$(MODULE_DIR)
-endif
 
 	mv ${MLXBF_PKA_DRIVER} $(DEST)/
 	popd

@@ -31,11 +31,7 @@ $(addprefix $(DEST)/, $(MLXBF_LIVEFISH_DRIVER)): $(DEST)/% :
 	pushd ${MLXBF_LIVEFISH}
 
 	# Build the package
-ifeq ($(CROSS_BUILD_ENVIRON), y)
-	make -C /lib/modules/$(KVERSION)/build ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- M=$(MODULE_DIR)
-else
 	make -C /lib/modules/$(KVERSION)/build M=$(MODULE_DIR)
-endif
 
 	mv ${MLXBF_LIVEFISH_DRIVER} $(DEST)/
 	popd
