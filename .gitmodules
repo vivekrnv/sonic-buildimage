@@ -100,3 +100,6 @@
 [submodule "platform/nvidia-bluefield/bfscripts"]
 	path = platform/nvidia-bluefield/bfscripts
 	url = https://github.com/Mellanox/bfscripts
+[submodule "src/sonic-p4rt/sonic-pins"]
+	path = src/sonic-p4rt/sonic-pins
+	url = https://github.com/Azure/sonic-pins.git
