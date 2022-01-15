@@ -33,11 +33,8 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	pushd ${MLX_OPENIPMI}
 
 	# Build the package
-ifeq ($(CROSS_BUILD_ENVIRON), y)	
-	dpkg-buildpackage -rfakeroot -us -uc -b -d -a$(CONFIGURED_ARCH) -Pcross,nocheck -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
-else
 	DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -rfakeroot -us -uc -b -d -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
-endif
+
 	popd
 
 	mv $* $(DEST)/
