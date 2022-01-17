@@ -1,5 +1,4 @@
 #!/bin/bash
-
 ifdown --force eth0
 
 # Check if ZTP DHCP policy has been installed
@@ -18,9 +17,15 @@ else
     echo "{ \"ZTP_DHCP_DISABLED\" : \"true\" }" > /tmp/ztp_input.json
 fi
 
+PLATFORM=${PLATFORM:-`sonic-cfggen -H -v DEVICE_METADATA.localhost.platform`}
+ASIC=$(cat /usr/share/sonic/device/${PLATFORM}/platform_asic)
+
+echo "{ \"ASIC\" : \"${ASIC}\" }" > /tmp/platform_info_input.json
+
 # Create /e/n/i file for existing and active interfaces, dhcp6 sytcl.conf and dhclient.conf
 CFGGEN_PARAMS=" \
     -d -j /tmp/ztp_input.json \
+    -j /tmp/platform_info_input.json \
     -t /usr/share/sonic/templates/interfaces.j2,/etc/network/interfaces \
     -t /usr/share/sonic/templates/90-dhcp6-systcl.conf.j2,/etc/sysctl.d/90-dhcp6-systcl.conf \
     -t /usr/share/sonic/templates/dhclient.conf.j2,/etc/dhcp/dhclient.conf \
@@ -36,7 +41,6 @@ done
 
 
 # Setup eth1 if we connect to a remote chassis DB.
-PLATFORM=${PLATFORM:-`sonic-cfggen -H -v DEVICE_METADATA.localhost.platform`}
 CHASSISDB_CONF="/usr/share/sonic/device/$PLATFORM/chassisdb.conf"
 [ -f $CHASSISDB_CONF ] && source $CHASSISDB_CONF
 

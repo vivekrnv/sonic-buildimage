@@ -27,6 +27,13 @@ iface lo inet loopback
    scope host
    post-up ip addr del 127.0.0.1/8 dev lo
 {% endblock loopback %}
+{% block tmfifo %}
+{% if ASIC and ASIC == "nvidia-bluefield" %}
+# BlueField host interface
+auto tmfifo_net0
+iface tmfifo_net0 inet static
+{% endif %}
+{% endblock tmfifo %}
 {% block mgmt_interface %}
 
 # The management network interface
