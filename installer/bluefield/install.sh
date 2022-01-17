@@ -243,7 +243,8 @@ menuentry '$demo_grub_entry' {
         linux   /$image_dir/boot/vmlinuz-5.10.0-8-2-arm64 root=$grub_cfg_root rw console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000 fixrtc \
                 loop=$image_dir/$FILESYSTEM_SQUASHFS loopfstype=squashfs                       \
                 systemd.unified_cgroup_hierarchy=0 \
-                apparmor=1 security=apparmor varlog_size=4096 systemd.unified_cgroup_hierarchy=0
+                apparmor=1 security=apparmor varlog_size=4096 systemd.unified_cgroup_hierarchy=0 \
+                isolcpus=1-7 nohz_full=1-7 rcu_nocbs=1-7
         echo    'Loading SONiC-OS initial ramdisk ...'
         initrd  /$image_dir/boot/initrd.img-5.10.0-8-2-arm64
 }
