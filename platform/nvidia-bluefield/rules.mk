@@ -41,6 +41,7 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/bfscripts.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-modules-bf2.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mft.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-openipmi.mk
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/sdk.mk
 # include $(PLATFORM_PATH)/$(RECIPE_DIR)/libpka.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/docker-syncd-bluefield.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/installer-image.mk

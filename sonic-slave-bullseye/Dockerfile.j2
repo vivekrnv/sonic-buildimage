@@ -343,7 +343,19 @@ RUN apt-get update && apt-get install -y \
         libgtest-dev \
         libgcc-10-dev \
 # For mlx-openIPMI
-	libpopt-dev \
+        libpopt-dev \
+# For rdma-core
+        valgrind \
+        pandoc \ 
+        udev \
+        cython3 \
+# For DPDK-HWS
+        libnuma-dev \
+        libpcap-dev \
+        python3-pyelftools \
+        meson \
+        hwdata \
+        pciutils \
 # For sonic-host-services build
         libcairo2-dev \
         libdbus-1-dev \

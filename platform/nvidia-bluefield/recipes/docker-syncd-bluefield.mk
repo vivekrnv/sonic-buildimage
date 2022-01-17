@@ -44,7 +44,7 @@ $(DOCKER_SYNCD_BASE)_RUN_OPT += --privileged -t
 $(DOCKER_SYNCD_BASE)_RUN_OPT += -v /host/machine.conf:/etc/machine.conf
 $(DOCKER_SYNCD_BASE)_RUN_OPT += -v /etc/sonic:/etc/sonic:ro
 
-$(DOCKER_SYNCD_BASE)_DEPENDS += $(MFT)
+$(DOCKER_SYNCD_BASE)_DEPENDS += $(MFT) $(SDN_APPL)
 $(DOCKER_SYNCD_BASE)_DBG_DEPENDS += $(LIBSWSSCOMMON_DBG)
                
 $(DOCKER_SYNCD_BASE)_VERSION = 1.0.0
