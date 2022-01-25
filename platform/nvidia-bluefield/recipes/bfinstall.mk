@@ -14,12 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BFINSTALL_VERSION = 3.8.0.11969
+BFINSTALL_VERSION = 3.8.0-11969
+BFINSTALL_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin/BlueField-$(BFINSTALL_VERSION)
 
-BFINSTALL_BASE_URL = "http://fit69.mtl.labs.mlnx/auto/sw_mc_soc_release/BlueField-$(BFINSTALL_VERSION)"
-BFINSTALL_FILE = BlueField-$(BFINSTALL_VERSION)_install.bfb
+BFINSTALL_BASE_URL =
+
+BFINSTALL_FILE = BlueField-$(subst -,.,$(BFINSTALL_VERSION))_install.bfb
+
+ifneq ($(BFINSTALL_BASE_URL), )
 $(BFINSTALL_FILE)_URL = $(BFINSTALL_BASE_URL)/$(BFINSTALL_FILE)
-
 SONIC_ONLINE_FILES += $(BFINSTALL_FILE)
+else
+$(BFINSTALL_FILE)_PATH = $(BFINSTALL_BASE_PATH)
+SONIC_COPY_FILES += $(BFINSTALL_FILE)
+endif
 
 export BFINSTALL_FILE

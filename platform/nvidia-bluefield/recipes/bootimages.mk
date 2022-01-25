@@ -15,8 +15,18 @@
 # limitations under the License.
 
 BOOTIMAGES_VERSION = 3.8.0-11969
+BOOTIMAGES_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin/BlueField-$(BFINSTALL_VERSION)
 
-BOOTIMAGES = mlxbf-bootimages_$(BOOTIMAGES_VERSION)_arm64.deb
-$(BOOTIMAGES)_URL = http://fit69.mtl.labs.mlnx/auto/sw_mc_soc_release/BlueField-$(subst -,.,$(BFINSTALL_VERSION))/DEBS/$(BOOTIMAGES)
+BOOTIMAGES_BASE_URL =
 
+BOOTIMAGES = mlxbf-bootimages_$(BFINSTALL_VERSION)_arm64.deb
+
+ifneq ($(BOOTIMAGES_BASE_URL), )
+$(BOOTIMAGES)_URL = $(BOOTIMAGES_BASE_URL)/$(BOOTIMAGES)
 SONIC_ONLINE_DEBS += $(BOOTIMAGES)
+else
+$(BOOTIMAGES)_PATH = $(BOOTIMAGES_BASE_PATH)
+SONIC_COPY_DEBS += $(BOOTIMAGES)
+endif
+
+export BOOTIMAGES
