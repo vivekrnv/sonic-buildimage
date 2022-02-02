@@ -22,6 +22,9 @@ MLX_OPENIPMI_SERVER_DEB = mlx-openipmi_${MLX_OPENIPMI_DRIVER_VERSION}-3_arm64.de
 
 $(MLX_OPENIPMI_DEB)_SRC_PATH = $(PLATFORM_PATH)/mlx-openipmi
 $(MLX_OPENIPMI_DEB)_DEPENDS += $(LINUX_HEADERS) $(LINUX_HEADERS_COMMON) libsnmp-dev_$(SNMPD_VERSION_FULL)_$(CONFIGURED_ARCH).deb
+# openipmi server has a runtime dependency on mlxbf-scripts package
+$(MLX_OPENIPMI_DEB)_RDEPENDS += $(MLNX_BLUEFIELD_BUILD_SCRIPTS)
+
 SONIC_MAKE_DEBS += $(MLX_OPENIPMI_DEB)
 $(eval $(call add_derived_package,$(MLX_OPENIPMI_DEB),$(MLX_OPENIPMI_SERVER_DEB)))
 

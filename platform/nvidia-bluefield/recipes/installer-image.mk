@@ -31,6 +31,9 @@ $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
                                     $(KERNEL_MFT) \
                                     $(MFT_OEM) \
                                     $(MFT) \
+                                    $(BOOTIMAGES) \
+                                    $(MLXBF_BOOTCTL_DEB) \
+                                    $(MLNX_BLUEFIELD_BUILD_SCRIPTS) \
                                     $(MLX_OPENIPMI_DEB) \
                                     $(MLX_OPENIPMI_SERVER_DEB) \
                                     $(BF2_PLATFORM_MODULE)
