@@ -17,59 +17,33 @@
 #
 set -e
 
-IMAGE_VER=
-CDIR=/sonic/
-SDIR=/sonic/installer/bluefield
-DDIR=/sonic/
 WDIR=
-CAPSULE=/lib/firmware/mellanox/boot/capsule/MmcBootCap
+IMAGE_VER=
+KERNEL=
+CHROOT_DIR=
+INITRD=
+VMLINUZ=
+MODULES_DIR=
+EFIVARS_MOD=
+
+CDIR=/sonic/
+SDIR=$CDIR/installer/bluefield
+DDIR=$CDIR
+CAPSULE=$CDIR/$FILES_PATH/update.cap
+BOOTCTL_DRIVER=$CDIR/$FILES_PATH/mlx-bootctl.ko
+TMFIFO_DRIVER=$CDIR/$FILES_PATH/mlxbf-tmfifo.ko
 TARGET_MACHINE=nvidia-bluefield
+BFB="${BFB:-/lib/firmware/mellanox/boot/default.bfb}"
 
 usage() {
 cat << EOF
 Usage: `basename $0` [ OPTIONS ]
 OPTIONS:
 -i, --install_bfb <BFB>           Installation BFB to be used as a basis for the target BFB. Default: $BFB
--s, --sonic_version <IMAGE_VER>   SONiC version to be installed
+-k, --kernel <kernel version>     Kernel version for the SmartNIC.
 -v, --verbose                     Run script in verbose mode. Will print out each step of execution.
 -h, --help                        Display help
 EOF
-}
-
-validate_config() {
-    if [[ $BFB == "" ]]; then
-        if [[ $BFINSTALL_FILE == "" ]]; then
-            echo "Error! Path to reference BFB is not specified! Please set BFINSTALL_FILE variable."
-            exit 1
-        fi
-
-        BFB=/sonic/$FILES_PATH/$BFINSTALL_FILE
-        if [ ! -f $BFB ]; then
-            echo "Error! Reference BFB does not exist!"
-            exit 1
-        fi
-    fi
-
-    if [ ! -n "$OUTPUT_BFB_IMAGE" ]; then
-        echo "OUTPUT_BFB_IMAGE name not defined. Exiting.."
-        exit 1
-    fi
-
-    if [ ! -f "$CDIR/$ONIE_INSTALLER_PAYLOAD" ]; then
-        echo "$ONIE_INSTALLER_PAYLOAD not found. Exiting.."
-        exit 1
-    fi
-
-    mkbfb=`which mlx-mkbfb`
-    if [ ! -x "${mkbfb}" ]; then
-        echo "Error! mlx-mkbfb is required to build BFB image"
-        exit 1
-    fi
-
-    if [ ! -e $CAPSULE ]; then
-        echo "ERROR: Capsule file $CAPSULE does not exist"
-        exit 1
-    fi
 }
 
 parse_args() {
@@ -83,9 +57,9 @@ parse_args() {
                 shift
                 BFB=$1
                 ;;
-            -s|--sonic_version)
+            -k|--kernel)
                 shift
-                IMAGE_VER=$1
+                KERNEL=$1
                 ;;
             *)
                 usage
@@ -94,6 +68,69 @@ parse_args() {
         esac
         shift
     done
+}
+
+validate_config() {
+    if [[ ! -d "$CHROOT_DIR" ]]; then
+        echo "[create_sonic_bfb] Error! Path to CHROOT not found"
+        exit 1
+    fi
+
+    if [[ ! -f "$INITRD" ]]; then
+        echo "[create_sonic_bfb] Error! SONiC INITRD not found"
+        exit 1
+    fi
+
+    if [[ ! -f "$VMLINUZ" ]]; then
+        echo "[create_sonic_bfb] Error! SONiC VMLINUZ not found"
+        exit 1
+    fi
+
+    if [[ ! -d "$MODULES_DIR" ]]; then
+        echo "[create_sonic_bfb] Error! Path to Kernel Modules not found"
+        exit 1
+    fi
+
+    if [[ ! -n "$OUTPUT_BFB_IMAGE" ]]; then
+        echo "[create_sonic_bfb] Error! OUTPUT_BFB_IMAGE name not defined. Exiting.."
+        exit 1
+    fi
+
+    if [[ ! -f "$CDIR/$ONIE_INSTALLER_PAYLOAD" ]]; then
+        echo "$ONIE_INSTALLER_PAYLOAD not found. Exiting.."
+        exit 1
+    fi
+
+    mkbfb=`which mlx-mkbfb`
+    if [[ ! -x "${mkbfb}" ]]; then
+        echo "Error! mlx-mkbfb is required to build BFB image"
+        exit 1
+    fi
+
+    if [[ ! -f $CAPSULE ]]; then
+        echo "ERROR: Capsule file $CAPSULE does not exist"
+        exit 1
+    fi
+
+    if [[ ! -f $BOOTCTL_DRIVER ]]; then
+        echo "ERROR: Bootctl driver $BOOTCTL_DRIVER does not exist"
+        exit 1
+    fi
+
+    if [[ ! -f $TMFIFO_DRIVER ]]; then
+        echo "ERROR: Bootctl driver $TMFIFO_DRIVER does not exist"
+        exit 1
+    fi
+
+    if [[ ! -f $EFIVARS_MOD  ]]; then
+        echo "ERROR: EFIVARS driver $EFIVARS_MOD does not exist"
+        exit 1
+    fi
+
+    if [[ ! -f $BFB ]]; then
+        echo "ERROR: Default BFB $BFB does not exist"
+        exit 1
+    fi
 }
 
 cleanup_workdir() {
@@ -109,7 +146,8 @@ create_workdir() {
     fi
 }
 
-initramfs_put_installer() {
+add_sonic_to_initramfs() {
+    # Add the logic to put second stage installer into bfb initramfs
     mkdir -p debian
 
     cp ${SDIR}/install.sh temp_install.sh
@@ -124,61 +162,191 @@ initramfs_put_installer() {
     # Copy the INSTALLER payload
     cp $CDIR/$ONIE_INSTALLER_PAYLOAD ./debian/
 
-    cat > etc/init.d/install-debian << EOF
-#!/bin/sh
+cat > scripts/initrd-install << EOF
+#!/bin/bash
 
-echo
-echo "=================================" | tee /dev/kmsg
-echo "Installing SONiC. Please wait..." | tee /dev/kmsg
-echo "=================================" | tee /dev/kmsg
-
-sleep 5
-
-/bin/sh /debian/install.sh
-if [ \$? -eq 0 ]; then
-        echo "===================================" | tee /dev/kmsg
-        echo "Installation finished. Rebooting..." | tee /dev/kmsg
-        echo "===================================" | tee /dev/kmsg
-        echo
-        sleep 3
-        /sbin/shutdown -r 0
-else
-        echo "========================" | tee /dev/kmsg
-        echo "Failed to install SONiC" | tee /dev/kmsg
-        echo "========================" | tee /dev/kmsg
-fi
-EOF
-    chmod 755 etc/init.d/install-debian
-    ln -snf ../init.d/install-debian etc/rcS.d/S99install-debian
+printf_msg()
+{
+	echo "$@" | tee /dev/kmsg
+	return 0
 }
 
-create_initramfs() {
-    $mkbfb -x ${BFB}
-    local initramfs_template=$PWD/dump-initramfs-v0
-    local sonic_installer_initramfs=$PWD/sonic-installer-initramfs
-    if [ ! -f $initramfs_template ]; then
-        echo "Error! BFB initramfs ('$initramfs_template') is not found!"
-        exit 1
+depmod -a $KERNEL > /dev/null 2>&1
+insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio.ko > /dev/null 2>&1
+insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio_ring.ko > /dev/null 2>&1
+insmod /efivarfs.ko > /dev/null 2>&1
+insmod /mlx-bootctl.ko > /dev/null 2>&1
+insmod /mlxbf-tmfifo.ko > /dev/null 2>&1
+
+printf_msg "================================="
+printf_msg "Installing SONiC. Please wait..."
+printf_msg "================================="
+
+/bin/bash /debian/install.sh
+if [ \$? -eq 0 ]; then
+	printf_msg "==================================="
+	printf_msg "Installation finished. Rebooting..."
+	printf_msg "==================================="
+	printf_msg
+	reboot -f
+else
+	printf_msg "========================"
+	printf_msg "Failed to install SONiC"
+	printf_msg "========================"
+fi
+EOF
+    chmod +x scripts/initrd-install
+    sudo rm -f conf/conf.d/debian-core*
+    sudo sh -c 'echo "BOOT=initrd-install" > conf/conf.d/initrd_install'
+    sudo sh -c 'echo "ROOT=\"LABEL=writable\"" > conf/conf.d/default_root'
+}
+
+copy_bin()
+{
+    if [ -e $1 ]; then
+        bin=$1
+    else
+        bin=`which $1 2> /dev/null`
     fi
 
-    local initramfs_dir=$WDIR/initramfs
-    mkdir -p $initramfs_dir
-    pushd $initramfs_dir >/dev/null
-    cpio -id < $initramfs_template
+    if [[ -z "$bin" ]]; then
+        echo "ERROR: Cannot find $1"
+        exit 1
+    else
+        sudo mkdir -p .`dirname $bin`
+        if [ ! -e .${bin} ]; then
+            sudo cp -a $bin .${bin}
+        fi
 
-    initramfs_put_installer
-
-    find . | cpio -H newc -o | gzip -9 > $sonic_installer_initramfs
-
-    popd >/dev/null
-
-    echo $sonic_installer_initramfs
+        # Copy dependencies
+        for lib in `ldd $bin 2> /dev/null | grep '=>' | awk '{print $3}'`
+        do
+            if [ -e .$lib ]; then
+                continue
+            fi
+            sudo mkdir -p .`dirname $lib`
+            sudo cp -a $lib .$lib
+            if [ -h $lib ]; then
+                tlib=`readlink -f $lib`
+                if [ ! -e .$tlib ]; then
+                    sudo mkdir -p .`dirname $tlib`
+                    sudo cp $tlib .$tlib
+                fi
+            fi
+	    done
+	fi
 }
 
 create_bfb_image() {
-    local initramfs=$1
-    $mkbfb --initramfs $initramfs --capsule $CAPSULE ${BFB} ${DDIR}/${OUTPUT_BFB_IMAGE}
+
+    pushd $WDIR
+
+    # Copy the initrd into the work directory
+    initramfs=$(realpath $INITRD)
+    cp $initramfs $WDIR/dump-initramfs-v0
+    initramfs=$WDIR/dump-initramfs-v0
+
+    case "$(file --brief --mime-type "$initramfs")" in
+        "application/x-lzma")
+            cat_initrd="lzcat" ;;
+        "application/x-lz4")
+            cat_initrd="lz4cat" ;;
+        *)
+            cat_initrd="zcat" ;;
+    esac
+
+    echo "Rebuilding $initramfs"
+
+    mkdir -p ${WDIR}/initramfs
+    pushd initramfs
+    $cat_initrd "$initramfs" | cpio -i
+
+    # Remove tools coming with busybox
+    for tool in `dpkg -L mlxbf-scripts | grep bin/` \
+            `dpkg -L grub2-common` \
+            `dpkg -L dosfstools` \
+            `dpkg -L e2fsprogs` \
+            `dpkg -L fdisk` \
+            `dpkg -L kmod | grep -v share` \
+            `dpkg -L pciutils | grep -v share` \
+            `dpkg -L usbutils | grep -v share` \
+            `dpkg -L mft` \
+            `dpkg -L mft-oem` \
+            `dpkg -L kernel-mft-modules` \
+            `dpkg -L tar`
+    do
+        if [ -d $tool ]; then
+            continue
+        fi
+        /bin/rm -f .${tool}
+    done
+
+    for tool in `dpkg -L mlxbf-scripts | grep bin/` \
+            `dpkg -L dosfstools | grep -v share` \
+            `dpkg -L e2fsprogs | grep -v share` \
+            `dpkg -L grub2-common` \
+            `dpkg -L fdisk | grep -v share` \
+            `dpkg -L kmod | grep -v share` \
+            `dpkg -L pciutils | grep -v share` \
+            `dpkg -L usbutils | grep -v share` \
+            `dpkg -L mft` \
+            `dpkg -L mft-oem` \
+            `dpkg -L kernel-mft-modules` \
+            `dpkg -L tar | grep -v share` \
+            `dpkg -L grub-efi-arm64-bin` \
+            xz efibootmgr gcc-10 bash getopt hexdump lspci perl \
+            lsblk shutdown systemctl strings aarch64-linux-gnu-strings \
+            mlxbf-bootctl id mkfs fsck
+    do
+        if [ -d $tool ]; then
+            continue
+        fi
+        copy_bin $tool
+    done
+
+    mkdir -p usr/share/misc/ bin/ var/log/watchdog
+    cp $CHROOT_DIR/usr/share/misc/pci.ids usr/share/misc/
+    cp $BOOTCTL_DRIVER .
+    cp $TMFIFO_DRIVER .
+    cp $EFIVARS_MOD .
+
+    mkdir -p ./lib/firmware/mellanox/boot/
+    cp /lib/firmware/mellanox/boot/default.bfb ./lib/firmware/mellanox/boot/default.bfb
+    cp -a /lib/firmware/mellanox/boot/capsule ./lib/firmware/mellanox/boot/
+    cp $CAPSULE ./lib/firmware/mellanox/boot/capsule/
+    mkdir -p mnt dev sys proc
+
+    add_sonic_to_initramfs
+
+    # Make initramfs with new debian
+    find . -print0 | sudo cpio --null -o --format=newc | gzip -9 > "$initramfs"
+
+    popd
+
+    # Make bfb
+    boot_args=$(mktemp)
+    boot_path=$(mktemp)
+    boot_desc=$(mktemp)
+    printf "console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000 initrd=initramfs" > \
+        "$boot_args"
+
+    printf "VenHw(F019E406-8C9C-11E5-8797-001ACA00BFC4)/Image" > "$boot_path"
+    printf "Linux from rshim" > "$boot_desc"
+    vmlinuz=$WDIR/vmlinuz
+    cat $VMLINUZ > "$vmlinuz"
+
+    $mkbfb --image "$vmlinuz" \
+           --initramfs "$initramfs" \
+           --capsule "$CAPSULE" \
+           --boot-args "$boot_args" \
+           --boot-path "$boot_path" \
+           --boot-desc "$boot_desc" \
+            ${BFB} ${DDIR}/${OUTPUT_BFB_IMAGE}
+
     echo "BFB is ready: $(readlink -f  ${DDIR}/${OUTPUT_BFB_IMAGE})"
+
+    rm -rf $boot_args $boot_path $boot_desc
+    popd
 }
 
 main() {
@@ -187,15 +355,18 @@ main() {
 
     . $CDIR/onie-image-arm64.conf
 
+    CHROOT_DIR=$CDIR/$FILESYSTEM_ROOT
+    INITRD=$CDIR/$FILESYSTEM_ROOT/boot/initrd.img-$KERNEL
+    VMLINUZ=$CDIR/$FILESYSTEM_ROOT/boot/vmlinuz-$KERNEL
+    MODULES_DIR=$CDIR/$FILESYSTEM_ROOT/lib/modules/$KERNEL
+    EFIVARS_MOD=$MODULES_DIR/kernel/fs/efivarfs/efivarfs.ko
+    IMAGE_VER=$(cat $CHROOT_DIR/etc/sonic/sonic_version.yml | grep "build_version" | sed -e "s/build_version: //g;s/'//g")
     validate_config
 
     create_workdir
     echo "Work directory: $WDIR"
-    pushd $WDIR
-    local sonic_installer_initramfs=$(create_initramfs)
 
-    create_bfb_image $sonic_installer_initramfs
-    popd
+    create_bfb_image
 }
 
 main $@

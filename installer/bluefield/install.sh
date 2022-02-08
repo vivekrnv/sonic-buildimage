@@ -31,10 +31,6 @@ demo_volume_revision_label="SONiC-OS-${IMAGE_VERSION}"
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/mellanox/scripts"
 CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-if [ -e /etc/bf.cfg ]; then
-	. /etc/bf.cfg
-fi
-
 rshimlog=`which bfrshlog 2> /dev/null`
 distro="SONiC"
 
@@ -47,6 +43,48 @@ log()
 	fi
 }
 
+#
+# Check auto configuration passed from boot-fifo
+#
+boot_fifo_path="/sys/bus/platform/devices/MLNXBF04:00/bootfifo"
+if [ -e "${boot_fifo_path}" ]; then
+	cfg_file=$(mktemp)
+	# Get 16KB assuming it's big enough to hold the config file.
+	dd if=${boot_fifo_path} of=${cfg_file} bs=4096 count=4
+
+	#
+	# Check the .xz signature {0xFD, '7', 'z', 'X', 'Z', 0x00} and extract the
+	# config file from it. Then start decompression in the background.
+	#
+	offset=$(strings -a -t d ${cfg_file} | grep -m 1 "7zXZ" | awk '{print $1}')
+	if [ -s "${cfg_file}" -a ."${offset}" != ."1" ]; then
+		log "INFO: Found bf.cfg"
+		cat ${cfg_file} | tr -d '\0' > /etc/bf.cfg
+	fi
+	rm -f $cfg_file
+fi
+
+if [ -e /etc/bf.cfg ]; then
+	. /etc/bf.cfg
+fi
+
+log_file=/sonic_install_log_file.log
+if [ "X${DEBUG}" == "Xyes" ]; then
+    touch $log_file
+fi
+ex(){
+    if [ "X${DEBUG}" == "Xyes" ]; then
+        # Execute the command and redirect the logs to the log file
+        echo "COMMAND: $@" >> $log_file
+        echo "STDOUT & STDERR:" >> $log_file
+        "$@" >> $log_file 2>&1
+        echo "EXT STATUS: $?" >> $log_file
+        echo -e "\n" >> $log_file
+    else
+        "$@" > /dev/null 2>&1
+    fi
+}
+
 log "INFO: $distro installation started"
 
 device=/dev/mmcblk0
@@ -57,26 +95,6 @@ while [ ! -b $device ]; do
     printf "Waiting for %s to be ready\n" "$device"
     sleep 1
 done
-
-# Flash firmware from bfb to MMC device boot partitions (it alternates
-# between boot0 and boot1, that is why we call mlx-bootctl twice).
-
-# Update default.bfb
-bfb_location=/lib/firmware/mellanox/default.bfb
-
-if [ -f "$bfb_location" ]; then
-	/bin/rm -f /mnt/lib/firmware/mellanox/boot/default.bfb
-	mkdir -p /mnt/lib/firmware/mellanox/boot
-	cp $bfb_location /mnt/lib/firmware/mellanox/boot/default.bfb
-fi
-
-# Update eMMC boot partitions. Update via either capsule
-# path or default path (i.e., mlxbf-bootctl). This command
-# MUST be executed after 'update_boot' and 'install_grub',
-# otherwise the newly created boot option would be either
-# cleaned up or unset from default option.
-bfrec --policy dual
-sleep 3
 
 # Flash image
 bs=512
@@ -111,36 +129,38 @@ EOF
 sync
 
 # Refresh partition table
-blockdev --rereadpt ${device} > /dev/null 2>&1
+ex blockdev --rereadpt ${device}
 
 if function_exists bfb_pre_install; then
 	bfb_pre_install
 fi
 
 # Generate some entropy
-mke2fs  ${device}p2 >> /dev/null
+ex mke2fs  ${device}p2 >> /dev/null
 
-mkdosfs ${device}p1 -n "system-boot"
-mkfs.ext4 -F ${device}p2 -L "SONiC-OS"
+ex mkdosfs ${device}p1 -n "system-boot"
+ex mkfs.ext4 -F ${device}p2 -L "SONiC-OS"
 
-fsck.vfat -a ${device}p1
+ex fsck.vfat -a ${device}p1
 
 mkdir -p /mnt
-mount -t ext4 -o defaults,rw ${device}p2 /mnt
+ex mount -t ext4 ${device}p2 /mnt
 mkdir -p /mnt/boot/efi
-mount -t vfat ${device}p1 /mnt/boot/efi
+ex mount -t vfat ${device}p1 /mnt/boot/efi
 
-echo "Installing SONiC to /mnt/$image_dir"
+if [ "X${DEBUG}" == "Xyes" ]; then
+    log "Extracting SONiC files"
+fi
+
 mkdir -p /mnt/$image_dir
 
 # Extract the INSTALLER_PAYLOAD to the $image_dir
 export EXTRACT_UNSAFE_SYMLINKS=1
-unzip -o /debian/$INSTALLER_PAYLOAD -x $FILESYSTEM_DOCKERFS -d /mnt/$image_dir
+ex unzip -o /debian/$INSTALLER_PAYLOAD -x $FILESYSTEM_DOCKERFS -d /mnt/$image_dir
 mkdir -p /mnt/$image_dir/$DOCKERFS_DIR
 unzip -op /debian/$INSTALLER_PAYLOAD "$FILESYSTEM_DOCKERFS" | tar xz --warning=no-timestamp -f - -C /mnt/$image_dir/$DOCKERFS_DIR
 
 # Copy in the machine.conf file
-# TODO: Don't statically define bf_platform 
 cat <<EOF > /mnt/machine.conf
 bf_vendor=nvidia
 bf_machine=nvidia-bluefield
@@ -151,39 +171,15 @@ chmod a+r /mnt/machine.conf
 
 sync
 
-if (grep -qE "MemTotal:\s+16" /proc/meminfo > /dev/null 2>&1); then
-	echo "net.netfilter.nf_conntrack_max = 500000" > /mnt/usr/lib/sysctl.d/90-bluefield.conf
+if [ "X${DEBUG}" == "Xyes" ]; then
+    log "Installing GRUB"
 fi
 
-
-umount /mnt/boot/efi
-umount /mnt
-
-blockdev --rereadpt ${device} > /dev/null 2>&1
-
-fsck.vfat -a ${device}p1
-sync
-
-bfbootmgr --cleanall
-
-# Make it the boot partition
-mount -t efivarfs none /sys/firmware/efi/efivars
-mount ${device}p2 /mnt/
-mount ${device}p1 /mnt/boot/efi/
-
-if [ -x /usr/sbin/grub-install ]; then
-	grub-install \
-		--bootloader-id="SONiC-OS" \
-		--locale-directory=/mnt/usr/share/locale \
-		--efi-directory=/mnt/boot/efi/ \
-		--boot-directory=/mnt/ \
-		${device}p1
-else
-	if efibootmgr | grep buster; then
-		efibootmgr -b "$(efibootmgr | grep buster | cut -c 5-8)" -B
-	fi
-	efibootmgr -c -d "$device" -p 1 -L buster -l "\EFI\debian\grubaa64.efi"
-fi
+ex grub-install \
+    --bootloader-id="SONiC-OS" \
+    --efi-directory=/mnt/boot/efi/ \
+    --boot-directory=/mnt/ \
+    ${device}p1
 
 # Create a minimal grub.cfg that allows for:
 #   - configure the serial console
@@ -192,13 +188,12 @@ fi
 
 grub_cfg=$(mktemp)
 
-# Set a few GRUB_xxx environment variables that will be picked up and
-# used by the 50_onie_grub script.  This is similiar to what an OS
-# would specify in /etc/default/grub.
-#
-# GRUB_SERIAL_COMMAND
+# Modify GRUB_CMDLINE_LINUX from bf.cfg file if required
 # GRUB_CMDLINE_LINUX
-[ -r /debian/platform.conf ] && . /debian/platform.conf
+
+DEFAULT_GRUB_CMDLINE_LINUX="console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000 quiet"
+GRUB_CMDLINE_LINUX=${GRUB_CMDLINE_LINUX:-"$DEFAULT_GRUB_CMDLINE_LINUX"}
+export GRUB_CMDLINE_LINUX
 
 # Add the logic to support grub-reboot and grub-set-default
 cat <<EOF >> $grub_cfg
@@ -228,7 +223,7 @@ else
 fi
 
 # Add common configuration, like the timeout
-cat <<EOF > $grub_cfg
+cat <<EOF >> $grub_cfg
 set timeout=5
 EOF
 
@@ -240,7 +235,7 @@ menuentry '$demo_grub_entry' {
         search --no-floppy --label --set=root SONiC-OS
         if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
         echo 'Loading SONiC-OS Kernel'
-        linux   /$image_dir/boot/vmlinuz-5.10.0-8-2-arm64 root=$grub_cfg_root rw console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000 fixrtc \
+        linux   /$image_dir/boot/vmlinuz-5.10.0-8-2-arm64 root=$grub_cfg_root rw $GRUB_CMDLINE_LINUX fixrtc \
                 loop=$image_dir/$FILESYSTEM_SQUASHFS loopfstype=squashfs                       \
                 systemd.unified_cgroup_hierarchy=0 \
                 apparmor=1 security=apparmor varlog_size=4096 systemd.unified_cgroup_hierarchy=0 \
@@ -251,22 +246,93 @@ menuentry '$demo_grub_entry' {
 EOF
 
 # Copy the grub.cfg onto the boot-directory as specified in the grub-install
-mkdir -p /mnt/grub && cp $grub_cfg /mnt/grub/grub.cfg
+ex mkdir -p /mnt/grub 
+ex cp $grub_cfg /mnt/grub/grub.cfg
 
 sync
 
+if [ "X${DEBUG}" == "Xyes" ]; then
+    log "GRUB CFG Updated"
+fi
+
 umount /mnt/boot/efi
 umount /mnt
-umount /sys/firmware/efi/efivars
+
+ex blockdev --rereadpt ${device}
+
+ex fsck.vfat -a ${device}p1
+sync
+
+if [ -e /lib/firmware/mellanox/boot/capsule/update.cap ]; then
+	ex bfrec --capsule /lib/firmware/mellanox/boot/capsule/update.cap
+fi
+
+ex bfbootmgr --cleanall
+
+# Make it the boot partition
+mounted_efivarfs=0
+if [ ! -d /sys/firmware/efi/efivars ]; then
+	ex mount -t efivarfs none /sys/firmware/efi/efivars
+	mounted_efivarfs=1
+fi
+
+if efibootmgr | grep SONiC-OS; then
+    ex efibootmgr -b "$(efibootmgr | grep SONiC-OS | cut -c 5-8)" -B
+fi
+ex efibootmgr -c -d "$device" -p 1 -L SONiC-OS -l "\EFI\SONiC-OS\grubaa64.efi"
+
+if [ "X${DEBUG}" == "Xyes" ]; then
+    log "EFIBootMgr Updated"
+fi
 
 BFCFG=`which bfcfg 2> /dev/null`
 if [ -n "$BFCFG" ]; then
-	$BFCFG
+	# Create PXE boot entries
+	if [ -e /etc/bf.cfg ]; then
+		mv /etc/bf.cfg /etc/bf.cfg.orig
+	fi
+
+	cat > /etc/bf.cfg << EOF
+BOOT0=DISK
+BOOT1=NET-NIC_P0-IPV4
+BOOT2=NET-NIC_P0-IPV6
+BOOT3=NET-NIC_P1-IPV4
+BOOT4=NET-NIC_P1-IPV6
+BOOT5=NET-OOB-IPV4
+BOOT6=NET-OOB-IPV6
+PXE_DHCP_CLASS_ID=$DHCP_CLASS_ID
+EOF
+
+	ex $BFCFG
+
+	# Restore the original bf.cfg
+	/bin/rm -f /etc/bf.cfg
+	if [ -e /etc/bf.cfg.orig ]; then
+		mv /etc/bf.cfg.orig /etc/bf.cfg
+	fi
+fi
+
+if [ $mounted_efivarfs -eq 1 ]; then
+	umount /sys/firmware/efi/efivars > /dev/null 2>&1
+fi
+
+if [ -n "$BFCFG" ]; then
+	ex $BFCFG
 fi
 
 if function_exists bfb_post_install; then
-	bfb_post_install
+	ex bfb_post_install
 fi
 
-log "INFO: Installation finished"
-log "INFO: Rebooting..."
+if [ "X${DEBUG}" == "Xyes" ]; then
+    # Copy the log file to Persistent Storage
+    mount -t ext4 ${device}p2 /mnt
+    mkdir -p /mnt/bfb-boot-logs/
+    dmesg > /mnt/bfb-boot-logs/installer_bfb_dmesg.log
+    mv $log_file /mnt/bfb-boot-logs/$log_file
+    umount /mnt
+    log "Rebooting..."
+    log "Installation finished"
+    # Wait for these messages to be pulled by the rshim service
+    sleep 3
+fi

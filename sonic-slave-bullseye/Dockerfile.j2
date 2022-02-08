@@ -362,8 +362,15 @@ RUN apt-get update && apt-get install -y \
         libgirepository1.0-dev \
         libsystemd-dev \
         pkg-config \
+# For building bfb image
+        fdisk \
+        usbutils \
+        dosfstools \
+        efibootmgr \
+        grub-efi-arm64-bin \
+        grub2-common \
 # For socat build
-	net-tools \
+        net-tools \
 # For audisp-tacplus
         libauparse-dev \
         auditd

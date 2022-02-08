@@ -13,19 +13,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-IMAGE_TYPE=dev
+.ONESHELL:
+SHELL = /bin/bash
+.SHELLFLAGS += -ex
 
-BOOTIMAGES_BASE_URL = https://linux.mellanox.com/public/repo/bluefield/3.8.5/bootimages/$(IMAGE_TYPE)
-BOOTIMAGES = mlxbf-bootimages_$(BSD_VER)-$(BSD_REV)_arm64.deb
+MLX_BOOTCTL = mlx-bootctl-$(MLX_BOOTCTL_DRIVER_VERSION)
+MLX_BOOTCTL_TAR = ${MLX_BOOTCTL}.tar.gz
 
-# Required for building BFB image
-UPDATE_CAP = update.cap
+$(addprefix $(DEST)/, $(MLX_BOOTCTL_DRIVER)): $(DEST)/% :
+	rm -rf ${MLX_BOOTCTL} ${MLX_BOOTCTL_TAR} *.buildinfo *.changes *.deb
+	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLX_BOOTCTL_TAR)"
+	tar -z -f $(MLX_BOOTCTL_TAR) -x
 
-$(BOOTIMAGES)_URL = $(BOOTIMAGES_BASE_URL)/$(BOOTIMAGES)
-SONIC_ONLINE_DEBS += $(BOOTIMAGES)
+	pushd ${MLX_BOOTCTL}  
 
-$(UPDATE_CAP)_URL = $(BOOTIMAGES_BASE_URL)/$(UPDATE_CAP)
-SONIC_ONLINE_FILES += $(UPDATE_CAP)
+	# Build the package
+	KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	
+	mv $* $(DEST)/
 
-export BOOTIMAGES UPDATE_CAP
+	popd
