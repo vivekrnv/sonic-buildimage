@@ -31,6 +31,9 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
 	pushd doca_dpdk/
 
+	# Temp Fix
+	chmod -x debian/*
+
 	# Build the Debs
 	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 
