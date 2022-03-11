@@ -26,6 +26,8 @@ else
 SDK_FROM_SRC = n
 endif
 
+export DOCA_SDK_SOURCE_BASE_URL
+
 ### RDMA
 RDMA_CORE_VER=33.1-1
 
