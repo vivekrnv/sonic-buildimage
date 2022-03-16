@@ -36,6 +36,7 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/bootimages.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bfscripts.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-modules-bf2.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mft.dep
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/dpu-sai.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-openipmi.dep
 # include $(PLATFORM_PATH)/$(RECIPE_DIR)/libpka.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/installer-image.dep

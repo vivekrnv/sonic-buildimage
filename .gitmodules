@@ -106,3 +106,6 @@
 [submodule "src/sonic-p4rt/sonic-pins"]
 	path = src/sonic-p4rt/sonic-pins
 	url = https://github.com/Azure/sonic-pins.git
+[submodule "platform/nvidia-bluefield/dpu-sai/sai-dpu"]
+	path = platform/nvidia-bluefield/dpu-sai/sai-dpu
+	url = ssh://git@github.com/nvidia-sonic/sai-dpu
