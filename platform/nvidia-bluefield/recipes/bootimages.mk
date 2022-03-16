@@ -16,7 +16,7 @@
 
 IMAGE_TYPE=dev
 
-BOOTIMAGES_BASE_URL = https://linux.mellanox.com/public/repo/bluefield/3.8.5/bootimages/$(IMAGE_TYPE)
+BOOTIMAGES_BASE_URL = https://linux.mellanox.com/public/repo/bluefield/$(BSD_VER)/bootimages/$(IMAGE_TYPE)
 BOOTIMAGES = mlxbf-bootimages_$(BSD_VER)-$(BSD_REV)_arm64.deb
 
 # Required for building BFB image

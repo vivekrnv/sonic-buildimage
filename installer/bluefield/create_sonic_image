@@ -15,6 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# This script generates the corresponding SONiC installer images for Bluefield
+# 1) BFB Image
+# 2) PXE Archive for Network Booting
+
 set -e
 
 WDIR=
@@ -34,12 +39,13 @@ BOOTCTL_DRIVER=$CDIR/$FILES_PATH/mlx-bootctl.ko
 TMFIFO_DRIVER=$CDIR/$FILES_PATH/mlxbf-tmfifo.ko
 TARGET_MACHINE=nvidia-bluefield
 BFB="${BFB:-/lib/firmware/mellanox/boot/default.bfb}"
+GRUB_AA64=grubnetaa64.efi
+CONSOLE_PARAM="console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000"
 
 usage() {
 cat << EOF
 Usage: `basename $0` [ OPTIONS ]
 OPTIONS:
--i, --install_bfb <BFB>           Installation BFB to be used as a basis for the target BFB. Default: $BFB
 -k, --kernel <kernel version>     Kernel version for the SmartNIC.
 -v, --verbose                     Run script in verbose mode. Will print out each step of execution.
 -h, --help                        Display help
@@ -53,9 +59,9 @@ parse_args() {
                 usage
                 exit 0
                 ;;
-            -i|--install_bfb)
+            -v|--verbose)
                 shift
-                BFB=$1
+                set -x
                 ;;
             -k|--kernel)
                 shift
@@ -72,27 +78,27 @@ parse_args() {
 
 validate_config() {
     if [[ ! -d "$CHROOT_DIR" ]]; then
-        echo "[create_sonic_bfb] Error! Path to CHROOT not found"
+        echo "[create_sonic_image] Error! Path to CHROOT not found"
         exit 1
     fi
 
     if [[ ! -f "$INITRD" ]]; then
-        echo "[create_sonic_bfb] Error! SONiC INITRD not found"
+        echo "[create_sonic_image] Error! SONiC INITRD not found"
         exit 1
     fi
 
     if [[ ! -f "$VMLINUZ" ]]; then
-        echo "[create_sonic_bfb] Error! SONiC VMLINUZ not found"
+        echo "[create_sonic_image] Error! SONiC VMLINUZ not found"
         exit 1
     fi
 
     if [[ ! -d "$MODULES_DIR" ]]; then
-        echo "[create_sonic_bfb] Error! Path to Kernel Modules not found"
+        echo "[create_sonic_image] Error! Path to Kernel Modules not found"
         exit 1
     fi
 
     if [[ ! -n "$OUTPUT_BFB_IMAGE" ]]; then
-        echo "[create_sonic_bfb] Error! OUTPUT_BFB_IMAGE name not defined. Exiting.."
+        echo "[create_sonic_image] Error! OUTPUT_BFB_IMAGE name not defined. Exiting.."
         exit 1
     fi
 
@@ -134,16 +140,20 @@ validate_config() {
 }
 
 cleanup_workdir() {
-    rm -rf $WDIR
+    rm -rf $boot_args $boot_path $boot_desc $arxiv_wdir $WDIR
 }
 
 create_workdir() {
     if [[ $WDIR == "" ]]; then
         WDIR=$(mktemp -d /sonic/bfb-wd-XXXX)
-        trap cleanup_workdir EXIT
     else
         rm -rf $WDIR/*
     fi
+    boot_args=$(mktemp /tmp/boot-args-XXXX)
+    boot_path=$(mktemp /tmp/boot-path-XXXX)
+    boot_desc=$(mktemp /tmp/boot-desc-XXXX)
+    arxiv_wdir=$(mktemp -d /tmp/pxe-wd-XXXX)
+    trap cleanup_workdir EXIT
 }
 
 add_sonic_to_initramfs() {
@@ -177,6 +187,8 @@ insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio_ring.ko > 
 insmod /efivarfs.ko > /dev/null 2>&1
 insmod /mlx-bootctl.ko > /dev/null 2>&1
 insmod /mlxbf-tmfifo.ko > /dev/null 2>&1
+insmod /sbsa_gwdt.ko > /dev/null 2>&1
+/usr/sbin/watchdog > /dev/null 2>&1
 
 printf_msg "================================="
 printf_msg "Installing SONiC. Please wait..."
@@ -273,7 +285,8 @@ create_bfb_image() {
             `dpkg -L mft` \
             `dpkg -L mft-oem` \
             `dpkg -L kernel-mft-modules` \
-            `dpkg -L tar`
+            `dpkg -L tar` \
+            /usr/sbin/watchdog
     do
         if [ -d $tool ]; then
             continue
@@ -296,7 +309,7 @@ create_bfb_image() {
             `dpkg -L grub-efi-arm64-bin` \
             xz efibootmgr gcc-10 bash getopt hexdump lspci perl \
             lsblk shutdown systemctl strings aarch64-linux-gnu-strings \
-            mlxbf-bootctl id mkfs fsck
+            mlxbf-bootctl id mkfs fsck watchdog
     do
         if [ -d $tool ]; then
             continue
@@ -304,11 +317,15 @@ create_bfb_image() {
         copy_bin $tool
     done
 
+    sudo depmod -a -b ./ $KERNEL
     mkdir -p usr/share/misc/ bin/ var/log/watchdog
+    sudo cp /etc/watchdog.conf etc
+    sudo cp /usr/share/misc/pci.ids usr/share/misc/
     cp $CHROOT_DIR/usr/share/misc/pci.ids usr/share/misc/
     cp $BOOTCTL_DRIVER .
     cp $TMFIFO_DRIVER .
     cp $EFIVARS_MOD .
+    cp $WATCHDOG .
 
     mkdir -p ./lib/firmware/mellanox/boot/
     cp /lib/firmware/mellanox/boot/default.bfb ./lib/firmware/mellanox/boot/default.bfb
@@ -324,12 +341,8 @@ create_bfb_image() {
     popd
 
     # Make bfb
-    boot_args=$(mktemp)
-    boot_path=$(mktemp)
-    boot_desc=$(mktemp)
-    printf "console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000 initrd=initramfs" > \
-        "$boot_args"
-
+    printf "$CONSOLE_PARAM initrd=initramfs" > "$boot_args"
+       
     printf "VenHw(F019E406-8C9C-11E5-8797-001ACA00BFC4)/Image" > "$boot_path"
     printf "Linux from rshim" > "$boot_desc"
     vmlinuz=$WDIR/vmlinuz
@@ -345,7 +358,28 @@ create_bfb_image() {
 
     echo "BFB is ready: $(readlink -f  ${DDIR}/${OUTPUT_BFB_IMAGE})"
 
-    rm -rf $boot_args $boot_path $boot_desc
+    popd
+}
+
+create_pxe_archive(){
+    # Installed by grub-efi-arm64-bin deb package
+    if [[ ! -f "/usr/lib/grub/arm64-efi/monolithic/$GRUB_AA64" ]]; then
+        echo "Grub EFI binary not found, check if grub-efi-arm64-bin package is installed"
+        exit 1
+    fi
+
+    pushd $arxiv_wdir
+
+    cp /usr/lib/grub/arm64-efi/monolithic/$GRUB_AA64 .
+
+    cp $WDIR/vmlinuz Image
+    cp $WDIR/dump-initramfs-v0 initramfs
+
+    console_params=$CONSOLE_PARAM j2 /sonic/installer/bluefield/grub.cfg.j2 > grub.cfg
+    cp /sonic/installer/bluefield/PXE_README.txt .
+
+    tar -C $arxiv_wdir -cvzf ${DDIR}/${OUTPUT_PXE_IMAGE} .
+
     popd
 }
 
@@ -360,6 +394,7 @@ main() {
     VMLINUZ=$CDIR/$FILESYSTEM_ROOT/boot/vmlinuz-$KERNEL
     MODULES_DIR=$CDIR/$FILESYSTEM_ROOT/lib/modules/$KERNEL
     EFIVARS_MOD=$MODULES_DIR/kernel/fs/efivarfs/efivarfs.ko
+    WATCHDOG=$MODULES_DIR/kernel/drivers/watchdog/sbsa_gwdt.ko
     IMAGE_VER=$(cat $CHROOT_DIR/etc/sonic/sonic_version.yml | grep "build_version" | sed -e "s/build_version: //g;s/'//g")
     validate_config
 
@@ -367,6 +402,10 @@ main() {
     echo "Work directory: $WDIR"
 
     create_bfb_image
+
+    if [[ $IMAGE_TYPE == pxe ]]; then
+        create_pxe_archive
+    fi
 }
 
 main $@

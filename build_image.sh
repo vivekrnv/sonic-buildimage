@@ -293,14 +293,12 @@ elif [[ $IMAGE_TYPE = s2s && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
     sudo rm -f $OUTPUT_ONIE_IMAGE
     generate_s2s_installer_image_bluefield
 
-elif [[ $IMAGE_TYPE == bfb && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
-    sudo --preserve-env /sonic/installer/bluefield/create_sonic_bfb --kernel $KVERSION
+elif [[ ( $IMAGE_TYPE == bfb || $IMAGE_TYPE == pxe ) && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
+    sudo --preserve-env /sonic/installer/bluefield/create_sonic_image --kernel $KVERSION
     sudo chown $USER ./$OUTPUT_BFB_IMAGE
-
-elif [[ $IMAGE_TYPE == pxe && $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
-    echo "Not Yet Implemented"
-    exit 1
-
+    if [[ $IMAGE_TYPE == pxe ]]; then
+        sudo chown $USER ./$OUTPUT_PXE_IMAGE
+    fi
 else
     echo "Error: Non supported image type $IMAGE_TYPE"
     exit 1

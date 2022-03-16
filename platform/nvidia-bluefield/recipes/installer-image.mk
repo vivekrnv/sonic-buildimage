@@ -39,18 +39,19 @@ $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
                                     $(BF2_PLATFORM_MODULE)
 
 # Required Dockers
-# TODO: Add swss, syncd and pmon later
+# TODO: Add swss and pmon later
 $(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(filter-out $(DOCKER_ORCHAGENT) $(DOCKER_PLATFORM_MONITOR),$(SONIC_INSTALL_DOCKER_IMAGES))
 
-
 # A compressed archive which contains individual files required for PXE boot
-SONIC_BF2_IMAGE_PXE = $(SONIC_BF2_IMAGE_BASE).gz
+# A BFB image is also generated as a by-product of PXE image generation
+SONIC_BF2_IMAGE_PXE = $(SONIC_BF2_IMAGE_BASE).tar.gz
 $(SONIC_BF2_IMAGE_PXE)_IMAGE_TYPE = pxe
 $(SONIC_BF2_IMAGE_PXE)_MACHINE = $($(SONIC_BF2_IMAGE_BASE)_MACHINE)
 $(SONIC_BF2_IMAGE_PXE)_INSTALLS += $($(SONIC_BF2_IMAGE_BASE)_INSTALLS)
 $(SONIC_BF2_IMAGE_PXE)_DEPENDS += $($(SONIC_BF2_IMAGE_BASE)_DEPENDS)
 $(SONIC_BF2_IMAGE_PXE)_DOCKERS += $($(SONIC_BF2_IMAGE_BASE)_DOCKERS)
 $(SONIC_BF2_IMAGE_PXE)_LAZY_INSTALLS += $($(SONIC_BF2_IMAGE_BASE)_LAZY_INSTALLS)
+$(SONIC_BF2_IMAGE_BFB)_FILES += $(UPDATE_CAP) $(MLX_BOOTCTL_DRIVER)
 
 # The traditional *.bin image. Works for sonic-sonic upgrade.
 SONIC_BF2_IMAGE_BIN = $(SONIC_BF2_IMAGE_BASE).bin

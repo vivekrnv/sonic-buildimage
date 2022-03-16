@@ -68,10 +68,21 @@ if [ -e /etc/bf.cfg ]; then
 	. /etc/bf.cfg
 fi
 
+# Read kernel cmdline parameters to check if logging is enabled
+set -- $(cat /proc/cmdline)
+for x in "$@"; do
+    case "$x" in
+        logging=true)
+            DEBUG="yes"
+            ;;
+    esac
+done
+
 log_file=/sonic_install_log_file.log
 if [ "X${DEBUG}" == "Xyes" ]; then
     touch $log_file
 fi
+
 ex(){
     if [ "X${DEBUG}" == "Xyes" ]; then
         # Execute the command and redirect the logs to the log file
@@ -255,6 +266,21 @@ if [ "X${DEBUG}" == "Xyes" ]; then
     log "GRUB CFG Updated"
 fi
 
+# Update HW-dependant files
+if (/usr/bin/lspci -n -d 15b3: | grep -wq 'a2d2'); then
+    # BlueField-1
+    if [ ! -n "$DHCP_CLASS_ID" ]; then
+        DHCP_CLASS_ID="BF1Client"
+    fi
+elif (/usr/bin/lspci -n -d 15b3: | grep -wq 'a2d6'); then
+    # BlueField-2
+    if [ ! -n "$DHCP_CLASS_ID" ]; then
+        DHCP_CLASS_ID="BF2Client"
+    fi
+fi
+
+ex echo $DHCP_CLASS_ID
+
 umount /mnt/boot/efi
 umount /mnt
 
@@ -288,18 +314,17 @@ fi
 BFCFG=`which bfcfg 2> /dev/null`
 if [ -n "$BFCFG" ]; then
 	# Create PXE boot entries
+	# Not adding CX ifaces because presumably they'll not be used for PXE
 	if [ -e /etc/bf.cfg ]; then
 		mv /etc/bf.cfg /etc/bf.cfg.orig
 	fi
 
 	cat > /etc/bf.cfg << EOF
 BOOT0=DISK
-BOOT1=NET-NIC_P0-IPV4
-BOOT2=NET-NIC_P0-IPV6
-BOOT3=NET-NIC_P1-IPV4
-BOOT4=NET-NIC_P1-IPV6
-BOOT5=NET-OOB-IPV4
-BOOT6=NET-OOB-IPV6
+BOOT1=NET-OOB-IPV4
+BOOT2=NET-OOB-IPV6
+BOOT3=NET-RSHIM-IPV4
+BOOT4=NET-RSHIM-IPV6
 PXE_DHCP_CLASS_ID=$DHCP_CLASS_ID
 EOF
 

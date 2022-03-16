@@ -1,0 +1,9 @@
+set timeout=10
+set default=0
+
+menuentry 'SONiC-Installer' --class red --class gnu-linux --class gnu --class os {
+        echo "Downloading SONiC Installer Kernel..."
+        linux (tftp)/<update the location>/Image ro ip=dhcp {{console_params}}
+        echo "Downloading SONiC Installer Initramfs..."
+        initrd (tftp)/<update the location>/initramfs
+}
