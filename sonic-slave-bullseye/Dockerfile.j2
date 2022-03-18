@@ -368,7 +368,9 @@ RUN apt-get update && apt-get install -y \
         dosfstools \
         efibootmgr \
         watchdog \
+{%- if CONFIGURED_ARCH in ["armhf", "arm64"] %}
         grub-efi-arm64-bin \
+{%- endif %}
         grub2-common \
 # For socat build
         net-tools \
