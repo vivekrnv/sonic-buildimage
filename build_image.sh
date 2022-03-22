@@ -145,7 +145,8 @@ generate_s2s_installer_image_bluefield()
            -e "s/%%INSTALLER_PAYLOAD%%/$ONIE_INSTALLER_PAYLOAD/g" \
            -e "s/%%FILESYSTEM_DOCKERFS%%/$FILESYSTEM_DOCKERFS/g" \
            -e "s/%%DOCKERFS_DIR%%/$DOCKERFS_DIR/g" \
-           -e "s/%%FILESYSTEM_SQUASHFS%%/$FILESYSTEM_SQUASHFS/g" $tmp_installdir/install.sh || clean_dir $tmp_dir 1
+           -e "s/%%FILESYSTEM_SQUASHFS%%/$FILESYSTEM_SQUASHFS/g" \
+           -e "s/%%KERNEL_VERSION%%/$KVERSION/g" $tmp_installdir/install.sh || clean_dir $tmp_dir 1
     chmod 0755 $tmp_installdir/install.sh
 
     # Copy the payload file

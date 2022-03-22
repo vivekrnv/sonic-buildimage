@@ -24,6 +24,7 @@ INSTALLER_PAYLOAD="%%INSTALLER_PAYLOAD%%"
 FILESYSTEM_DOCKERFS="%%FILESYSTEM_DOCKERFS%%"
 DOCKERFS_DIR="%%DOCKERFS_DIR%%"
 FILESYSTEM_SQUASHFS="%%FILESYSTEM_SQUASHFS%%"
+KERNEL_VERSION="%%KERNEL_VERSION%%"
 
 image_dir="image-$IMAGE_VERSION"
 demo_volume_revision_label="SONiC-OS-${IMAGE_VERSION}"
@@ -246,13 +247,13 @@ menuentry '$demo_grub_entry' {
         search --no-floppy --label --set=root SONiC-OS
         if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
         echo 'Loading SONiC-OS Kernel'
-        linux   /$image_dir/boot/vmlinuz-5.10.0-8-2-arm64 root=$grub_cfg_root rw $GRUB_CMDLINE_LINUX fixrtc \
+        linux   /$image_dir/boot/vmlinuz-$KERNEL_VERSION root=$grub_cfg_root rw $GRUB_CMDLINE_LINUX fixrtc \
                 loop=$image_dir/$FILESYSTEM_SQUASHFS loopfstype=squashfs                       \
                 systemd.unified_cgroup_hierarchy=0 \
                 apparmor=1 security=apparmor varlog_size=4096 systemd.unified_cgroup_hierarchy=0 \
                 isolcpus=1-7 nohz_full=1-7 rcu_nocbs=1-7
         echo    'Loading SONiC-OS initial ramdisk ...'
-        initrd  /$image_dir/boot/initrd.img-5.10.0-8-2-arm64
+        initrd  /$image_dir/boot/initrd.img-$KERNEL_VERSION
 }
 EOF
 

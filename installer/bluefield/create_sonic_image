@@ -166,6 +166,7 @@ add_sonic_to_initramfs() {
     sed -i -e "s/%%FILESYSTEM_DOCKERFS%%/$FILESYSTEM_DOCKERFS/g" temp_install.sh
     sed -i -e "s/%%DOCKERFS_DIR%%/$DOCKERFS_DIR/g" temp_install.sh
     sed -i -e "s/%%FILESYSTEM_SQUASHFS%%/$FILESYSTEM_SQUASHFS/g" temp_install.sh
+    sed -i -e "s/%%KERNEL_VERSION%%/$KERNEL/g" temp_install.sh
     install -m 0755 temp_install.sh ./debian/install.sh
     rm -f temp_install.sh
 
