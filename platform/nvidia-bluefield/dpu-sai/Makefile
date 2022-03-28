@@ -19,9 +19,10 @@
 SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
-DPU_SAI_TAR = mlnx-sai.1.mlnx.${DPU_SAI_VERSION}-master.orig.tar.gz
+MAIN_TARGET = $(DPU_SAI)
+DERIVED_TARGETS = $(DPU_SAI_DBGSYM)
 
-$(addprefix $(DEST)/, $(DPU_SAI)): $(DEST)/% :
+$(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
 	pushd sai-dpu
 	pushd mlnx_sai
@@ -32,5 +33,5 @@ $(addprefix $(DEST)/, $(DPU_SAI)): $(DEST)/% :
 
 	popd
 
-	mv $* $(DEST)/
+	mv $* $(DERIVED_TARGETS) $(DEST)/
 	popd

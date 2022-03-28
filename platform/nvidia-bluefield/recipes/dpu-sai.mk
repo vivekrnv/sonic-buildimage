@@ -27,3 +27,4 @@ $(eval $(call add_derived_package,$(DPU_SAI),$(DPU_SAI_DBGSYM)))
 SONIC_MAKE_DEBS += $(DPU_SAI)
 
 export DPU_SAI
+export DPU_SAI_DBGSYM

@@ -50,3 +50,9 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/sdk.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/docker-syncd-bluefield.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/installer-image.mk
 
+# Inject DPU sai into syncd
+$(SYNCD)_DEPENDS += $(DPU_SAI)
+$(SYNCD)_UNINSTALLS += $(DPU_SAI)
+
+# Runtime dependency on DPU sai is set only for syncd
+$(SYNCD)_RDEPENDS += $(DPU_SAI)
