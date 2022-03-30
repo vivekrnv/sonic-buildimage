@@ -39,8 +39,8 @@ $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
                                     $(BF2_PLATFORM_MODULE)
 
 # Required Dockers
-# TODO: Add swss and pmon later
-$(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(filter-out $(DOCKER_ORCHAGENT) $(DOCKER_PLATFORM_MONITOR),$(SONIC_INSTALL_DOCKER_IMAGES))
+# TODO: Add swss later
+$(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(filter-out $(DOCKER_ORCHAGENT),$(SONIC_INSTALL_DOCKER_IMAGES))
 
 # A compressed archive which contains individual files required for PXE boot
 # A BFB image is also generated as a by-product of PXE image generation
