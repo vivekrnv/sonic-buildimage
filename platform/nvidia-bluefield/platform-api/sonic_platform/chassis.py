@@ -180,3 +180,78 @@ class Chassis(ChassisBase):
             bool: True if it is replaceable.
         """
         return False
+
+    ##############################################
+    # THERMAL methods
+    ##############################################
+
+    def initialize_thermals(self):
+        if not self._thermal_list:
+            from .thermal import initialize_chassis_thermals
+            # Initialize thermals
+            self._thermal_list = initialize_chassis_thermals()
+
+    def get_num_thermals(self):
+        """
+        Retrieves the number of thermals available on this chassis
+
+        Returns:
+            An integer, the number of thermals available on this chassis
+        """
+        self.initialize_thermals()
+        return len(self._thermal_list)
+
+    def get_all_thermals(self):
+        """
+        Retrieves all thermals available on this chassis
+
+        Returns:
+            A list of objects derived from ThermalBase representing all thermals
+            available on this chassis
+        """
+        self.initialize_thermals()
+        return self._thermal_list
+
+    def get_thermal(self, index):
+        """
+        Retrieves thermal unit represented by (0-based) index <index>
+
+        Args:
+            index: An integer, the index (0-based) of the thermal to
+            retrieve
+
+        Returns:
+            An object dervied from ThermalBase representing the specified thermal
+        """
+        self.initialize_thermals()
+        return super(Chassis, self).get_thermal(index)
+
+    ##############################################
+    # System LED methods
+    ##############################################
+
+    def initizalize_system_led(self):
+        pass
+
+    def set_status_led(self, color):
+        """
+        Sets the state of the system LED
+
+        Args:
+            color: A string representing the color with which to set the
+                   system LED
+
+        Returns:
+            bool: True if system LED state is set successfully, False if not
+        """
+        return False
+
+    def get_status_led(self):
+        """
+        Gets the state of the system LED
+
+        Returns:
+            A string, one of the valid LED color strings which could be vendor
+            specified.
+        """
+        return 'N/A'
