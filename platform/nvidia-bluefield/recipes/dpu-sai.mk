@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-DPU_SAI_VERSION = SAIRel0.0.0.3
+DPU_SAI_VERSION = SAIRel0.0.1.0
 
 export DPU_SAI_VERSION
 
