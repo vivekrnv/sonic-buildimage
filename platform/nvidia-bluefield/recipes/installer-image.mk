@@ -38,9 +38,7 @@ $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
                                     $(MLX_OPENIPMI_SERVER_DEB) \
                                     $(BF2_PLATFORM_MODULE)
 
-# Required Dockers
-# TODO: Add swss later
-$(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(filter-out $(DOCKER_ORCHAGENT),$(SONIC_INSTALL_DOCKER_IMAGES))
+$(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(SONIC_INSTALL_DOCKER_IMAGES)
 
 # A compressed archive which contains individual files required for PXE boot
 # A BFB image is also generated as a by-product of PXE image generation

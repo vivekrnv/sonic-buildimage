@@ -63,6 +63,8 @@ elif [ "$platform" == "mellanox" ]; then
     ORCHAGENT_ARGS+=""
 elif [ "$platform" == "innovium" ]; then
     ORCHAGENT_ARGS+="-m $MAC_ADDRESS"
+elif [ "$platform" == "nvidia-bluefield" ]; then
+    ORCHAGENT_ARGS+="-m $MAC_ADDRESS"
 else
     # Should we use the fallback MAC in case it is not found in Device.Metadata
     ORCHAGENT_ARGS+="-m $MAC_ADDRESS"
