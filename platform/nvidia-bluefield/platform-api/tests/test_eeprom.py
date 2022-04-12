@@ -29,7 +29,7 @@ sys.path.insert(0, modules_path)
 from sonic_platform.chassis import Chassis
 from sonic_platform.eeprom import Eeprom
 
-from .test_chassis import platform_sample
+from .utils import platform_sample
 
 
 vpd_sample = """

@@ -28,7 +28,7 @@ sys.path.insert(0, modules_path)
 from sonic_platform.sfp import Sfp
 from sonic_platform.chassis import Chassis
 
-from .test_chassis import platform_sample
+from .utils import platform_sample
 
 @patch('sonic_py_common.device_info.get_platform', MagicMock(return_value=""))
 @patch('sonic_py_common.device_info.get_path_to_platform_dir', MagicMock(return_value=""))

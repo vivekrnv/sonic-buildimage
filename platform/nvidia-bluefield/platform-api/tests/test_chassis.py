@@ -28,45 +28,7 @@ sys.path.insert(0, modules_path)
 
 from sonic_platform.chassis import Chassis
 from sonic_platform.device_data import DeviceDataManager
-
-
-platform_sample = """
-{
-    "chassis": {
-        "name": "Nvidia-MBF2H516A",
-        "components": [],
-        "fans": [],
-        "fan_drawers": [],
-        "psus": [],
-        "thermals": [],
-        "sfps": [
-            {
-                "name": "p0"
-            },
-            {
-                "name": "p1"
-            }
-        ]
-    },
-    "interfaces": {
-        "Ethernet0": {
-            "index": "1,1,1,1",
-            "lanes": "0,1,2,3",
-            "breakout_modes": {
-                "1x100G": ["etp1"]
-            }
-        },
-        "Ethernet4": {
-            "index": "2,2,2,2",
-            "lanes": "4,5,6,7",
-            "breakout_modes": {
-                "1x100G": ["etp2"]
-            }
-        }
-    }
-}
-"""
-
+from .utils import platform_sample
 
 @patch('sonic_py_common.device_info.get_platform', MagicMock(return_value=""))
 @patch('sonic_py_common.device_info.get_path_to_platform_dir', MagicMock(return_value=""))
