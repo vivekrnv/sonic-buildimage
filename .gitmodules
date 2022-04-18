@@ -109,3 +109,6 @@
 [submodule "platform/nvidia-bluefield/dpu-sai/sai-dpu"]
 	path = platform/nvidia-bluefield/dpu-sai/sai-dpu
 	url = ssh://git@github.com/nvidia-sonic/sai-dpu
+[submodule "src/thrift_0_14_1/thrift"]
+	path = src/thrift_0_14_1/thrift
+	url = https://github.com/apache/thrift.git
