@@ -57,3 +57,6 @@ $(SYNCD)_UNINSTALLS += $(DPU_SAI)
 
 # Runtime dependency on DPU sai is set only for syncd
 $(SYNCD)_RDEPENDS += $(DPU_SAI)
+
+# Inject mft into platform monitor
+$(DOCKER_PLATFORM_MONITOR)_DEPENDS += $(MFT)
