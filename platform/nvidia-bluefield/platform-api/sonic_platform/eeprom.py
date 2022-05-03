@@ -15,20 +15,18 @@
 # limitations under the License.
 #
 
+from functools import reduce
 import re
-import os
 import enum
-import shutil
-import tempfile
 import subprocess
 
 from sonic_py_common.logger import Logger
 try:
-    from sonic_platform_base.sonic_eeprom import eeprom_tlvinfo
+    from sonic_platform_base.sonic_eeprom.eeprom_tlvinfo import TlvInfoDecoder
 except ImportError as e:
     raise ImportError(str(e) + "- required module not found")
 
-from .utils import default_return, is_host
+from .utils import default_return
 
 logger = Logger()
 
@@ -162,11 +160,14 @@ class FwManager:
         return self._fw_info[self.FwInfo.pci_dev_name]
 
 
-class Eeprom:
+class Eeprom(TlvInfoDecoder):
 
     def __init__(self):
         self._fwmngr = FwManager()
         self._vpd = Vpd(self._fwmngr)
+        self._eeprom_info_dict = None
+        self._eeprom_raw = None
+        super(Eeprom, self).__init__('', 0, '', True)
 
     @default_return(return_value='Undefined.')
     def get_base_mac(self):
@@ -177,7 +178,7 @@ class Eeprom:
             A string containing the MAC address in the format
             'XX:XX:XX:XX:XX:XX'
         """
-        return self._fwmngr.get_base_mac()
+        return self._get_eeprom_value(self._TLV_CODE_MAC_BASE)
 
     @default_return(return_value='Undefined.')
     def get_serial_number(self):
@@ -187,7 +188,7 @@ class Eeprom:
         Returns:
             A string containing the hardware serial number for this chassis.
         """
-        return self._vpd.get_serial_number()
+        return self._get_eeprom_value(self._TLV_CODE_SERIAL_NUMBER)
 
     @default_return(return_value='Undefined.')
     def get_product_name(self):
@@ -197,7 +198,7 @@ class Eeprom:
         Returns:
             A string containing the hardware product name for this chassis.
         """
-        return self._vpd.get_product_name()
+        return self._get_eeprom_value(self._TLV_CODE_PRODUCT_NAME)
 
     @default_return(return_value='Undefined.')
     def get_part_number(self):
@@ -207,7 +208,7 @@ class Eeprom:
         Returns:
             A string containing the hardware part number for this chassis.
         """
-        return self._vpd.get_part_number()
+        return self._get_eeprom_value(self._TLV_CODE_PART_NUMBER)
 
     @default_return(return_value='Undefined.')
     def get_revision(self):
@@ -217,7 +218,7 @@ class Eeprom:
         Returns:
             string: Revision value of device
         """
-        return self._vpd.get_revision()
+        return self._get_eeprom_value(self._TLV_CODE_LABEL_REVISION)
 
     @default_return({})
     def get_system_eeprom_info(self):
@@ -229,4 +230,80 @@ class Eeprom:
             OCP ONIE TlvInfo EEPROM format and values are their corresponding
             values.
         """
-        raise NotImplementedError()
+        if not self._eeprom_info_dict:
+            self._eeprom_init()
+        return self._eeprom_info_dict
+
+    def _get_eeprom_value(self, code):
+        """Helper function to help get EEPROM data by code
+
+        Args:
+            code (int): EEPROM TLV code
+
+        Returns:
+            str: value of EEPROM TLV
+        """
+        eeprom_info_dict = self.get_system_eeprom_info()
+        return eeprom_info_dict[hex(code)]
+
+    def _eeprom_init_raw(self, tlvs_info):
+        """Initializes the _eeprom_raw by encoding tlvs_info's values via TlvInfoDecoder.encoder
+
+        Args:
+            tlvs_info (dict): EEPROM TLV types and values
+
+        Returns:
+            int: EEPROM CRC
+        """
+        encoded = [self.encoder((k,), v) for k,v in tlvs_info.items()]
+        tlvs = reduce(lambda x,y: x+y, encoded)
+
+        # adding TLV_CODE_CRC_32 [type, len] for checksum calculation
+        tlvs += bytearray([self._TLV_CODE_CRC_32]) + bytearray([4])
+
+        # 4 extra bytes for checksum value that is calculated and added later
+        tlvs_len = len(tlvs) + 4
+
+        tlvs_len_header = bytearray([(tlvs_len >> 8) & 0xFF]) + bytearray([tlvs_len & 0xFF])
+        header = self._TLV_INFO_ID_STRING + bytearray([self._TLV_INFO_VERSION]) + tlvs_len_header
+        raw = header + tlvs
+        checksum = self.calculate_checksum(raw)
+        raw += self.encode_checksum(checksum)
+        self._eeprom_raw = raw
+        return checksum
+
+    def _epprom_data_get(self):
+        data = {}
+        db_initialized = self._redis_hget('EEPROM_INFO|State', 'Initialized')
+        if db_initialized == '1':
+            for code in range(self._TLV_CODE_PRODUCT_NAME, self._TLV_CODE_CRC_32 + 1):
+                value = self._redis_hget('EEPROM_INFO|{}'.format(hex(code)), 'Value')
+                if value:
+                    data[code] = value
+        else:
+            data = {
+                self._TLV_CODE_MAC_BASE: self._fwmngr.get_base_mac(),
+                self._TLV_CODE_SERIAL_NUMBER: self._vpd.get_serial_number(),
+                self._TLV_CODE_PRODUCT_NAME: self._vpd.get_product_name(),
+                self._TLV_CODE_PART_NUMBER: self._vpd.get_part_number(),
+                self._TLV_CODE_LABEL_REVISION: self._vpd.get_revision(),
+            }
+        return data
+
+    def _eeprom_init(self):
+        """Initializes the _eeprom_raw and _eeprom_info_dict via data retrived from Vpd and FwManager
+
+        """
+        eeprom_data = self._epprom_data_get()
+        checksum = self._eeprom_init_raw(eeprom_data)
+
+        self._eeprom_info_dict = dict([(hex(k), v) for k,v in eeprom_data.items()])
+        self._eeprom_info_dict[hex(self._TLV_CODE_CRC_32)] = checksum
+
+    def read_eeprom(self):
+        """Overrides the TlvInfoDecoder.read_eeprom so the EPPROM is read from _eeprom_raw instead of a file
+
+        """
+        if not self._eeprom_raw:
+            self._eeprom_init()
+        return self._eeprom_raw
