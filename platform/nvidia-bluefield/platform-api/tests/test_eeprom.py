@@ -16,7 +16,6 @@
 #
 
 import os
-import pytest
 import sys
 
 from unittest.mock import patch
@@ -71,30 +70,88 @@ Device #1:
 
 """
 
+
+eeprom_info_dict = {
+            hex(Eeprom._TLV_CODE_SERIAL_NUMBER): 'MT2152X03653',
+            hex(Eeprom._TLV_CODE_PRODUCT_NAME): 'BlueField-2 DPU 100GbE Dual-Port QSFP56, integrated BMC, Secure Boot Enabled, Crypto Disabled, 32GB on-board DDR, 1GbE OOB management, FHHL',
+            hex(Eeprom._TLV_CODE_PART_NUMBER): 'MBF2H536C-CESOT',
+            hex(Eeprom._TLV_CODE_LABEL_REVISION): 'A5',
+            hex(Eeprom._TLV_CODE_MAC_BASE): '08:c0:eb:e1:4b:94'
+        }
+
+eeprom_redis_data = dict([((f'EEPROM_INFO|{k}', 'Value'), v) for k,v in eeprom_info_dict.items()])
+eeprom_redis_data[('EEPROM_INFO|State', 'Initialized')] = '1'
+
 @patch('sonic_py_common.device_info.get_platform', MagicMock(return_value=""))
 @patch('sonic_py_common.device_info.get_path_to_platform_dir', MagicMock(return_value=""))
 @patch('builtins.open', new_callable=mock_open, read_data=platform_sample)
 @patch('os.path.isfile', MagicMock(return_value=True))
 class TestEeprom:
-
+    @patch('sonic_platform.eeprom.FwManager._read_fw_info_raw', MagicMock(return_value=fwinfo_sample.split('\n')))
     @patch('sonic_platform.eeprom.Vpd._read_raw', MagicMock(return_value=vpd_sample.split('\n')))
-    def test_vpd(self, *args):
+    def test_read_vdp_fw_raw(self, *args):
         eeprom = Eeprom()
+        return_values = {
+            ('EEPROM_INFO|State', 'Initialized'): '0',
+        }
+        def side_effect(key, field):
+            return return_values.get((key, field))
+        eeprom._redis_hget = MagicMock(side_effect = side_effect)
+        assert eeprom.get_serial_number() == 'MT2152X03653'
+        assert eeprom.get_product_name() == 'BlueField-2 DPU 100GbE Dual-Port QSFP56, integrated BMC, Secure Boot Enabled, Crypto Disabled, 32GB on-board DDR, 1GbE OOB management, FHHL'
+        assert eeprom.get_part_number() == 'MBF2H536C-CESOT'
+        assert eeprom.get_revision() == 'A5'
+        assert eeprom.get_base_mac() == '08:c0:eb:e1:4b:94'
+
+        chassis = Chassis()
+        chassis._eeprom = eeprom
+        assert chassis.get_serial() == 'MT2152X03653'
+        assert chassis.get_name() == 'BlueField-2 DPU 100GbE Dual-Port QSFP56, integrated BMC, Secure Boot Enabled, Crypto Disabled, 32GB on-board DDR, 1GbE OOB management, FHHL'
+        assert chassis.get_model() == 'MBF2H536C-CESOT'
+        assert chassis.get_revision() == 'A5'
+        assert chassis.get_base_mac() == '08:c0:eb:e1:4b:94'
+
+    @patch('sonic_platform.eeprom.Eeprom.get_system_eeprom_info', MagicMock(return_value=eeprom_info_dict))
+    def test_get_system_eeprom_info(self, *args):
+        chassis = Chassis()
+        assert chassis.get_serial() == 'MT2152X03653'
+        assert chassis.get_name() == 'BlueField-2 DPU 100GbE Dual-Port QSFP56, integrated BMC, Secure Boot Enabled, Crypto Disabled, 32GB on-board DDR, 1GbE OOB management, FHHL'
+        assert chassis.get_model() == 'MBF2H536C-CESOT'
+        assert chassis.get_revision() == 'A5'
+        assert chassis.get_base_mac() == '08:c0:eb:e1:4b:94'
+        assert chassis.get_system_eeprom_info() == eeprom_info_dict
+
+    def test_get_system_eeprom_info_from_db(self, *args):
+        def side_effect(key, field):
+            return eeprom_redis_data.get((key, field))
+        eeprom = Eeprom()
+        eeprom._redis_hget = MagicMock(side_effect = side_effect)
         assert eeprom.get_serial_number() == "MT2152X03653"
         assert eeprom.get_product_name() == "BlueField-2 DPU 100GbE Dual-Port QSFP56, integrated BMC, Secure Boot Enabled, Crypto Disabled, 32GB on-board DDR, 1GbE OOB management, FHHL"
         assert eeprom.get_part_number() == "MBF2H536C-CESOT"
         assert eeprom.get_revision() == "A5"
 
-        chassis = Chassis()
-        assert chassis.get_serial() == "MT2152X03653"
-        assert chassis.get_name() == "BlueField-2 DPU 100GbE Dual-Port QSFP56, integrated BMC, Secure Boot Enabled, Crypto Disabled, 32GB on-board DDR, 1GbE OOB management, FHHL"
-        assert chassis.get_model() == "MBF2H536C-CESOT"
-        assert chassis.get_revision() == "A5"
 
     @patch('sonic_platform.eeprom.FwManager._read_fw_info_raw', MagicMock(return_value=fwinfo_sample.split('\n')))
-    def test_fwinfo(self, *args):
+    @patch('sonic_platform.eeprom.Vpd._read_raw', MagicMock(return_value=vpd_sample.split('\n')))
+    def test_read_eeprom(self, *args):
+        types = [
+            Eeprom._TLV_CODE_MAC_BASE,
+            Eeprom._TLV_CODE_SERIAL_NUMBER,
+            Eeprom._TLV_CODE_PRODUCT_NAME,
+            Eeprom._TLV_CODE_PART_NUMBER,
+            Eeprom._TLV_CODE_LABEL_REVISION
+        ]
         eeprom = Eeprom()
-        assert eeprom.get_base_mac() == "08:c0:eb:e1:4b:94"
+        return_values = {
+            ('EEPROM_INFO|State', 'Initialized'): '0',
+        }
+        def side_effect(key, field):
+            return return_values.get((key, field))
+        eeprom._redis_hget = MagicMock(side_effect = side_effect)
 
-        chassis = Chassis()
-        assert chassis.get_base_mac() == "08:c0:eb:e1:4b:94"
+        eeprom_data = eeprom.read_eeprom()
+        for t in types:
+            assert hex(t) in eeprom.get_system_eeprom_info()
+            exists, _ = eeprom.get_tlv_field(eeprom_data, t)
+            assert exists
