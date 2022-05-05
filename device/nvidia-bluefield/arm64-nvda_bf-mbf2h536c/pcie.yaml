@@ -1,0 +1,30 @@
+- bus: '00'
+  dev: '00'
+  fn: '0'
+  id: a2d5
+  name: 'PCI bridge: Mellanox Technologies MT42822 BlueField-2 SoC Crypto disabled
+    (rev 01)'
+- bus: '01'
+  dev: '00'
+  fn: '0'
+  id: '1978'
+  name: 'PCI bridge: Mellanox Technologies MT42822 Family [BlueField-2 SoC PCIe Bridge]
+    (rev 01)'
+- bus: '02'
+  dev: '00'
+  fn: '0'
+  id: '1978'
+  name: 'PCI bridge: Mellanox Technologies MT42822 Family [BlueField-2 SoC PCIe Bridge]
+    (rev 01)'
+- bus: '03'
+  dev: '00'
+  fn: '0'
+  id: a2d6
+  name: 'Ethernet controller: Mellanox Technologies MT42822 BlueField-2 integrated
+    ConnectX-6 Dx network controller (rev 01)'
+- bus: '03'
+  dev: '00'
+  fn: '1'
+  id: a2d6
+  name: 'Ethernet controller: Mellanox Technologies MT42822 BlueField-2 integrated
+    ConnectX-6 Dx network controller (rev 01)'
