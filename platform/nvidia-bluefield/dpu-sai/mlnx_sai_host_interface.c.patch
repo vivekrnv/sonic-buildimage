@@ -1,0 +1,21 @@
+diff --git a/mlnx_sai/src/mlnx_sai_host_interface.c b/mlnx_sai/src/mlnx_sai_host_interface.c
+index 6a9274c..8a40f97 100644
+--- a/mlnx_sai/src/mlnx_sai_host_interface.c
++++ b/mlnx_sai/src/mlnx_sai_host_interface.c
+@@ -323,6 +323,16 @@ static sai_status_t mlnx_create_host_interface(_Out_ sai_object_id_t     * hif_i
+         return status;
+     }
+ 
++    char cmd[256];
++    snprintf(cmd, sizeof(cmd), "ip link del %s", name->chardata);
++    status = system(cmd);
++
++    snprintf(cmd, sizeof(cmd), "ip link add %s type dummy", name->chardata);
++    if (SAI_STATUS_SUCCESS != system(cmd)) {
++        SX_LOG_ERR("Failed to create host interface - %s\n", cmd);
++        return SAI_STATUS_FAILURE;
++    }
++
+     host_interface_key_to_str(*hif_id, key_str);
+     SX_LOG_NTC("Created host interface %s\n", key_str);
+ 
