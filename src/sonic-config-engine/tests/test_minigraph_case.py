@@ -14,6 +14,7 @@ BMC_MGMT_TOR_ROUTER = 'BmcMgmtToRRouter'
 class TestCfgGenCaseInsensitive(TestCase):
 
     def setUp(self):
+        self.yang = utils.YangWrapper()
         self.test_dir = os.path.dirname(os.path.realpath(__file__))
         self.script_file = utils.PYTHON_INTERPRETTER + ' ' + os.path.join(self.test_dir, '..', 'sonic-cfggen')
         self.sample_graph = os.path.join(self.test_dir, 'simple-sample-graph-case.xml')
@@ -24,6 +25,8 @@ class TestCfgGenCaseInsensitive(TestCase):
 
     def run_script(self, argument, check_stderr=False):
         print('\n    Running sonic-cfggen ' + argument)
+        self.assertTrue(self.yang.validate(argument))
+
         if check_stderr:
             output = subprocess.check_output(self.script_file + ' ' + argument, stderr=subprocess.STDOUT, shell=True)
         else:
@@ -45,27 +48,27 @@ class TestCfgGenCaseInsensitive(TestCase):
         self.assertEqual(output, '')
 
     def test_minigraph_sku(self):
-        argument = '-v "DEVICE_METADATA[\'localhost\'][\'hwsku\']" -m "' + self.sample_graph + '"'
+        argument = '-v "DEVICE_METADATA[\'localhost\'][\'hwsku\']" -m "' + self.sample_graph + '" -p "' + self.port_config + '"'
         output = self.run_script(argument)
         self.assertEqual(output.strip(), 'Force10-S6000')
 
     def test_print_data(self):
-        argument = '-m "' + self.sample_graph + '" --print-data'
+        argument = '-m "' + self.sample_graph + '" -p "' + self.port_config + '" --print-data'
         output = self.run_script(argument)
         self.assertTrue(len(output.strip()) > 0)
 
     def test_jinja_expression(self):
-        argument = '-m "' + self.sample_graph + '" -v "DEVICE_METADATA[\'localhost\'][\'type\']"'
+        argument = '-m "' + self.sample_graph + '" -p "' + self.port_config + '" -v "DEVICE_METADATA[\'localhost\'][\'type\']"'
         output = self.run_script(argument)
         self.assertEqual(output.strip(), 'ToRRouter')
 
     def test_minigraph_subtype(self):
-        argument = '-m "' + self.sample_graph + '" -v "DEVICE_METADATA[\'localhost\'][\'subtype\']"'
+        argument = '-m "' + self.sample_graph + '" -p "' + self.port_config + '" -v "DEVICE_METADATA[\'localhost\'][\'subtype\']"'
         output = self.run_script(argument)
         self.assertEqual(output.strip(), 'DualToR')
 
     def test_minigraph_peer_switch_hostname(self):
-        argument = '-m "' + self.sample_graph + '" -v "DEVICE_METADATA[\'localhost\'][\'peer_switch\']"'
+        argument = '-m "' + self.sample_graph + '" -p "' + self.port_config + '" -v "DEVICE_METADATA[\'localhost\'][\'peer_switch\']"'
         output = self.run_script(argument)
         self.assertEqual(output.strip(), 'switch2-t0')
 
@@ -157,7 +160,7 @@ class TestCfgGenCaseInsensitive(TestCase):
         )
 
     def test_minigraph_console_mgmt_feature(self):
-        argument = '-m "' + self.sample_graph + '" -v CONSOLE_SWITCH'
+        argument = '-m "' + self.sample_graph + '" -p "' + self.port_config + '" -v CONSOLE_SWITCH'
         output = self.run_script(argument)
         self.assertEqual(
             utils.to_dict(output.strip()),
