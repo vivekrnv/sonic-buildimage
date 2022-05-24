@@ -24,7 +24,7 @@ DERIVED_TARGETS = $(SDN_APPL_DEV)
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	# get sources
 	rm -rf SDN_appliance/ SDN_appliance.zip
-	
+
 	# get sources
 	wget $(DOCA_SDK_SOURCE_BASE_URL)/SDN_appliance.zip
 	unzip SDN_appliance.zip
@@ -32,7 +32,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	pushd SDN_appliance/
 
 	# Build the Debs
-	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j1 --admindir $(SONIC_DPKG_ADMINDIR)
 
 	popd
 	mv $(DERIVED_TARGETS) $* $(DEST)/

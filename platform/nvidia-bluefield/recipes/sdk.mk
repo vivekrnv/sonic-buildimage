@@ -154,11 +154,11 @@ export DOCA_DPDK DOCA_DPDK_DEV
 SDN_APPL_VER=1.5-1mlnx1
 SDN_APPL = sdn-appliance_${SDN_APPL_VER}_${CONFIGURED_ARCH}.deb
 $(SDN_APPL)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/sdn
-$(SDN_APPL)_DEPENDS = $(DOCA_DPDK_DEV) 
 $(SDN_APPL)_RDEPENDS = $(DOCA_DPDK)
 
 SDN_APPL_DEV = sdn-appliance-dev_${DOCA_DPDK_VER}_${CONFIGURED_ARCH}.deb
 ifeq ($(SDK_FROM_SRC),y)
+$(SDN_APPL)_DEPENDS = $(DOCA_DPDK_DEV)
 $(eval $(call add_derived_package,$(SDN_APPL),$(SDN_APPL_DEV)))
 endif
 

@@ -15,12 +15,14 @@
 # limitations under the License.
 #
 
-DPU_SAI_VERSION = SAIRel0.0.1.0
+DPU_SAI_VERSION = SAIRel0.0.2.0
 
 export DPU_SAI_VERSION
 
 DPU_SAI = mlnx-sai_1.mlnx.$(DPU_SAI_VERSION)_arm64.deb
 $(DPU_SAI)_SRC_PATH = $(PLATFORM_PATH)/dpu-sai
+$(DPU_SAI)_DEPENDS = $(SDN_APPL)
+$(DPU_SAI)_RDEPENDS = $(SDN_APPL)
 
 DPU_SAI_DBGSYM = mlnx-sai-dbgsym_1.mlnx.$(DPU_SAI_VERSION)_arm64.deb
 $(eval $(call add_derived_package,$(DPU_SAI),$(DPU_SAI_DBGSYM)))
