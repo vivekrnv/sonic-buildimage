@@ -19,14 +19,16 @@ DOCA_SDK_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin
 
 # Place here URL where SDK sources exist
 DOCA_SDK_SOURCE_BASE_URL =
+DOCA_SDK_VERSION = 0.1-RC11
 
 ifneq ($(DOCA_SDK_SOURCE_BASE_URL), )
 SDK_FROM_SRC = y
+DOCA_SDK_SOURCE_URL = $(DOCA_SDK_SOURCE_BASE_URL)/$(subst -,/,$(DOCA_SDK_VERSION))
 else
 SDK_FROM_SRC = n
 endif
 
-export DOCA_SDK_SOURCE_BASE_URL
+export DOCA_SDK_SOURCE_URL
 
 ### RDMA
 RDMA_CORE_VER=33.1-1

@@ -26,7 +26,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf rdma-core.hws.fdb/ rdma-core.hws.fdb.zip
 	
 	# get sources
-	wget $(DOCA_SDK_SOURCE_BASE_URL)/rdma-core.hws.fdb.zip
+	wget $(DOCA_SDK_SOURCE_URL)/rdma-core.hws.fdb.zip
 	unzip rdma-core.hws.fdb.zip
 	
 	# build

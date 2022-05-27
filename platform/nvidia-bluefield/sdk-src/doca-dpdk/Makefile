@@ -26,7 +26,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf doca_dpdk/ doca_dpdk.zip
 	
 	# get sources
-	wget $(DOCA_SDK_SOURCE_BASE_URL)/doca_dpdk.zip
+	wget $(DOCA_SDK_SOURCE_URL)/doca_dpdk.zip
 	unzip doca_dpdk.zip
 
 	pushd doca_dpdk/

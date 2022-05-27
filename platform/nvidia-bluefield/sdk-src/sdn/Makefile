@@ -26,7 +26,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf SDN_appliance/ SDN_appliance.zip
 
 	# get sources
-	wget $(DOCA_SDK_SOURCE_BASE_URL)/SDN_appliance.zip
+	wget $(DOCA_SDK_SOURCE_URL)/SDN_appliance.zip
 	unzip SDN_appliance.zip
 
 	pushd SDN_appliance/
