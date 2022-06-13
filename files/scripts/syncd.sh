@@ -56,7 +56,7 @@ function waitplatform() {
             fi
         else
             debug "Starting pmon service..."
-            /bin/systemctl start pmon
+            #/bin/systemctl start pmon
             debug "Started pmon service"
         fi
     fi
@@ -77,7 +77,7 @@ function stopplatform1() {
 
     if [[ x$sonic_asic_platform == x"mellanox" ]] && [[ x$TYPE == x"cold" ]]; then
         debug "Stopping pmon service ahead of syncd..."
-        /bin/systemctl stop pmon
+        #/bin/systemctl stop pmon
         debug "Stopped pmon service"
     fi
 
