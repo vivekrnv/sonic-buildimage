@@ -44,11 +44,11 @@ class TestJ2Files(TestCase):
 
     def test_interfaces(self):
         interfaces_template = os.path.join(self.test_dir, '..', '..', '..', 'files', 'image_config', 'interfaces', 'interfaces.j2')
-        argument = '-m ' + self.t0_minigraph + ' -a \'{\"hwaddr\":\"e4:1d:2d:a5:f3:ad\"}\' -t ' + interfaces_template + ' > ' + self.output_file
+        argument = '-m ' + self.t0_minigraph + ' -p ' + self.t0_port_config + ' -a \'{\"hwaddr\":\"e4:1d:2d:a5:f3:ad\"}\' -t ' + interfaces_template + ' > ' + self.output_file
         self.run_script(argument)
         self.assertTrue(utils.cmp(os.path.join(self.test_dir, 'sample_output', utils.PYvX_DIR, 'interfaces'), self.output_file))
 
-        argument = '-m ' + self.t0_mvrf_minigraph + ' -a \'{\"hwaddr\":\"e4:1d:2d:a5:f3:ad\"}\' -t ' + interfaces_template + ' > ' + self.output_file
+        argument = '-m ' + self.t0_mvrf_minigraph + ' -p ' + self.t0_port_config + ' -a \'{\"hwaddr\":\"e4:1d:2d:a5:f3:ad\"}\' -t ' + interfaces_template + ' > ' + self.output_file
         self.run_script(argument)
         self.assertTrue(utils.cmp(os.path.join(self.test_dir, 'sample_output', utils.PYvX_DIR, 'mvrf_interfaces'), self.output_file))
 
@@ -212,8 +212,8 @@ class TestJ2Files(TestCase):
         sample_output_file = os.path.join(self.test_dir, 'sample_output', utils.PYvX_DIR, 'qos-arista7050.json')
         assert utils.cmp(sample_output_file, self.output_file), self.run_diff(sample_output_file, self.output_file)
 
-    def test_qos_and_buffer_arista7800r3_48cq2_lc_render_template(self):
-        arista_dir_path = os.path.join(self.test_dir, '..', '..', '..', 'device', 'arista', 'x86_64-arista_7800r3_48cq2_lc', 'Arista-7800R3-48CQ2-C48')
+    def do_test_qos_and_buffer_arista7800r3_48cq2_lc_render_template(self, platform, hwsku):
+        arista_dir_path = os.path.join(self.test_dir, '..', '..', '..', 'device', 'arista', platform, hwsku)
         qos_file = os.path.join(arista_dir_path, 'qos.json.j2')
         buffer_file = os.path.join(arista_dir_path, 'buffers.json.j2')
         port_config_ini_file = os.path.join(arista_dir_path, 'port_config.ini')
@@ -235,6 +235,12 @@ class TestJ2Files(TestCase):
 
             sample_output_file = os.path.join(self.test_dir, 'sample_output', utils.PYvX_DIR, sample_output_file)
             assert utils.cmp(sample_output_file, self.output_file), self.run_diff(sample_output_file, self.output_file)
+
+    def test_qos_and_buffer_arista7800r3_48cq2_lc_render_template(self):
+        self.do_test_qos_and_buffer_arista7800r3_48cq2_lc_render_template('x86_64-arista_7800r3_48cq2_lc', 'Arista-7800R3-48CQ2-C48')
+
+    def test_qos_and_buffer_arista7800r3_48cqm2_lc_render_template(self):
+        self.do_test_qos_and_buffer_arista7800r3_48cq2_lc_render_template('x86_64-arista_7800r3_48cqm2_lc', 'Arista-7800R3-48CQM2-C48')
 
     def test_qos_dell9332_render_template(self):
         dell_dir_path = os.path.join(self.test_dir, '..', '..', '..', 'device', 'dell', 'x86_64-dellemc_z9332f_d1508-r0', 'DellEMC-Z9332f-O32')
@@ -273,6 +279,49 @@ class TestJ2Files(TestCase):
 
         sample_output_file = os.path.join(self.test_dir, 'sample_output', utils.PYvX_DIR, 'qos-dell6100.json')
         assert utils.cmp(sample_output_file, self.output_file), self.run_diff(sample_output_file, self.output_file)
+
+    def test_qos_dscp_remapping_render_template(self):
+        if utils.PYvX_DIR != 'py3':
+            # Skip on python2 as the change will not be backported to previous version
+            return
+
+        dir_paths = [
+            '../../../device/arista/x86_64-arista_7050cx3_32s/Arista-7050CX3-32S-D48C8',
+            '../../../device/arista/x86_64-arista_7260cx3_64/Arista-7260CX3-D108C8',
+            '../../../device/arista/x86_64-arista_7260cx3_64/Arista-7260CX3-C64'
+            ]
+        sample_outputs = [
+            'qos-arista7050cx3-dualtor.json',
+            'qos-arista7260-dualtor.json',
+            'qos-arista7260-t1.json'
+        ]
+        sample_minigraph_files = [
+            'sample-arista-7050cx3-dualtor-minigraph.xml',
+            'sample-arista-7260-dualtor-minigraph.xml',
+            'sample-arista-7260-t1-minigraph.xml'
+        ]
+        for i, path in enumerate(dir_paths):
+            device_template_path = os.path.join(self.test_dir, path)
+            sample_output = sample_outputs[i]
+            sample_minigraph_file = os.path.join(self.test_dir,sample_minigraph_files[i])
+            qos_file = os.path.join(device_template_path, 'qos.json.j2')
+            port_config_ini_file = os.path.join(device_template_path, 'port_config.ini')
+            test_output = os.path.join(self.test_dir, 'output.json')
+
+            # copy qos_config.j2 to the target directory to have all templates in one directory
+            qos_config_file = os.path.join(self.test_dir, '..', '..', '..', 'files', 'build_templates', 'qos_config.j2')
+            shutil.copy2(qos_config_file, device_template_path)
+
+            argument = '-m ' + sample_minigraph_file + ' -p ' + port_config_ini_file + ' -t ' + qos_file + ' > ' + test_output
+            self.run_script(argument)
+
+            # cleanup
+            qos_config_file_new = os.path.join(device_template_path, 'qos_config.j2')
+            os.remove(qos_config_file_new)
+
+            sample_output_file = os.path.join(self.test_dir, 'sample_output', utils.PYvX_DIR, sample_output)
+            assert utils.cmp(sample_output_file, test_output)
+            os.remove(test_output)
 
     def _test_buffers_render_template(self, vendor, platform, sku, minigraph, buffer_template, expected):
         dir_path = os.path.join(self.test_dir, '..', '..', '..', 'device', vendor, platform, sku)
@@ -326,16 +375,18 @@ class TestJ2Files(TestCase):
         test_list = {
             "t1": {
                 "graph": self.t1_mlnx_minigraph,
+                "port_config": self.mlnx_port_config,
                 "output": "t1-switch.json"
             },
             "t0": {
                 "graph": self.t0_minigraph,
+                "port_config": self.t0_port_config,
                 "output": "t0-switch.json"
             },
         }
         for _, v in test_list.items():
-            argument = " -m {} -y {} -t {} > {}".format(
-                v["graph"], constants_yml, switch_template, self.output_file
+            argument = " -m {} -p {} -y {} -t {} > {}".format(
+                v["graph"], v["port_config"], constants_yml, switch_template, self.output_file
             )
             sample_output_file = os.path.join(
                 self.test_dir, 'sample_output', v["output"]
