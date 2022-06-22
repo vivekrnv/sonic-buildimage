@@ -30,6 +30,7 @@ import argparse
 import sys
 import threading
 import time
+import docker
 
 from docker import APIClient
 from sonic_py_common import logger, device_info
@@ -47,8 +48,12 @@ g_dep_services = []
 
 def wait_for_container(docker_client, container_name):
     while True:
-        while docker_client.inspect_container(container_name)['State']['Status'] != "running":
+        try:
+            while docker_client.inspect_container(container_name)['State']['Status'] != "running":
+                time.sleep(1)
+        except docker.errors.NotFound:
             time.sleep(1)
+            continue
 
         docker_client.wait(container_name)
 

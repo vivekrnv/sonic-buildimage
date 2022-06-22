@@ -214,9 +214,9 @@ wait() {
         ALL_PEERS_RUNNING=true
         for peer in ${PEER}; do
             if [[ ! -z $DEV ]]; then
-                RUNNING=$(docker inspect -f '{{.State.Running}}' ${peer}$DEV)
+                RUNNING=$(docker inspect -f '{{.State.Running}}' ${peer}$DEV 2>/dev/null)
             else
-                RUNNING=$(docker inspect -f '{{.State.Running}}' ${peer})
+                RUNNING=$(docker inspect -f '{{.State.Running}}' ${peer} 2>/dev/null)
             fi
             if [[ x"$RUNNING" != x"true" ]]; then
                 ALL_PEERS_RUNNING=false
@@ -226,9 +226,9 @@ wait() {
         ALL_DEPS_RUNNING=true
         for dep in ${MULTI_INST_DEPENDENT}; do
             if [[ ! -z $DEV ]]; then
-                DEP_RUNNING=$(docker inspect -f '{{.State.Running}}' ${dep}$DEV)
+                DEP_RUNNING=$(docker inspect -f '{{.State.Running}}' ${dep}$DEV 2>/dev/null)
             else
-                DEP_RUNNING=$(docker inspect -f '{{.State.Running}}' ${dep})
+                DEP_RUNNING=$(docker inspect -f '{{.State.Running}}' ${dep} 2>/dev/null)
             fi
             if [[ x"$DEP_RUNNING" != x"true" ]]; then
                 ALL_DEPS_RUNNING=false
