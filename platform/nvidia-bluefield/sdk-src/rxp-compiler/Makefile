@@ -15,18 +15,27 @@
 # limitations under the License.
 #
 
-DPU_SAI_VERSION = SAIRel0.0.2.1
+.ONESHELL:
+SHELL = /bin/bash
 
-export DPU_SAI_VERSION
+MAIN_TARGET = $(RXPCOMPILER)
+DERIVED_TARGETS = $(LIBRXPCOMPILER_DEV)
 
-DPU_SAI = mlnx-sai_1.mlnx.$(DPU_SAI_VERSION)_arm64.deb
-$(DPU_SAI)_SRC_PATH = $(PLATFORM_PATH)/dpu-sai
-$(DPU_SAI)_DEPENDS = $(SDN_APPL) $(SDN_APPL_DEV)
-$(DPU_SAI)_RDEPENDS = $(SDN_APPL)
+$(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	# get sources
+	rm -rf rxp-tools/ rxp-tools.zip
+	
+	# get sources
+	wget $(DOCA_SDK_SOURCE_URL)/rxp-tools.zip
+	unzip rxp-tools.zip
 
-DPU_SAI_DBGSYM = mlnx-sai-dbgsym_1.mlnx.$(DPU_SAI_VERSION)_arm64.deb
-$(eval $(call add_derived_package,$(DPU_SAI),$(DPU_SAI_DBGSYM)))
-SONIC_MAKE_DEBS += $(DPU_SAI)
+	pushd rxp-tools/
+	find . -type f -exec touch {} +
 
-export DPU_SAI
-export DPU_SAI_DBGSYM
+	# Build the Debs
+	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+
+	popd
+	mv $(DERIVED_TARGETS) $* $(DEST)/
+
+$(addprefix $(DEST)/, $(DERIVED_TARGETS)): $(DEST)/% : $(DEST)/$(MAIN_TARGET)

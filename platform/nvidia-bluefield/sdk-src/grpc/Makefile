@@ -18,22 +18,23 @@
 .ONESHELL:
 SHELL = /bin/bash
 
-MAIN_TARGET = $(DPDK)
-DERIVED_TARGETS = $(DPDK_DEV)
+MAIN_TARGET = $(LIBGRPC_DEV)
+DERIVED_TARGETS = $(LIBGRPC_DERIVED_DEBS)
+LIBGRPC_TAR = libgrpc-dev_$(LIBGRPC_VER).tar.gz
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	
-	rm -rf dpdk.org/ dpdk.org.zip
+	# get sources
+	rm -rf grpc/ $(LIBGRPC_TAR)
 
 	# get sources
-	wget $(DOCA_SDK_SOURCE_URL)/dpdk.org.zip
-	unzip dpdk.org.zip
-	pushd dpdk.org/
+	wget $(DOCA_SDK_SOURCE_URL)/$(LIBGRPC_TAR)
+	tar xf $(LIBGRPC_TAR)
+
+	pushd grpc/
 	find . -type f -exec touch {} +
 
-	# Build the package
-	# PATH variable is required for ninja to find the right version
-	PATH=/usr/bin/:$(PATH) DPDK_CONFIG_OPTIONS='--cross-file ../config/arm/arm64_bluefield_linux_gcc' DEB_BUILD_OPTIONS='dpdk_config_options=-Dmachine=0xd08' dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	# Build the Debs
+	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 
 	popd
 	mv $(DERIVED_TARGETS) $* $(DEST)/

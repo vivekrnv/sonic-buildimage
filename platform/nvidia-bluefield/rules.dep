@@ -41,3 +41,4 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-openipmi.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-api.dep
 # include $(PLATFORM_PATH)/$(RECIPE_DIR)/libpka.dep
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/installer-image.dep
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/sdk.dep

@@ -18,21 +18,14 @@
 .ONESHELL:
 SHELL = /bin/bash
 
-MAIN_TARGET = $(DOCA_DPDK)
-DERIVED_TARGETS = $(DOCA_DPDK_DEV)
+MAIN_TARGET = $(UCX)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	# get sources
-	rm -rf doca_dpdk/ doca_dpdk.zip
-	
-	# get sources
-	wget $(DOCA_SDK_SOURCE_URL)/doca_dpdk.zip
-	unzip doca_dpdk.zip
+	pushd ucx/
+	find . -type f -exec touch {} +
 
-	pushd doca_dpdk/
-
-	# Temp Fix
-	chmod -x debian/*
+	./autogen.sh
+	./contrib/configure-release
 
 	# Build the Debs
 	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)

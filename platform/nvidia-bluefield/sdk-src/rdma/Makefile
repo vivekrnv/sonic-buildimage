@@ -19,18 +19,21 @@
 SHELL = /bin/bash
 
 MAIN_TARGET = $(RDMA_CORE)
-DERIVED_TARGETS = $(RDMA_CORE_DEBS) $(RDMA_CORE_DBGSYM_DEBS) $(RDMA_CORE_DEV_DEBS)
+DERIVED_TARGETS = $(RDMA_CORE_DERIVED_DEBS)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	
-	rm -rf rdma-core.hws.fdb/ rdma-core.hws.fdb.zip
+	rm -rf rdma-core/ rdma-core.zip
 	
 	# get sources
-	wget $(DOCA_SDK_SOURCE_URL)/rdma-core.hws.fdb.zip
-	unzip rdma-core.hws.fdb.zip
+	wget $(DOCA_SDK_SOURCE_URL)/rdma-core.zip
+	unzip rdma-core.zip
 	
 	# build
-	pushd rdma-core.hws.fdb/
+	pushd rdma-core/
+	patch -p1 < ../disable-ibverb-dependencies.patch
+
+	find . -type f -exec touch {} +
 
 	# Build the Debs
 	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)

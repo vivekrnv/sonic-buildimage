@@ -19,7 +19,7 @@ DOCA_SDK_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin
 
 # Place here URL where SDK sources exist
 DOCA_SDK_SOURCE_BASE_URL =
-DOCA_SDK_VERSION = 0.1-RC11
+DOCA_SDK_VERSION = 0.1-RC16
 
 ifneq ($(DOCA_SDK_SOURCE_BASE_URL), )
 SDK_FROM_SRC = y
@@ -28,159 +28,196 @@ else
 SDK_FROM_SRC = n
 endif
 
-export DOCA_SDK_SOURCE_URL
+export DOCA_SDK_VERSION DOCA_SDK_SOURCE_URL
 
-### RDMA
-RDMA_CORE_VER=33.1-1
+SDK_DEBS =
+
+# RDMA and derived packages
+
+RDMA_CORE_VER=56mlnx40-1
 
 RDMA_CORE = rdma-core_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
 $(RDMA_CORE)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/rdma
-$(RDMA_CORE)_DEPENDS = $(LIBNL3_DEV) $(LIBNL_ROUTE3_DEV)
 $(RDMA_CORE)_RDEPENDS = $(LIBNL3) $(ETHTOOL)
+$(RDMA_CORE)_DEPENDS = $(LIBNL3_DEV) $(LIBNL_ROUTE3_DEV)
 RDMA_CORE_DBGSYM = rdma-core-dbgsym_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-ifeq ($(SDK_FROM_SRC),y)
-$(eval $(call add_extra_package,$(RDMA_CORE),$(RDMA_CORE_DBGSYM)))
-endif
 
-# Derived debs from rdma-core
 IB_VERBS_PROV = ibverbs-providers_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
+$(IB_VERBS_PROV)_DEPENDS = $(LIBNL3_DEV) $(LIBNL_ROUTE3_DEV)
 IB_VERBS_PROV_DBGSYM = ibverbs-providers-dbgsym_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-$(IB_VERBS_PROV)_DEPENDS = $(IB_VERBS)
-$(IB_VERBS_PROV)_RDEPENDS = $(IB_VERBS)
-$(IB_VERBS_PROV_DBGSYM)_DEPENDS = $(IB_VERBS_DBGSYM)
-$(IB_VERBS_PROV_DBGSYM)_RDEPENDS = $(IB_VERBS_DBGSYM)
-ifeq ($(SDK_FROM_SRC),y)
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_VERBS_PROV)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_VERBS_PROV_DBGSYM)))
-endif
 
 IB_VERBS = libibverbs1_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-IB_VERBS_DBGSYM = libibverbs1-dbgsym_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-IB_VERBS_DEV = libibverbs-dev_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
 $(IB_VERBS)_DEPENDS = $(LIBNL3_DEV) $(LIBNL_ROUTE3_DEV)
-$(IB_VERBS_DBGSYM)_DEPENDS = $(LIBNL3_DEV) $(LIBNL_ROUTE3_DEV)
-$(IB_VERBS_DEV)_DEPENDS = $(IB_VERBS_PROV)
-ifeq ($(SDK_FROM_SRC),y)
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_VERBS)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_VERBS_DBGSYM)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_VERBS_DEV)))
-endif
+IB_VERBS_DEV = libibverbs-dev_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
+IB_VERBS_DBGSYM = libibverbs1-dbg_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
 
 IB_UMAD = libibumad3_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-IB_UMAD_DBGSYM = libibumad3-dbgsym_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
 IB_UMAD_DEV = libibumad-dev_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
+IB_UMAD_DBGSYM = libibumad3-dbg_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
+
+$(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS_PROV)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS_DEV)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(IB_UMAD)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(IB_UMAD_DEV)))
+
 ifeq ($(SDK_FROM_SRC),y)
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_UMAD)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_UMAD_DBGSYM)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_UMAD_DEV)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(RDMA_CORE_DBGSYM)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS_PROV_DBGSYM)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS_DBGSYM)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(IB_UMAD_DBGSYM)))
 endif
 
-RDMA_CM = librdmacm1_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-RDMA_CM_DBGSYM = librdmacm1-dbgsym_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-RDMA_CM_DEV = librdmacm-dev_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-ifeq ($(SDK_FROM_SRC),y)
-$(eval $(call add_extra_package,$(RDMA_CORE),$(RDMA_CM)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(RDMA_CM_DBGSYM)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(RDMA_CM_DEV)))
-endif
+export RDMA_CORE RDMA_CORE_DBGSYM
+export IB_VERBS IB_VERBS_DEV IB_VERBS_DBGSYM
+export IB_VERBS_PROV IB_VERBS_PROV_DBGSYM
+export IB_UMAD IB_UMAD_DEV IB_UMAD_DBGSYM
 
-IB_MAD = libibmad5_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-$(IB_MAD)_DEPENDS = $(IB_UMAD)
-$(IB_MAD)_RDEPENDS = $(IB_UMAD)
-IB_MAD_DBGSYM = libibmad5-dbgsym_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-$(IB_MAD_DBGSYM)_DEPENDS = $(IB_UMAD_DBGSYM)
-$(IB_MAD_DBGSYM)_RDEPENDS = $(IB_UMAD_DBGSYM)
-IB_MAD_DEV = libibmad-dev_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-ifeq ($(SDK_FROM_SRC),y)
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_MAD)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_MAD_DBGSYM)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_MAD_DEV)))
-endif
+RDMA_CORE_DERIVED_DEBS = $(RDMA_CORE_DBGSYM) \
+		$(IB_VERBS) \
+		$(IB_VERBS_DEV) \
+		$(IB_VERBS_DBGSYM) \
+		$(IB_VERBS_PROV) \
+		$(IB_VERBS_PROV_DBGSYM) \
+		$(IB_UMAD) \
+		$(IB_UMAD_DEV) \
+		$(IB_UMAD_DBGSYM)
 
-IB_NET_DISC = libibnetdisc5_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-IB_NET_DISC_DBGSYM = libibnetdisc5-dbgsym_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-IB_NET_DISC_DEV = libibnetdisc-dev_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
-ifeq ($(SDK_FROM_SRC),y)
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_NET_DISC)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_NET_DISC_DBGSYM)))
-$(eval $(call add_extra_package,$(RDMA_CORE),$(IB_NET_DISC_DEV)))
-endif
+export RDMA_CORE_DERIVED_DEBS
 
-RDMA_CORE_DEBS += $(IB_VERBS_PROV) $(IB_VERBS) $(RDMA_CM) \
-				  $(IB_UMAD) $(IB_MAD) $(IB_NET_DISC)
+SDK_DEBS += $(RDMA_CORE) $(RDMA_CORE_DERIVED_DEBS)
 
-RDMA_CORE_DBGSYM_DEBS += $(RDMA_CORE_DBGSYM) $(IB_VERBS_PROV_DBGSYM) \
-				 $(IB_VERBS_DBGSYM) $(IB_UMAD_DBGSYM) $(RDMA_CM_DBGSYM) \
-				 $(IB_MAD_DBGSYM) $(IB_NET_DISC_DBGSYM)
+# DPDK and derived packages
 
-RDMA_CORE_DEV_DEBS += $(IB_VERBS_DEV) $(IB_UMAD_DEV) $(RDMA_CM_DEV) $(IB_MAD_DEV) $(IB_NET_DISC_DEV)
+DPDK_VER=20.11.0-4.1.9
 
-export RDMA_CORE RDMA_CORE_DEBS RDMA_CORE_DBGSYM_DEBS RDMA_CORE_DEV_DEBS
+DPDK = mlnx-dpdk_${DPDK_VER}_${CONFIGURED_ARCH}.deb
+$(DPDK)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/dpdk
+$(DPDK)_RDEPENDS = $(IB_VERBS_PROV) $(IB_VERBS)
 
-### DPDK with Hardware Steering
+DPDK_DEV = mlnx-dpdk-dev_${DPDK_VER}_${CONFIGURED_ARCH}.deb
+$(DPDK)_DEPENDS = $(RDMA_CORE) $(IB_VERBS_PROV) $(IB_VERBS) $(IB_VERBS_DEV)
+$(DPDK_DEV)_RDEPENDS = $(DPDK)
 
-DPDK_VER=21.02-1mlnx1
+$(eval $(call add_derived_package,$(DPDK),$(DPDK_DEV)))
 
-DPDK_HWS = dpdk.hws_${DPDK_VER}_${CONFIGURED_ARCH}.deb
-$(DPDK_HWS)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/dpdk
-$(DPDK_HWS)_DEPENDS = $(IB_VERBS_PROV) $(IB_VERBS_DEV) $(RDMA_CORE) $(IB_MAD) $(IB_NET_DISC) $(RDMA_CM)
-$(DPDK_HWS)_RDEPENDS = $(IB_VERBS_PROV) $(IB_VERBS) $(RDMA_CORE) $(IB_MAD) $(IB_NET_DISC) $(RDMA_CM)
+export DPDK DPDK_DEV
 
-DPDK_HWS_DEV = dpdk.hws-dev_${DPDK_VER}_${CONFIGURED_ARCH}.deb
-$(DPDK_HWS_DEV)_DEPENDS = $(IB_VERBS_PROV) $(IB_VERBS_DEV) $(RDMA_CORE) $(IB_MAD) $(IB_NET_DISC) $(RDMA_CM)
-$(DPDK_HWS_DEV)_RDEPENDS = $(IB_VERBS_PROV) $(IB_VERBS) $(RDMA_CORE) $(IB_MAD) $(IB_NET_DISC) $(RDMA_CM)
-ifeq ($(SDK_FROM_SRC),y)
-$(eval $(call add_extra_package,$(DPDK_HWS),$(DPDK_HWS_DEV)))
-endif
+DPDK_DERIVED_DEBS = $(DPDK_DEV)
+export DPDK_DERIVED_DEBS
 
-export DPDK_HWS DPDK_HWS_DEV
+SDK_DEBS += $(DPDK) $(DPDK_DERIVED_DEBS)
 
-## DOCA_DPDK
+# Collectx
 
-DOCA_DPDK_VER=1.5-1mlnx1
+COLLECTX_CLXAPI = collectx-1.9.1-5158675.aarch64_debian-11.2-clxapi.deb
+$(COLLECTX_CLXAPI)_RDEPENDS = $(IB_UMAD)
 
-DOCA_DPDK = doca-dpdk_${DOCA_DPDK_VER}_${CONFIGURED_ARCH}.deb
-$(DOCA_DPDK)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/doca-dpdk
-$(DOCA_DPDK)_DEPENDS = $(DPDK_HWS_DEV)
-$(DOCA_DPDK)_RDEPENDS = $(DPDK_HWS)
+SDK_DEBS += $(COLLECTX_CLXAPI)
 
-DOCA_DPDK_DEV = doca-dpdk-dev_${DOCA_DPDK_VER}_${CONFIGURED_ARCH}.deb
-ifeq ($(SDK_FROM_SRC),y)
-$(eval $(call add_derived_package,$(DOCA_DPDK),$(DOCA_DPDK_DEV)))
-endif
+# RXP compiler and derived packages
 
-export DOCA_DPDK DOCA_DPDK_DEV
+RXPCOMPILER_VER = 22.05.1
 
-## SDN Appliance 
+RXPCOMPILER = rxp-compiler_$(RXPCOMPILER_VER)_arm64.deb
+$(RXPCOMPILER)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/rxp-compiler
+LIBRXPCOMPILER_DEV = librxpcompiler-dev_$(RXPCOMPILER_VER)_arm64.deb
+
+$(eval $(call add_derived_package,$(RXPCOMPILER),$(LIBRXPCOMPILER_DEV)))
+
+export RXPCOMPILER LIBRXPCOMPILER_DEV
+
+RXPCOMPILER_DERIVED_DEBS = $(LIBRXPCOMPILER_DEV)
+export RXPCOMPILER_DERIVED_DEBS
+
+SDK_DEBS += $(RXPCOMPILER) $(RXPCOMPILER_DERIVED_DEBS)
+
+# UCX and derived packages
+
+UCX_VER = 1.13.43f710a
+
+UCX = ucx_$(UCX_VER)_arm64.deb
+$(UCX)_DEPENDS = $(IB_VERBS_PROV) $(IB_VERBS)
+$(UCX)_RDEPENDS = $(IB_VERBS_PROV) $(IB_VERBS)
+$(UCX)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/ucx
+
+export UCX
+
+SDK_DEBS += $(UCX)
+
+# GRPC and derived packages
+
+LIBGRPC_VER = 1.39.0-1
+
+LIBGRPC_DEV = libgrpc-dev_$(LIBGRPC_VER)_arm64.deb
+$(LIBGRPC_DEV)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/grpc
+LIBGRPC_DBG = libgrpc-dev-dbgsym_$(LIBGRPC_VER)_arm64.deb
+
+$(eval $(call add_derived_package,$(LIBGRPC_DEV),$(LIBGRPC_DBG)))
+
+export LIBGRPC_DEV LIBGRPC_DBG LIBGRPC_VER
+
+LIBGRPC_DERIVED_DEBS = $(LIBGRPC_DBG)
+export LIBGRPC_DERIVED_DEBS
+
+SDK_DEBS += $(LIBGRPC_DEV) $(LIBGRPC_DERIVED_DEBS)
+
+# DOCA and derived packages
+
+DOCA_VERSION = 1.4.0038
+DOCA_DEB_VERSION = $(DOCA_VERSION)-1
+
+DOCA_LIBS = doca-libs_${DOCA_DEB_VERSION}_${CONFIGURED_ARCH}.deb
+$(DOCA_LIBS)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/doca
+$(DOCA_LIBS)_RDEPENDS = $(DPDK) $(COLLECTX_CLXAPI) $(RXPCOMPILER) $(LIBRXPCOMPILER_DEV) $(UCX) $(LIBGRPC_DEV)
+$(DOCA_LIBS)_DEPENDS = $(COLLECTX_CLXAPI) $(RXPCOMPILER) $(LIBRXPCOMPILER_DEV) $(UCX) $(DPDK_DEV) $(LIBGRPC_DEV)
+DOCA_LIBS_DEV = libdoca-libs-dev_${DOCA_DEB_VERSION}_${CONFIGURED_ARCH}.deb
+DOCA_LIBS_DBG = doca-libs-dbgsym_${DOCA_DEB_VERSION}_${CONFIGURED_ARCH}.deb
+
+$(eval $(call add_derived_package,$(DOCA_LIBS),$(DOCA_LIBS_DEV)))
+$(eval $(call add_derived_package,$(DOCA_LIBS),$(DOCA_LIBS_DBG)))
+
+export DOCA_LIBS DOCA_LIBS_DEV DOCA_LIBS_DBG
+
+DOCA_LIBS_DERIVED_DEBS = $(DOCA_LIBS_DEV) $(DOCA_LIBS_DBG)
+export DOCA_LIBS_DERIVED_DEBS
+
+SDK_DEBS += $(DOCA_LIBS) $(DOCA_LIBS_DERIVED_DEBS)
+
+# SDN Appliance
 
 SDN_APPL_VER=1.5-1mlnx1
 SDN_APPL = sdn-appliance_${SDN_APPL_VER}_${CONFIGURED_ARCH}.deb
 $(SDN_APPL)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/sdn
-$(SDN_APPL)_RDEPENDS = $(DOCA_DPDK)
+$(SDN_APPL)_RDEPENDS = $(DOCA_LIBS)
+$(SDN_APPL)_DEPENDS = $(DOCA_LIBS_DEV) $(DOCA_LIBS) $(DPDK_DEV) 
 
-SDN_APPL_DEV = sdn-appliance-dev_${DOCA_DPDK_VER}_${CONFIGURED_ARCH}.deb
-ifeq ($(SDK_FROM_SRC),y)
-$(SDN_APPL)_DEPENDS = $(DOCA_DPDK_DEV)
 $(eval $(call add_derived_package,$(SDN_APPL),$(SDN_APPL_DEV)))
-endif
+
+SDN_APPL_DEV = sdn-appliance-dev_${SDN_APPL_VER}_${CONFIGURED_ARCH}.deb
 
 export SDN_APPL SDN_APPL_DEV
+
+SDN_APPL_DERIVED_DEBS = $(SDN_APPL_DEV)
+export SDN_APPL_DERIVED_DEBS
+
+SDK_DEBS += $(SDN_APPL) $(SDN_APPL_DERIVED_DEBS)
 
 define make_path
 	$(1)_PATH = $(DOCA_SDK_BASE_PATH)
 
 endef
 
-$(eval $(foreach deb,$(RDMA_CORE) $(RDMA_CORE_DEBS),$(call make_path,$(deb))))
-$(eval $(foreach deb,$(DPDK_HWS) $(DOCA_DPDK) $(SDN_APPL),$(call make_path,$(deb))))
+$(eval $(foreach deb, $(SDK_DEBS),$(call make_path,$(deb))))
+
+SONIC_COPY_DEBS += $(COLLECTX_CLXAPI)
 
 ifeq ($(SDK_FROM_SRC), y)
-SONIC_MAKE_DEBS += $(RDMA_CORE) $(DPDK_HWS) $(DOCA_DPDK) $(SDN_APPL)
+SONIC_MAKE_DEBS += $(UCX) $(RXPCOMPILER) $(RDMA_CORE) $(DPDK) $(LIBGRPC_DEV) $(DOCA_LIBS) $(SDN_APPL) $(SDN_APPL_DEV)
 else
-$(SDN_APPL)_DERIVED_DEBS += $(RDMA_CORE) $(RDMA_CORE_DEBS) $(DPDK_HWS) $(DOCA_DPDK)
-SONIC_COPY_DEBS += $(RDMA_CORE) $(RDMA_CORE_DEBS) $(DPDK_HWS) $(DOCA_DPDK) $(SDN_APPL)
+SONIC_COPY_DEBS += $(UCX) $(RXPCOMPILER) $(RDMA_CORE) $(DPDK) $(LIBGRPC_DEV) $(DOCA_LIBS) $(SDN_APPL) $(SDN_APPL_DEV)
 endif
 
-doca-sdk-packages: $(addprefix $(DEBS_PATH)/, $(RDMA_CORE) $(DPDK_HWS) $(DOCA_DPDK) $(SDN_APPL))
+doca-sdk-packages: $(addprefix $(DEBS_PATH)/, $(UCX) $(RXPCOMPILER) $(COLLECTX_CLXAPI) $(RDMA_CORE) $(DPDK) $(LIBGRPC_DEV) $(DOCA_LIBS) $(SDN_APPL) $(SDN_APPL_DEV))
 
 SONIC_PHONY_TARGETS += doca-sdk-packages
