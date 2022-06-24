@@ -1,0 +1,22 @@
+diff --git a/mlnx_sai/src/mlnx_sai_switch.c b/mlnx_sai/src/mlnx_sai_switch.c
+index 6180382..416651e 100644
+--- a/mlnx_sai/src/mlnx_sai_switch.c
++++ b/mlnx_sai/src/mlnx_sai_switch.c
+@@ -32,7 +32,7 @@
+ 
+ #define MAX_NUM_PORTS         2
+ #define SDK_START_CMD_STR_LEN 255
+-#define NASA_LOAD_TIME        60
++#define NASA_LOAD_TIME        90
+ #define NASA_UNLOAD_TIME      20
+ #define DRIVER_LOAD_TIME      10
+ 
+@@ -256,7 +256,7 @@ static sai_status_t mlnx_initialize_switch()
+     }
+     #endif
+ 
+-    char cmd[] = "nasa -l 0-7 --single-file-segment -- --sai --no-cli &";
++    char cmd[] = "nasa -l 0-7 --single-file-segment -a0000:03:00.0,dv_flow_en=2 -a0000:03:00.1,dv_flow_en=2 --socket-mem=4096 -- --sai --no-cli &";
+ 
+     if (0 != system(cmd)) {
+         SX_LOG_ERR("Failed to run NASA application - %s\n", cmd);
