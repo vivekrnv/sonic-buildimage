@@ -15,20 +15,20 @@
 # limitations under the License.
 #
 
-DOCA_SDK_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin
+SDK_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin
 
 # Place here URL where SDK sources exist
-DOCA_SDK_SOURCE_BASE_URL =
-DOCA_SDK_VERSION = 0.1-RC16
+SDK_SOURCE_BASE_URL =
+SDK_VERSION = 0.1-RC16
 
-ifneq ($(DOCA_SDK_SOURCE_BASE_URL), )
+ifneq ($(SDK_SOURCE_BASE_URL), )
 SDK_FROM_SRC = y
-DOCA_SDK_SOURCE_URL = $(DOCA_SDK_SOURCE_BASE_URL)/$(subst -,/,$(DOCA_SDK_VERSION))
+SDK_SOURCE_URL = $(SDK_SOURCE_BASE_URL)/$(subst -,/,$(SDK_VERSION))
 else
 SDK_FROM_SRC = n
 endif
 
-export DOCA_SDK_VERSION DOCA_SDK_SOURCE_URL
+export SDK_VERSION SDK_SOURCE_URL
 
 SDK_DEBS =
 
@@ -221,7 +221,7 @@ export SDN_APPL_DERIVED_DEBS
 SDK_DEBS += $(SDN_APPL) $(SDN_APPL_DERIVED_DEBS)
 
 define make_path
-	$(1)_PATH = $(DOCA_SDK_BASE_PATH)
+	$(1)_PATH = $(SDK_BASE_PATH)
 
 endef
 
@@ -235,6 +235,6 @@ else
 SONIC_COPY_DEBS += $(OFED_KERNEL) $(UCX) $(RXPCOMPILER) $(RDMA_CORE) $(DPDK) $(LIBGRPC_DEV) $(DOCA_LIBS) $(SDN_APPL) $(SDN_APPL_DEV)
 endif
 
-doca-sdk-packages: $(addprefix $(DEBS_PATH)/, $(OFED_KERNEL) $(UCX) $(RXPCOMPILER) $(COLLECTX_CLXAPI) $(RDMA_CORE) $(DPDK) $(LIBGRPC_DEV) $(DOCA_LIBS) $(SDN_APPL) $(SDN_APPL_DEV))
+sdk-packages: $(addprefix $(DEBS_PATH)/, $(OFED_KERNEL) $(UCX) $(RXPCOMPILER) $(COLLECTX_CLXAPI) $(RDMA_CORE) $(DPDK) $(LIBGRPC_DEV) $(DOCA_LIBS) $(SDN_APPL) $(SDN_APPL_DEV))
 
-SONIC_PHONY_TARGETS += doca-sdk-packages
+SONIC_PHONY_TARGETS += sdk-packages

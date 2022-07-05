@@ -34,7 +34,7 @@ DKMS_TMP := $(shell mktemp -u -d -t dkms.XXXXXXXXXX)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	sudo rm -rf MLNX_OFED_SRC*
-	wget $(DOCA_SDK_SOURCE_URL)/$(OFED_TAR)
+	wget $(SDK_SOURCE_URL)/$(OFED_TAR)
 	tar xf $(OFED_TAR)
 
 	pushd $(OFED_SRC)/

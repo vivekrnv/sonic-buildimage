@@ -26,7 +26,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf dpdk.org/ dpdk.org.zip
 
 	# get sources
-	wget $(DOCA_SDK_SOURCE_URL)/dpdk.org.zip
+	wget $(SDK_SOURCE_URL)/dpdk.org.zip
 	unzip dpdk.org.zip
 	pushd dpdk.org/
 	find . -type f -exec touch {} +

@@ -26,7 +26,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf rdma-core/ rdma-core.zip
 	
 	# get sources
-	wget $(DOCA_SDK_SOURCE_URL)/rdma-core.zip
+	wget $(SDK_SOURCE_URL)/rdma-core.zip
 	unzip rdma-core.zip
 	
 	# build

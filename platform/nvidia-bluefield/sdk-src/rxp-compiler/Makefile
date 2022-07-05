@@ -26,7 +26,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf rxp-tools/ rxp-tools.zip
 	
 	# get sources
-	wget $(DOCA_SDK_SOURCE_URL)/rxp-tools.zip
+	wget $(SDK_SOURCE_URL)/rxp-tools.zip
 	unzip rxp-tools.zip
 
 	pushd rxp-tools/

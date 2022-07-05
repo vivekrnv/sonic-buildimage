@@ -27,7 +27,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf grpc/ $(LIBGRPC_TAR)
 
 	# get sources
-	wget $(DOCA_SDK_SOURCE_URL)/$(LIBGRPC_TAR)
+	wget $(SDK_SOURCE_URL)/$(LIBGRPC_TAR)
 	tar xf $(LIBGRPC_TAR)
 
 	pushd grpc/
