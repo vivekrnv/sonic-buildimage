@@ -36,7 +36,8 @@ $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
                                     $(MLNX_BLUEFIELD_BUILD_SCRIPTS) \
                                     $(MLX_OPENIPMI_DEB) \
                                     $(MLX_OPENIPMI_SERVER_DEB) \
-                                    $(BF2_PLATFORM_MODULE)
+                                    $(BF2_PLATFORM_MODULE) \
+                                    $(OFED_KERNEL)
 
 $(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(SONIC_INSTALL_DOCKER_IMAGES)
 
