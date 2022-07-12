@@ -8,10 +8,10 @@
         "thermals": [],
         "sfps": [
             {
-                "name": "p0"
+                "name": "Ethernet0"
             },
             {
-                "name": "p1"
+                "name": "Ethernet4"
             }
         ]
     },

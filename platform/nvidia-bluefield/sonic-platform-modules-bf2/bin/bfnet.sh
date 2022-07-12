@@ -23,10 +23,10 @@ start()
     # NOTE: temporary workaround. SDN application requires to have interfaces up
     # and have IP addresses configured.
     sleep 2
-    ifconfig p0 up
-    ifconfig p1 up
-    ifconfig p0 11.11.11.11/8 up; ip -6 a a 11:11:0:11::11/64 dev p0
-    ifconfig p1 12.12.12.12/8 up; ip -6 a a 12:12:0:12::12/64 dev p1
+    ifconfig Ethernet0 up
+    ifconfig Ethernet4 up
+    ifconfig Ethernet0 11.11.11.11/8 up; ip -6 a a 11:11:0:11::11/64 dev Ethernet0
+    ifconfig Ethernet4 12.12.12.12/8 up; ip -6 a a 12:12:0:12::12/64 dev Ethernet4
 }
 
 stop()
