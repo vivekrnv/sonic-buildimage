@@ -25,7 +25,6 @@ DERIVED_TARGETS = $(DPU_SAI_DBGSYM)
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
 	pushd sai-dpu
-	patch -p1 < ../mlnx_sai_host_interface.c.patch
 	pushd mlnx_sai
 
 	chmod +x autogen.sh 
