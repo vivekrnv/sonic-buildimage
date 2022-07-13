@@ -172,6 +172,9 @@ ex unzip -o /debian/$INSTALLER_PAYLOAD -x $FILESYSTEM_DOCKERFS -d /mnt/$image_di
 mkdir -p /mnt/$image_dir/$DOCKERFS_DIR
 unzip -op /debian/$INSTALLER_PAYLOAD "$FILESYSTEM_DOCKERFS" | tar xz --warning=no-timestamp -f - -C /mnt/$image_dir/$DOCKERFS_DIR
 
+mkdir -p /mnt/$image_dir/platform
+unzip -op /debian/$INSTALLER_PAYLOAD "platform.tar.gz" | tar xz --warning=no-timestamp -f - -C /mnt/$image_dir/platform
+
 # Copy in the machine.conf file
 cat <<EOF > /mnt/machine.conf
 bf_vendor=nvidia
