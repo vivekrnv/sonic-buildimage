@@ -5,6 +5,9 @@
 {%- if switch_type %}
             "switch_type": "{{switch_type}}",
 {%- endif %}
+{%- if sonic_asic_platform == "nvidia-bluefield" %}
+            "subtype": "appliance",
+{%- endif %}
             "buffer_model": {% if default_buffer_model == "dynamic" %}"dynamic"{% else %}"traditional"{% endif %},
             {%- if include_p4rt == "y" %}"synchronous_mode":"enable",{% endif %}
             "default_bgp_status": {% if shutdown_bgp_on_start == "y" %}"down"{% else %}"up"{% endif %},
