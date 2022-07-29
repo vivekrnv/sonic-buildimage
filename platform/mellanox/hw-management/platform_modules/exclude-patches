@@ -3,6 +3,7 @@
 0044-platform-mellanox-mlxreg-io-Fix-read-access-of-n-byt.patch
 0048-hwmon-pmbus-mp2975-Add-missed-POUT-attribute-for-pag.patch
 0049-leds-mlxreg-Provide-conversion-for-hardware-LED-colo.patch
+0083-platform_data-mlxreg-Add-field-for-notification-call.patch
 0050-leds-mlxreg-Skip-setting-LED-color-during-initializa.patch
 0051-leds-mlxreg-Allow-multi-instantiation-of-same-name-L.patch
 0067-platform-mellanox-Add-dedicated-match-for-system-typ.patch
