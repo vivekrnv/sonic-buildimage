@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import sys
 import yaml
 
 LINUX=sys.argv[1]
@@ -96,7 +97,7 @@ with open("/usr/src/hwmgmt-{}/dkms.conf".format(HWMGMT_VERSION), "w") as conf:
         lines += ['BUILT_MODULE_NAME[{}]="{}"\n'.format(count,mod)]
         lines += ['BUILT_MODULE_LOCATION[{}]="{}"\n'.format(count,os.path.basename(path))]
         lines += ['DEST_MODULE_LOCATION[{}]="{}"\n'.format(count, os.path.join("/kernel/", path))]
-        lines += ['MAKE[{}]="make -C {} KERNELDIR=/lib/modules/{}/build"\n'.format(count,os.path.basename(path),KVERSION)]
+        lines += ['MAKE[{}]="make -C /usr/src/linux-headers-{} M="/var/lib/dkms/hwmgmt/{}/build/{}" KERNELDIR=/lib/modules/{}/build modules"\n'.format(count, KVERSION, HWMGMT_VERSION, os.path.basename(path), KVERSION)]
         count += 1
 
 
@@ -104,12 +105,11 @@ with open("/usr/src/hwmgmt-{}/dkms.conf".format(HWMGMT_VERSION), "w") as conf:
     conf.writelines(lines)
 
 
-quit()
 
 # Build
-subprocess.call("sudo dkms add hwmgmt/{}".format(HWMGMT_VERSION))
-subprocess.call("sudo dkms build hwmgmt/{} -k {} -a {}".format(HWMGMT_VERSION, KVERSION, CONFIGURED_ARCH))
-subprocess.call("sudo mkbmdeb build hwmmgt/{} -k {} -a {}".format(HWMGMT_VERSION, KVERSION, CONFIGURED_ARCH))
+subprocess.call("sudo dkms add hwmgmt/{}".format(HWMGMT_VERSION), shell=True)
+subprocess.call("sudo dkms build hwmgmt/{} -k {} -a {}".format(HWMGMT_VERSION, KVERSION, CONFIGURED_ARCH), shell=True)
+subprocess.call("sudo dkms mkbmdeb hwmgmt/{} -k {} -a {}".format(HWMGMT_VERSION, KVERSION, CONFIGURED_ARCH), shell=True)
 
 
 # Copy resulting debs to expected location for Makefile
