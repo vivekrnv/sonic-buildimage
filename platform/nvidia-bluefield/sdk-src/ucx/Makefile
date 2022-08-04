@@ -20,12 +20,18 @@ SHELL = /bin/bash
 
 MAIN_TARGET = $(UCX)
 
-$(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	pushd ucx/
-	find . -type f -exec touch {} +
+OFED_TAR = MLNX_OFED_SRC-debian-$(OFED_VER_FULL).tgz
+OFED_SRC = MLNX_OFED_SRC-$(OFED_VER_FULL)
+UCX_TAR = ucx_*.orig.tar.gz
 
-	./autogen.sh
-	./contrib/configure-release
+$(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	sudo rm -rf MLNX_OFED_SRC*
+	wget $(SDK_SOURCE_URL)/$(OFED_TAR)
+	tar xf $(OFED_TAR)
+	pushd $(OFED_SRC)/SOURCES
+	tar xf $(UCX_TAR)
+	pushd ucx-*/
+	find . -type f -exec touch {} +
 
 	# Build the Debs
 	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)

@@ -151,14 +151,14 @@ SDK_DEBS += $(RXPCOMPILER) $(RXPCOMPILER_DERIVED_DEBS)
 
 # UCX and derived packages
 
-UCX_VER = 1.13.43f710a
+UCX_VER = 1.13.0-1.56103
 
 UCX = ucx_$(UCX_VER)_arm64.deb
 $(UCX)_DEPENDS = $(IB_VERBS_PROV) $(IB_VERBS)
 $(UCX)_RDEPENDS = $(IB_VERBS_PROV) $(IB_VERBS)
 $(UCX)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/ucx
 
-export UCX
+export UCX_VER UCX
 
 SDK_DEBS += $(UCX)
 
