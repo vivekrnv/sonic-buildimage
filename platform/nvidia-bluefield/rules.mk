@@ -49,12 +49,19 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlx-openipmi.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/sdk.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-api.mk
 # include $(PLATFORM_PATH)/$(RECIPE_DIR)/libpka.mk
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/libsaithrift-dev.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/docker-syncd-bluefield.mk
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/docker-syncd-bluefield-rpc.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/installer-image.mk
 
 # Inject DPU sai into syncd
 $(SYNCD)_DEPENDS += $(DPU_SAI)
 $(SYNCD)_UNINSTALLS += $(DPU_SAI)
+
+ifeq ($(ENABLE_SYNCD_RPC),y)
+$(SYNCD)_DEPENDS := $(filter-out $(LIBTHRIFT_DEV),$($(SYNCD)_DEPENDS))
+$(SYNCD)_DEPENDS += $(LIBSAITHRIFT_DEV) $(LIBTHRIFT_0_14_1_DEV)
+endif
 
 # Runtime dependency on DPU sai is set only for syncd
 $(SYNCD)_RDEPENDS += $(DPU_SAI)
