@@ -138,19 +138,34 @@ wait() {
 
 collect_mst() {
     debug "Collecting MST dump before syncd restart"
-    MSTDIR=/tmp/mstdump
+    IRGDBSERVER=/usr/local/bin/ir-gdbserver
+    TMPDIR=/tmp/mlnxdump
+    MSTDIR=$TMPDIR/mstdump
     DUMPDIR=/var/dump/mstdump
+    IRGDBDIR=$TMPDIR/ir-gdb
     mkdir -p $MSTDIR
-    local mst_dump_filename="$MSTDIR/mstdump"
-    local max_dump_count="3"
-    for i in $(seq 1 $max_dump_count); do
-        ${CMD_PREFIX}/usr/bin/mstdump /dev/mst/mt*conf0 > "${mst_dump_filename}${i}"
-    done
+    mkdir -p $IRGDBDIR
+    if ! mst status -v > $MSTDIR/mststatus; then
+        debug "mst status command returned error"
+    else
+        local mst_dump_filename="$MSTDIR/mstdump"
+        local max_dump_count="3"
+        for i in $(seq 1 $max_dump_count); do
+            if ! ${CMD_PREFIX}/usr/bin/mstdump /dev/mst/mt*pci_cr0 > "${mst_dump_filename}${i}"; then
+                debug "mstdump failed"
+                break
+            fi
+        done
+        if [ -f $IRGDBSERVER ]; then
+            debug "collecting ir-gdbserver dump"
+            $IRGDBSERVER -d /dev/mst/mt*_pci_cr0 -c $IRGDBDIR/core
+        fi
+    fi
     mkdir -p $DUMPDIR
-    TARFILE=mstdump_`date +%Y%m%d_%H%M%S`
-    tar -C $MSTDIR -cf $DUMPDIR/$TARFILE  .
+    TARFILE=mstdump_`date +%Y%m%d_%H%M%S`.tar
+    tar -C $TMPDIR -cf $DUMPDIR/$TARFILE  .
     gzip -f $DUMPDIR/$TARFILE
-    rm -rf $MSTDIR
+    rm -rf $TMPDIR
     # Maintaining the recent 3 files and removing the rest
     ls -1td $DUMPDIR/* | tail -n +4 | xargs rm -rf
 }
@@ -173,7 +188,6 @@ stop() {
         /bin/systemctl stop pmon
         debug "Stopped pmon service"
     fi
-
     if [[ x$sonic_asic_platform == x"mellanox" ]]; then
         # In case of SAI failure the last line of sairedis.rec would contain switch_shutdown_request
         if tail -1 /var/log/swss/sairedis.rec | grep -q switch_shutdown_request; then
