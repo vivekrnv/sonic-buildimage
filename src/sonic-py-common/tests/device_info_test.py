@@ -109,15 +109,15 @@ class TestDeviceInfo(object):
                      "revision": SonicV2Connector.TEST_REV}
             assert result == truth
 
-    def test_get_sonic_version(self):
-        with mock.patch("os.path.isfile") as mock_isfile:
-            mock_isfile.return_value = True
-            open_mocked = mock.mock_open(read_data=SONIC_VERISON_YML)
-            with mock.patch("{}.open".format(BUILTINS), open_mocked):
-                for _ in range(0,5):
-                    assert device_info.get_sonic_version_info() == SONIC_VERISON_YML_RESULT
-                # Assert the file was read only once
-                open_mocked.assert_called_once_with(device_info.SONIC_VERSION_YAML_PATH)
+    @mock.patch("os.path.isfile")
+    def test_get_sonic_version(self, mock_isfile):
+        mock_isfile.return_value = True
+        open_mocked = mock.mock_open(read_data=SONIC_VERISON_YML)
+        with mock.patch("{}.open".format(BUILTINS), open_mocked):
+            for _ in range(0,5):
+                assert device_info.get_sonic_version_info() == SONIC_VERISON_YML_RESULT
+            # Assert the file was read only once
+            open_mocked.assert_called_once_with(device_info.SONIC_VERSION_YAML_PATH)
         
     @mock.patch("sonic_py_common.device_info.get_platform_info")
     def test_is_chassis(self, mock_platform_info):
@@ -129,14 +129,12 @@ class TestDeviceInfo(object):
         assert device_info.is_voq_chassis() == False
         assert device_info.is_packet_chassis() == False
 
-        # Clear Cache
         device_info.is_chassis_type = None
         mock_platform_info.return_value = {"switch_type": "voq"}
         assert device_info.is_voq_chassis() == True
         assert device_info.is_packet_chassis() == False
         assert device_info.is_chassis() == True
 
-        # Clear Cache
         device_info.is_chassis_type = None
         mock_platform_info.return_value = {"switch_type": "chassis-packet"}
         assert device_info.is_voq_chassis() == False
