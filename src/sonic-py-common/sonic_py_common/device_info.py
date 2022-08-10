@@ -40,8 +40,8 @@ CHASSIS_INFO_MODEL_FIELD = 'model'
 CHASSIS_INFO_REV_FIELD = 'revision'
 
 # Cacheable Objects
-sonic_ver_info = None
-is_chassis_type = None
+sonic_ver_info = {}
+hw_info_dict = {}
 
 def get_localhost_info(field, config_db=None):
     try:
@@ -361,9 +361,12 @@ def get_platform_info(config_db=None):
     """
     This function is used to get the HW info helper function
     """
-    from .multi_asic import get_num_asics
+    global hw_info_dict
 
-    hw_info_dict = {}
+    if hw_info_dict:
+        return hw_info_dict
+
+    from .multi_asic import get_num_asics
 
     version_info = get_sonic_version_info()
 
@@ -444,10 +447,7 @@ def is_packet_chassis():
 
 
 def is_chassis():
-    global is_chassis_type
-    if is_chassis_type is None:
-        is_chassis_type = is_voq_chassis() or is_packet_chassis()
-    return is_chassis_type
+    return is_voq_chassis() or is_packet_chassis()
 
 
 def is_supervisor():
