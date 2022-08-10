@@ -145,7 +145,7 @@ collect_mst() {
     IRGDBDIR=$TMPDIR/ir-gdb
     mkdir -p $MSTDIR
     mkdir -p $IRGDBDIR
-    if ! mst status -v > $MSTDIR/mststatus; then
+    if ! mst status -v &> $MSTDIR/mststatus; then
         debug "mst status command returned error"
     else
         local mst_dump_filename="$MSTDIR/mstdump"
@@ -165,6 +165,7 @@ collect_mst() {
     TARFILE=mstdump_`date +%Y%m%d_%H%M%S`.tar
     tar -C $TMPDIR -cf $DUMPDIR/$TARFILE  .
     gzip -f $DUMPDIR/$TARFILE
+    debug "MST dump created $DUMPDIR/$TARFILE.gz"
     rm -rf $TMPDIR
     # Maintaining the recent 3 files and removing the rest
     ls -1td $DUMPDIR/* | tail -n +4 | xargs rm -rf
