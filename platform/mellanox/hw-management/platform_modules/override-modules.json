@@ -17,5 +17,29 @@
             "CONFIG_PMBUS": "n",
             "CONFIG_SENSORS_OCC": "n"
         }
+    },
+    "mlxreg-lc": {
+        "path": "drivers/platform/mellanox",
+        "build_opts": {
+            "CONFIG_MLXREG_LC": "m"
+        }
+    },
+    "mlx-platform": {
+        "path": "drivers/platform/x86",
+        "build_opts": {
+            "CONFIG_HP_ACCEL": "n"
+        }
+    },
+    "mlxreg-hotplug": {
+        "path": "drivers/platform/mellanox"
+    },
+    "mlxreg-io": {
+        "path": "drivers/platform/mellanox"
+    },
+    "mlxsw_core": {
+        "path": "drivers/net/ethernet/mellanox/mlxsw",
+        "build_opts": {
+            "CONFIG_MLXSW_CORE": "m"
+        }
     }
 }
