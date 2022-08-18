@@ -1,0 +1,21 @@
+{
+    "mp2888": {
+        "path": "drivers/hwmon/pmbus"
+    },
+    "i2c-mlxcpld": {
+        "path": "drivers/i2c/busses"
+    },
+    "i2c-mux-mlxcpld": {
+        "path": "drivers/i2c/muxes",
+        "build_opts": {
+            "CONFIG_I2C_MUX_GPIO": "n"
+        }
+    },
+    "mlxreg-fan": {
+        "path": "drivers/hwmon",
+        "build_opts": {
+            "CONFIG_PMBUS": "n",
+            "CONFIG_SENSORS_OCC": "n"
+        }
+    }
+}
