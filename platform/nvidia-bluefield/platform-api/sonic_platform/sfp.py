@@ -37,6 +37,26 @@ QSFP_DD_TYPE_LIST = [
     '0x18'  # QSFP_DD Type
 ]
 
+EEPROM_ETHTOOL_READ_RETRIES = 5
+
+def read_eeprom_ethtool(name, offset, num_bytes):
+    eeprom_raw = []
+    ethtool_cmd = "ethtool -m {} hex on offset {} length {} 2>/dev/null".format(name, offset, num_bytes)
+    try:
+        output = subprocess.check_output(ethtool_cmd,
+                                         shell=True,
+                                         universal_newlines=True)
+        output_lines = output.splitlines()
+        first_line_raw = output_lines[0]
+        if "Offset" in first_line_raw:
+            for line in output_lines[2:]:
+                line_split = line.split()
+                eeprom_raw = eeprom_raw + line_split[1:]
+    except subprocess.CalledProcessError as e:
+        return None
+    eeprom_raw = map(lambda h: int(h, base=16), eeprom_raw)
+    return bytearray(eeprom_raw)
+
 
 class Sfp(SfpOptoeBase):
 
@@ -68,23 +88,12 @@ class Sfp(SfpOptoeBase):
             bytearray, if raw sequence of bytes are read correctly from the offset of size num_bytes
             None, if the read_eeprom fails
         """
-        eeprom_raw = []
-        ethtool_cmd = "ethtool -m {} hex on offset {} length {} 2>/dev/null".format(self.data.name, offset, num_bytes)
-        try:
-            output = subprocess.check_output(ethtool_cmd,
-                                             shell=True,
-                                             universal_newlines=True)
-            output_lines = output.splitlines()
-            first_line_raw = output_lines[0]
-            if "Offset" in first_line_raw:
-                for line in output_lines[2:]:
-                    line_split = line.split()
-                    eeprom_raw = eeprom_raw + line_split[1:]
-        except subprocess.CalledProcessError as e:
-            return None
-
-        eeprom_raw = map(lambda h: int(h, base=16), eeprom_raw)
-        return bytearray(eeprom_raw)
+        # Temporary workaround to address instability
+        for _ in range(EEPROM_ETHTOOL_READ_RETRIES):
+            eeprom = read_eeprom_ethtool(self.data.name, offset, num_bytes)
+            if eeprom:
+                return eeprom
+        return None
 
     def write_eeprom(self, offset, num_bytes, write_buffer):
         """
