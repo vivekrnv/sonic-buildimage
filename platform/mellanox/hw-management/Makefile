@@ -1,7 +1,7 @@
 .ONESHELL:
 SHELL = /bin/bash
 
-BASE_LINUX = 5.10.43
+BASE_LINUX = 5.10.103
 
 MAIN_TARGET = hw-management_1.mlnx.$(MLNX_HW_MANAGEMENT_VERSION)_$(CONFIGURED_ARCH).deb
 MOD_TARGET = hwmgmt-modules-$(KVERSION)_$(MLNX_HW_MANAGEMENT_VERSION)_$(CONFIGURED_ARCH).deb
@@ -23,7 +23,8 @@ $(addprefix $(DEST)/, $(MOD_TARGET)): $(DEST)/% :
 
 #   Create Applicable patch set
 	find $(HW_MGMT_PCH_LOC) -regex ".*patch" -printf "%P\n" | sort > /tmp/series
-	grep -xvf platform_modules/exclude-patches /tmp/series > $(HW_MGMT_PCH_LOC)/series
+	grep -xvf platform_modules/exclude-patches /tmp/series > /tmp/non_excluded_series
+	grep -xvf platform_modules/upstream-patches /tmp/non_excluded_series > $(HW_MGMT_PCH_LOC)/series
 	echo "Patches Applicable: "
 	cat $(HW_MGMT_PCH_LOC)/series
 	
@@ -33,6 +34,7 @@ $(addprefix $(DEST)/, $(MOD_TARGET)): $(DEST)/% :
 	sudo rm -rf /var/lib/dkms/hwmgmt/$(MLNX_HW_MANAGEMENT_VERSION)
 
 #   Get Linux Source and apply patch set TODO: Get the tar file
+#	wget -nc https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-$(BASE_LINUX).tar.gz
 	tar xf linux-$(BASE_LINUX).tar.gz
 	pushd linux-$(BASE_LINUX)
 	git init

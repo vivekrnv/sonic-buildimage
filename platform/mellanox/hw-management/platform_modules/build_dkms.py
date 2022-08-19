@@ -108,6 +108,7 @@ class Data:
         Data.upstream = read_lines(UPSTREAM_PATCHES)
         Data.remove_ignore()
         Data.fl = Data.extract_modified_files()
+        print(json.dumps(Data.fl))
 
     @staticmethod 
     def remove_ignore():
@@ -117,6 +118,15 @@ class Data:
                 Data.patches.remove([p for p in Data.patches if i.strip() == os.path.basename(p)][0])
             except ValueError:
                 print("WARNING Ignored patch {} not included in hw-mgmt patch set.".format(i))
+    
+    @staticmethod 
+    def remove_upstream():
+        """ Remove upstreamed patches from patch list """ 
+        for i in Data.upstream:
+            try:
+                Data.patches.remove([p for p in Data.patches if i.strip() == os.path.basename(p)][0])
+            except ValueError:
+                print("WARNING Upstream patch {} not included in hw-mgmt patch set.".format(i))
 
     @staticmethod
     def extract_modified_files():
@@ -137,10 +147,12 @@ class Validator:
         """
         error, msg = False, ""
         for p, files in Data.fl.items():
-            print(p)
             if os.path.basename(p)[0:8] not in Data.sonicpatch and os.path.basename(p) not in Data.ignore and os.path.basename(p) not in Data.upstream:
                 for f in files:
-                    overridden = any([os.path.commonprefix([f,v[PATH]]) == v[PATH] for k, v in Data.modules.items()])
+                    overridden = False
+                    for k,v in Data.modules.items():
+                        if os.path.commonprefix([f,v[PATH]]) == v[PATH]:
+                            overridden = True
                     if not overridden:
                         error = True
                         msg += "Patch {} not in modules or upstream kernel!\n".format(p)
