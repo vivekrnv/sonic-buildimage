@@ -43,7 +43,7 @@ $(addprefix $(DEST)/, $(MOD_TARGET)): $(DEST)/% :
 	popd
 
 #   Validate and construct dkms
-	sudo python3 build_modules.py $(BASE_LINUX) $(MLNX_HW_MANAGEMENT_VERSION) $(CONFIGURED_ARCH) $(KVERSION)
+	sudo python3 build_dkms.py $(BASE_LINUX) $(MLNX_HW_MANAGEMENT_VERSION) $(CONFIGURED_ARCH) $(KVERSION)
 
 # 	Build the package
 	sudo dkms add hwmgmt/$(MLNX_HW_MANAGEMENT_VERSION) 

@@ -1,6 +1,7 @@
 {
     "mp2888": {
-        "path": "drivers/hwmon/pmbus"
+        "path": "drivers/hwmon",
+        "build_location": "pmbus"
     },
     "i2c-mlxcpld": {
         "path": "drivers/i2c/busses"
@@ -12,11 +13,7 @@
         }
     },
     "mlxreg-fan": {
-        "path": "drivers/hwmon",
-        "build_opts": {
-            "CONFIG_PMBUS": "n",
-            "CONFIG_SENSORS_OCC": "n"
-        }
+        "path": "drivers/hwmon"
     },
     "mlxreg-lc": {
         "path": "drivers/platform/mellanox",
@@ -35,11 +32,5 @@
     },
     "mlxreg-io": {
         "path": "drivers/platform/mellanox"
-    },
-    "mlxsw_core": {
-        "path": "drivers/net/ethernet/mellanox/mlxsw",
-        "build_opts": {
-            "CONFIG_MLXSW_CORE": "m"
-        }
     }
 }
