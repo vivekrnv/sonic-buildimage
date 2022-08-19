@@ -12,9 +12,6 @@
             "CONFIG_I2C_MUX_GPIO": "n"
         }
     },
-    "mlxreg-fan": {
-        "path": "drivers/hwmon"
-    },
     "mlxreg-lc": {
         "path": "drivers/platform/mellanox",
         "build_opts": {
