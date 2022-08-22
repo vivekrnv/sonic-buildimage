@@ -85,7 +85,7 @@ generate_onie_installer_image()
 
     ## Generate an ONIE installer image
     ## Note: Don't leave blank between lines. It is single line command.
-    ./onie-mk-demo.sh $TARGET_PLATFORM $TARGET_MACHINE $TARGET_PLATFORM-$TARGET_MACHINE-$ONIEIMAGE_VERSION \
+    ./onie-mk-demo.sh $CONFIGURED_ARCH $TARGET_MACHINE $TARGET_PLATFORM-$TARGET_MACHINE-$ONIEIMAGE_VERSION \
           installer platform/$TARGET_MACHINE/platform.conf $output_file OS $IMAGE_VERSION $ONIE_IMAGE_PART_SIZE \
           $ONIE_INSTALLER_PAYLOAD
 }
@@ -194,7 +194,7 @@ if [ "$IMAGE_TYPE" = "onie" ]; then
     mkdir -p `dirname $OUTPUT_ONIE_IMAGE`
     sudo rm -f $OUTPUT_ONIE_IMAGE
 
-    generate_device_list "./installer/$TARGET_PLATFORM/platforms_asic"
+    generate_device_list "./installer/platforms_asic"
 
     generate_onie_installer_image
 ## Build a raw partition dump image using the ONIE installer that can be
@@ -207,7 +207,7 @@ elif [ "$IMAGE_TYPE" = "raw" ]; then
     mkdir -p `dirname $OUTPUT_RAW_IMAGE`
     sudo rm -f $OUTPUT_RAW_IMAGE
 
-    generate_device_list "./installer/$TARGET_PLATFORM/platforms_asic"
+    generate_device_list "./installer/platforms_asic"
 
     generate_onie_installer_image "$tmp_output_onie_image"
 
@@ -241,7 +241,7 @@ elif [ "$IMAGE_TYPE" = "raw" ]; then
 
 elif [ "$IMAGE_TYPE" = "kvm" ]; then
 
-    generate_device_list "./installer/$TARGET_PLATFORM/platforms_asic"
+    generate_device_list "./installer/platforms_asic"
 
     generate_onie_installer_image
     # Generate single asic KVM image
