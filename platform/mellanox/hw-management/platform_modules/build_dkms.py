@@ -38,10 +38,13 @@ MOD_DEST = 'DEST_MODULE_LOCATION[{}]="{}"'
 AUTO_INS = 'AUTOINSTALL="yes"'
 
 
-# JSON Keys
-# Note: Use BLD_LOC field if the module.ko file sits in the subdirs of "path". 
-# If not specified, the path root is choosen as the location
-PATH = "path" # Mandatory
+# SCHEMA for override-modules.json
+# 1) PATH should start with "drivers/".
+# 2) Use BLD_LOC field if the module.ko file sits in the subdirs of "path". 
+#    If not specified, the *.ko file is searched under PATH
+# 3) BLD_OPTS should be of format "opt":"val" Eg: "CONFIG_MLXSW_CORE": "m"
+#    This is passed down directly to the make command used by the dkms
+PATH = "path" # Mandatory, 
 BLD_OPTS = "build_opts" # Optional
 BLD_LOC = "build_location" # Optional
 
@@ -178,6 +181,15 @@ class DKMS():
         for line in lines:
             self.add(line)
     
+    def rename(self, path):
+        """
+        drivers/i2c/muxes => platform_mellanox
+        """
+        components = os.path.normpath(path).split(os.sep)
+        if len(components) == 0 or components[0] != 'drivers':
+            raise Exception("target source should be under drivers/")
+        return "_".join([comp for comp in components[1:]])
+
     # Build overriden modules (explore combining all of these into single package)
     def create_dkms_src(self):
         os.mkdir(self.hwmgmt_dkms_src)
@@ -199,7 +211,7 @@ class DKMS():
         count = 0
         for mod, keys in Data.modules.items():
             path = keys[PATH]
-            loc = os.path.basename(path)
+            loc = self.rename(path)
             dest = os.path.join("/kernel/", path)
 
             if BLD_LOC in keys:
@@ -230,7 +242,7 @@ class DKMS():
             self.add_lns([nme, loc, dest])
 
     def write_mk(self):
-        final_mk = MK.format(" ".join(os.path.basename(path)+"/" for path in self.paths))
+        final_mk = MK.format(" ".join(self.rename(path)+"/" for path in self.paths))
         write_data(os.path.join(self.hwmgmt_dkms_src, "Makefile"), final_mk)
         
     def write_dkms_conf(self):
@@ -239,7 +251,12 @@ class DKMS():
 
     def move_src_dirs(self):
         for path in self.paths:
-            shutil.move(os.path.join("linux-{}".format(LINUX),path), self.hwmgmt_dkms_src) # Move to correct folder
+            # Move to the dkms folder
+            shutil.move(os.path.join("linux-{}".format(LINUX),path), self.hwmgmt_dkms_src)
+            leaf = os.path.basename(path)
+            mod_nme = self.rename(path)
+            # Rename
+            os.rename(os.path.join(self.hwmgmt_dkms_src,leaf), os.path.join(self.hwmgmt_dkms_src,mod_nme))
 
     def build(self):
         self.create_dkms_src()
