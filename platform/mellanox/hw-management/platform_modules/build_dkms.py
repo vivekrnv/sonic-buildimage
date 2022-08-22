@@ -183,7 +183,7 @@ class DKMS():
     
     def rename(self, path):
         """
-        drivers/i2c/muxes => platform_mellanox
+        drivers/i2c/muxes => i2c_muxes
         """
         components = os.path.normpath(path).split(os.sep)
         if len(components) == 0 or components[0] != 'drivers':

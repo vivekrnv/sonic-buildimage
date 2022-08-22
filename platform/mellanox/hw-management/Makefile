@@ -33,7 +33,8 @@ $(addprefix $(DEST)/, $(MOD_TARGET)): $(DEST)/% :
 	sudo rm -rf linux-$(BASE_LINUX) /usr/src/hwmgmt-$(MLNX_HW_MANAGEMENT_VERSION)
 	sudo rm -rf /var/lib/dkms/hwmgmt/$(MLNX_HW_MANAGEMENT_VERSION)
 
-#   Get Linux Source and apply patch set TODO: Get the tar file
+#   Get Linux Source and apply patch set
+#   TODO: Use the linux-source-deb-package built during sonic-linux-kernel
 #	wget -nc https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-$(BASE_LINUX).tar.gz
 	tar xf linux-$(BASE_LINUX).tar.gz
 	pushd linux-$(BASE_LINUX)

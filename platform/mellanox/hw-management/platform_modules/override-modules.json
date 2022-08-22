@@ -29,5 +29,12 @@
     },
     "mlxreg-io": {
         "path": "drivers/platform/mellanox"
+    },
+    "mlxsw_core": {
+        "path": "drivers/net/ethernet/mellanox",
+        "build_location" : "mlxsw",
+        "build_opts": {
+            "CONFIG_MLXSW_CORE": "m"
+        }
     }
 }
