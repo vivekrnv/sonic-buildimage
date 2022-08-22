@@ -34,7 +34,23 @@
         "path": "drivers/net/ethernet/mellanox",
         "build_location" : "mlxsw",
         "build_opts": {
-            "CONFIG_MLXSW_CORE": "m"
+            "CONFIG_MLXSW_CORE": "m",
+            "CONFIG_MLXSW_CORE_HWMON": "y",
+            "CONFIG_MLXSW_CORE_THERMAL" : "y"
+        }
+    },
+    "mlxsw_i2c": {
+        "path": "drivers/net/ethernet/mellanox",
+        "build_location" : "mlxsw",
+        "build_opts": {
+            "CONFIG_MLXSW_I2C" : "m"
+        }
+    },
+    "mlxsw_minimal": {
+        "path": "drivers/net/ethernet/mellanox",
+        "build_location" : "mlxsw",
+        "build_opts": {
+            "CONFIG_MLXSW_I2C" : "m"
         }
     }
 }
