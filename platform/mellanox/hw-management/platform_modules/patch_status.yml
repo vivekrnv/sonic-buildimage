@@ -1,6 +1,5 @@
 # Provides a mapping b/w modules built and the corresponding hw-mgmt patch
 # File has to be updated manually everytime new-patches are added or removed
-
 mp2888:
    - 0036-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2888-c.patch
 
@@ -33,14 +32,9 @@ mlx-platform:
    - 0066-platform-x86-mlx-platform-Add-new-attributes-for-Cof.patch 
    - 0081-platform-x86-mlx-platform-Add-support-for-multiply-c.patch
    - 0091-platform-x86-mlx-platform-Add-support-for-new-system.patch
-   - 0157-platform-x86-mlx-platform-Make-activation-of-some-dr.patch
-   - 0158-platform-x86-mlx-platform-Add-cosmetic-changes-for-a.patch
 
 mlxreg-hotplug:
    - 0057-platform-mellanox-mlxreg-hotplug-Extend-logic-for-ho.patch
-
-mlxreg-io: 
-   - 0059-platform-mellanox-mlxreg-io-Extend-number-of-hwmon-a.patch
 
 mlxsw_core:
    - 0015-mlxsw-core-Remove-critical-trip-points-from-thermal-.patch
@@ -53,8 +47,6 @@ mlxsw_core:
    - 0026-mlxsw-core-Add-support-for-module-EEPROM-read-by-pag.patch
    - 0031-mlxsw-core_env-Read-module-temperature-thresholds-us.patch
    - 0032-mlxsw-core_env-Avoid-unnecessary-memcpy-s.patch
-   - 0033-mlxsw-core-Set-thermal-zone-polling-delay-argument-t.patch
-   - 0034-mlxsw-Verify-the-accessed-index-doesn-t-exceed-the-a.patch
    - 0053-mlxsw-core-Avoid-creation-virtual-hwmon-objects-by-t.patch
    - 0054-mlxsw-minimal-Simplify-method-of-modules-number-dete.patch
    - 0068-mlxsw-core-Initialize-switch-driver-last.patch
