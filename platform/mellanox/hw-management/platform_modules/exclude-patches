@@ -12,7 +12,6 @@
 0059-platform-mellanox-mlxreg-io-Extend-number-of-hwmon-a.patch
 0067-platform-mellanox-Add-dedicated-match-for-system-typ.patch
 0082-mlxsw-core-Extend-external-cooling-device-whitelist-.patch
-0084-i2c-mlxcpld-Add-callback-to-notify-probing-completio.patch
 0085-hwmon-powr1220-Upgrade-driver-to-support-hwmon-info-.patch
 0086-hwmon-powr1220-Add-support-for-Lattice-s-POWR1014-po.patch
 0087-hwmon-Add-support-for-EMC2305-RPM-based-PWM-Fan-Spee.patch

@@ -10,6 +10,7 @@ i2c-mlxcpld:
    - 0045-i2c-mlxcpld-Fix-criteria-for-frequency-setting.patch
    - 0046-i2c-mlxcpld-Reduce-polling-time-for-performance-impr.patch
    - 0047-i2c-mlxcpld-Allow-flexible-polling-time-setting-for-.patch
+   - 0084-i2c-mlxcpld-Add-callback-to-notify-probing-completio.patch
 
 i2c-mux-mlxcpld:
    - 0004-i2c-mux-mlxcpld-Update-module-license.patch
@@ -35,6 +36,9 @@ mlx-platform:
 
 mlxreg-hotplug:
    - 0057-platform-mellanox-mlxreg-hotplug-Extend-logic-for-ho.patch
+
+nvsw-sn2201:
+   - 0089-platform-mellanox-Add-support-for-new-SN2201-system.patch
 
 mlxsw_core:
    - 0015-mlxsw-core-Remove-critical-trip-points-from-thermal-.patch
