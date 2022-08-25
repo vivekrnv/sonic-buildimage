@@ -25,6 +25,9 @@ OFED_SRC = MLNX_OFED_SRC-$(OFED_VER_FULL)
 UCX_TAR = ucx_*.orig.tar.gz
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	# Make sure errors will be reported
+	set -e
+
 	sudo rm -rf MLNX_OFED_SRC*
 	wget $(SDK_SOURCE_URL)/$(OFED_TAR)
 	tar xf $(OFED_TAR)

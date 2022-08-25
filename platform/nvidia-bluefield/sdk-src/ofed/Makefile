@@ -33,6 +33,9 @@ DKMS_BMDEB = /var/lib/dkms/mlnx-ofed-kernel/$(OFED_VER_SHORT)/bmdeb/
 DKMS_TMP := $(shell mktemp -u -d -t dkms.XXXXXXXXXX)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	# Make sure errors will be reported
+	set -e
+
 	sudo rm -rf MLNX_OFED_SRC*
 	wget $(SDK_SOURCE_URL)/$(OFED_TAR)
 	tar xf $(OFED_TAR)

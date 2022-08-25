@@ -22,7 +22,9 @@ MAIN_TARGET = $(DPDK)
 DERIVED_TARGETS = $(DPDK_DEV)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	
+	# Make sure errors will be reported
+	set -e
+
 	rm -rf dpdk.org/ dpdk.org.zip
 
 	# get sources

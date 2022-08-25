@@ -22,6 +22,9 @@ MAIN_TARGET = $(DOCA_LIBS)
 DERIVED_TARGETS = $(DOCA_LIBS_DEV) $(DOCA_LIBS_DBG)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	# Make sure errors will be reported
+	set -e
+
 	# get sources
 	rm -rf doca/ doca.zip
 

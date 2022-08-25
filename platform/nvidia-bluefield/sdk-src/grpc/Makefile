@@ -23,6 +23,9 @@ DERIVED_TARGETS = $(LIBGRPC_DERIVED_DEBS)
 LIBGRPC_TAR = libgrpc-dev_$(LIBGRPC_VER).tar.gz
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	# Make sure errors will be reported
+	set -e
+
 	# get sources
 	rm -rf grpc/ $(LIBGRPC_TAR)
 

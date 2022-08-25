@@ -22,6 +22,9 @@ MAIN_TARGET = $(SDN_APPL)
 DERIVED_TARGETS = $(SDN_APPL_DEV)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	# Make sure errors will be reported
+	set -e
+
 	# get sources
 	rm -rf SDN_appliance/ SDN_appliance.zip
 

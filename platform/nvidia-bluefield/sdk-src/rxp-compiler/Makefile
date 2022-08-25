@@ -22,6 +22,9 @@ MAIN_TARGET = $(RXPCOMPILER)
 DERIVED_TARGETS = $(LIBRXPCOMPILER_DEV)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	# Make sure errors will be reported
+	set -e
+
 	# get sources
 	rm -rf rxp-tools/ rxp-tools.zip
 	

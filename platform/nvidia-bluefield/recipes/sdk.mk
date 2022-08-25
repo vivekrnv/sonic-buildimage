@@ -24,18 +24,28 @@ SDK_VERSION = 0.1-RC19
 ifneq ($(SDK_SOURCE_BASE_URL), )
 SDK_FROM_SRC = y
 SDK_SOURCE_URL = $(SDK_SOURCE_BASE_URL)/$(subst -,/,$(SDK_VERSION))
+SDK_VERSIONS_FILE = "$(SDK_SOURCE_URL)/VERSIONS_FOR_SONIC_BUILD"
 else
 SDK_FROM_SRC = n
+SDK_VERSIONS_FILE = "$(SDK_BASE_PATH)/VERSIONS"
 endif
 
 export SDK_VERSION SDK_SOURCE_URL
+
+define get_sdk_package_version_short
+$(shell $(PLATFORM_PATH)/recipes/get_sdk_package_version.sh -s $(SDK_VERSIONS_FILE) $(1))
+endef
+
+define get_sdk_package_version_full
+$(shell $(PLATFORM_PATH)/recipes/get_sdk_package_version.sh $(SDK_VERSIONS_FILE) $(1))
+endef
 
 SDK_DEBS =
 
 # OFED and derived packages
 
-OFED_VER_SHORT = 5.6
-OFED_VER_FULL = $(OFED_VER_SHORT)-1.0.3.1
+OFED_VER_SHORT = $(call get_sdk_package_version_short,"ofed")
+OFED_VER_FULL = $(call get_sdk_package_version_full,"ofed")
 
 OFED_KERNEL = mlnx-ofed-kernel-modules-$(KVERSION)_$(OFED_VER_SHORT)_$(BUILD_ARCH).deb
 $(OFED_KERNEL)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/ofed
@@ -51,8 +61,7 @@ SDK_DEBS += $(OFED_KERNEL) $(OFED_DERIVED_DEBS)
 
 # RDMA and derived packages
 
-RDMA_CORE_VER=56mlnx40-1
-
+RDMA_CORE_VER = $(call get_sdk_package_version_full,"rdma-core")
 RDMA_CORE = rdma-core_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
 $(RDMA_CORE)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/rdma
 $(RDMA_CORE)_RDEPENDS = $(LIBNL3)
@@ -106,7 +115,7 @@ SDK_DEBS += $(RDMA_CORE) $(RDMA_CORE_DERIVED_DEBS)
 
 # DPDK and derived packages
 
-DPDK_VER=20.11.0-4.1.9
+DPDK_VER = $(call get_sdk_package_version_full,"dpdk")
 
 DPDK = mlnx-dpdk_${DPDK_VER}_${CONFIGURED_ARCH}.deb
 $(DPDK)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/dpdk
@@ -134,7 +143,7 @@ SDK_DEBS += $(COLLECTX_CLXAPI)
 
 # RXP compiler and derived packages
 
-RXPCOMPILER_VER = 22.05.1
+RXPCOMPILER_VER = $(call get_sdk_package_version_full,"rxp-tools")
 
 RXPCOMPILER = rxp-compiler_$(RXPCOMPILER_VER)_arm64.deb
 $(RXPCOMPILER)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/rxp-compiler
@@ -151,7 +160,7 @@ SDK_DEBS += $(RXPCOMPILER) $(RXPCOMPILER_DERIVED_DEBS)
 
 # UCX and derived packages
 
-UCX_VER = 1.13.0-1.56103
+UCX_VER = $(call get_sdk_package_version_full,"ucx")
 
 UCX = ucx_$(UCX_VER)_arm64.deb
 $(UCX)_DEPENDS = $(IB_VERBS_PROV) $(IB_VERBS)
@@ -164,7 +173,7 @@ SDK_DEBS += $(UCX)
 
 # GRPC and derived packages
 
-LIBGRPC_VER = 1.39.0-1
+LIBGRPC_VER = $(call get_sdk_package_version_full,"grpc")
 
 LIBGRPC_DEV = libgrpc-dev_$(LIBGRPC_VER)_arm64.deb
 $(LIBGRPC_DEV)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/grpc
@@ -181,7 +190,7 @@ SDK_DEBS += $(LIBGRPC_DEV) $(LIBGRPC_DERIVED_DEBS)
 
 # DOCA and derived packages
 
-DOCA_VERSION = 1.4.0047
+DOCA_VERSION = $(call get_sdk_package_version_full,"doca")
 DOCA_DEB_VERSION = $(DOCA_VERSION)-1
 
 DOCA_LIBS = doca-libs_${DOCA_DEB_VERSION}_${CONFIGURED_ARCH}.deb
@@ -203,7 +212,7 @@ SDK_DEBS += $(DOCA_LIBS) $(DOCA_LIBS_DERIVED_DEBS)
 
 # SDN Appliance
 
-SDN_APPL_VER=1.5-1mlnx1
+SDN_APPL_VER=$(call get_sdk_package_version_full,"nasa")
 SDN_APPL = sdn-appliance_${SDN_APPL_VER}_${CONFIGURED_ARCH}.deb
 $(SDN_APPL)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/sdn
 $(SDN_APPL)_RDEPENDS = $(DOCA_LIBS)

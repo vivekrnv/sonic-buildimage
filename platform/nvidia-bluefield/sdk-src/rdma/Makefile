@@ -18,20 +18,26 @@
 .ONESHELL:
 SHELL = /bin/bash
 
+OFED_TAR = MLNX_OFED_SRC-debian-$(OFED_VER_FULL).tgz
+OFED_SRC = MLNX_OFED_SRC-$(OFED_VER_FULL)
+RDMA_TAR = rdma-core*.orig.tar.gz
+
 MAIN_TARGET = $(RDMA_CORE)
 DERIVED_TARGETS = $(RDMA_CORE_DERIVED_DEBS)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	
-	rm -rf rdma-core/ rdma-core.zip
-	
-	# get sources
-	wget $(SDK_SOURCE_URL)/rdma-core.zip
-	unzip rdma-core.zip
-	
-	# build
-	pushd rdma-core/
-	patch -p1 < ../disable-ibverb-dependencies.patch
+	# Make sure errors will be reported
+	set -e
+
+	sudo rm -rf MLNX_OFED_SRC*
+	wget $(SDK_SOURCE_URL)/$(OFED_TAR)
+	tar xf $(OFED_TAR)
+	pushd $(OFED_SRC)/SOURCES
+	tar xf $(RDMA_TAR)
+	pushd rdma-core-*/
+	find . -type f -exec touch {} +
+
+	patch -p1 < ../../../disable-ibverb-dependencies.patch
 
 	find . -type f -exec touch {} +
 
