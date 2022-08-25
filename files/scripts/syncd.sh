@@ -138,13 +138,10 @@ wait() {
 
 collect_mst() {
     debug "Collecting MST dump before syncd restart"
-    IRGDBSERVER=/usr/local/bin/ir-gdbserver
     TMPDIR=/tmp/mlnxdump
     MSTDIR=$TMPDIR/mstdump
     DUMPDIR=/var/dump/mstdump
-    IRGDBDIR=$TMPDIR/ir-gdb
     mkdir -p $MSTDIR
-    mkdir -p $IRGDBDIR
     if ! mst status -v &> $MSTDIR/mststatus; then
         debug "mst status command returned error"
     else
@@ -156,10 +153,6 @@ collect_mst() {
                 break
             fi
         done
-        if [ -f $IRGDBSERVER ]; then
-            debug "collecting ir-gdbserver dump"
-            $IRGDBSERVER -d /dev/mst/mt*_pci_cr0 -c $IRGDBDIR/core
-        fi
     fi
     mkdir -p $DUMPDIR
     TARFILE=mstdump_`date +%Y%m%d_%H%M%S`.tar
