@@ -21,28 +21,56 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
 $(addprefix $(DEST)/, $(MOD_TARGET)): $(DEST)/% :
 
-#   Create Applicable patch set
+	rm -rf /tmp/dkms_patches
+	mkdir /tmp/dkms_patches
+
+# Create Applicable patch set
+# Get all Hw-mgmt patches
 	find $(HW_MGMT_PCH_LOC) -regex ".*patch" -printf "%P\n" | sort > /tmp/series
+# Remove Patches that are not applicable
 	grep -xvf platform_modules/exclude-patches /tmp/series > /tmp/non_excluded_series
-	grep -xvf platform_modules/upstream-patches /tmp/non_excluded_series > $(HW_MGMT_PCH_LOC)/series
+# Remove hw-mgmt Patches that have been modified to suit sonic
+	grep -xvf platform_modules/modified-patches /tmp/non_excluded_series > /tmp/non_modified_series
+# Remove upstream patches that are already there in sonic-linux version
+	grep -xvf platform_modules/upstream-patches /tmp/non_modified_series > /tmp/final_hwmgmt_series
+# Apply Modified patches
+	find platform_modules/sonic-patches/ -regex ".*patch" -printf "%P\n" | sort > /tmp/mod_series
+	cat /tmp/final_hwmgmt_series /tmp/mod_series | sort > /tmp/dkms_patches/final_series
+
+	cp $(HW_MGMT_PCH_LOC)/*.patch /tmp/dkms_patches/
+	cp platform_modules/sonic-patches/*.patch /tmp/dkms_patches/
+
 	echo "Patches Applicable: "
-	cat $(HW_MGMT_PCH_LOC)/series
+	cat /tmp/dkms_patches/final_series
+
+# Sanity Check
+	patches=`ls /tmp/dkms_patches/*.patch`
+	for s_patch in $(patches)
+	do 
+		p_name=`basename $(s_patch)`
+		if grep -Fxq "$(p_name)" /tmp/dkms_patches/final_series
+		then
+			echo "$(patch) will be applied"
+		else
+			echo "ERROR: $(patch) will not be applied"
+		fi
+	done
 	
-#   Cleanup
+# Cleanup
 	pushd platform_modules
 	sudo rm -rf linux-$(BASE_LINUX) /usr/src/hwmgmt-$(MLNX_HW_MANAGEMENT_VERSION)
 	sudo rm -rf /var/lib/dkms/hwmgmt/$(MLNX_HW_MANAGEMENT_VERSION)
 
-#   Get Linux Source and apply patch set
-#   TODO: Use the linux-source-deb-package built during sonic-linux-kernel
-#	wget -nc https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-$(BASE_LINUX).tar.gz
+# Get Linux Source and apply patch set
+# TODO: Use the linux-source-deb-package built during sonic-linux-kernel
+# wget -nc https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-$(BASE_LINUX).tar.gz
 	tar xf linux-$(BASE_LINUX).tar.gz
 	pushd linux-$(BASE_LINUX)
 	git init
 	git add -A
 	git commit -m "init"
 	stg init
-	stg import -s ../../$(HW_MGMT_PCH_LOC)/series
+	stg import -s /tmp/dkms_patches/final_series
 	popd
 
 #   Validate and construct dkms

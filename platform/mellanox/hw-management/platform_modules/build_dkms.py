@@ -19,6 +19,7 @@ KVERSION=""
 EXCLUDE_PATCHES = "exclude-patches"
 UPSTREAM_PATCHES = "upstream-patches"
 MODULES_JSON = "override-modules.json"
+MOD_PATCHES = "sonic-patches/"
 PATCHPATH = "../hw-mgmt/recipes-kernel/linux/linux-5.10/"
 SONIC_PATCHPATH = "../../../../src/sonic-linux-kernel/patch"
 
@@ -47,7 +48,6 @@ AUTO_INS = 'AUTOINSTALL="yes"'
 PATH = "path" # Mandatory, 
 BLD_OPTS = "build_opts" # Optional
 BLD_LOC = "build_location" # Optional
-
 
 """ Helper Methods """ 
 
@@ -80,7 +80,7 @@ def write_data(path, data: str):
     with open(path, "w") as mk:
         mk.write(data)
 
-def read_hwmgmt_patches(path: str) -> list:
+def read_patches(path: str) -> list:
     patch_list = [f for f in os.listdir(path) if f.endswith(".patch")]
     patch_list = [os.path.join(path, f) for f in patch_list]
     return patch_list
@@ -96,22 +96,24 @@ def newln(line: str) -> str:
 class Data:
     patches = []
     ignore = []
-    soncipatch = []
+    sonicpatch = []
     upstream = []
+    modifiedpatch= []
     modules = {}
     # information regarding the list of the files updated by the patches
     fl = {}
 
     @staticmethod
     def read_all():
-        Data.patches = read_hwmgmt_patches(PATCHPATH)
+        Data.patches = read_patches(PATCHPATH)
         Data.ignore = read_lines(EXCLUDE_PATCHES)
         Data.sonicpatch = read_sonic_patches(SONIC_PATCHPATH)
         Data.modules = read_json(MODULES_JSON)
         Data.upstream = read_lines(UPSTREAM_PATCHES)
         Data.remove_ignore()
+        Data.modifiedpatch = read_patches(MOD_PATCHES)
         Data.fl = Data.extract_modified_files()
-        print(json.dumps(Data.fl))
+        print(json.dumps(Data.fl, indent=4))
 
     @staticmethod 
     def remove_ignore():
@@ -277,7 +279,7 @@ if __name__ == "__main__":
     CONFIGURED_ARCH = args.arch
     KVERSION = args.kernel_ver
     Data.read_all()
-    Validator.check()
+    # Validator.check()
     dkms_handle = DKMS()
     dkms_handle.build()
 

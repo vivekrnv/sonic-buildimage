@@ -1,7 +1,19 @@
 {
     "mp2888": {
         "path": "drivers/hwmon",
-        "build_location": "pmbus"
+        "build_location": "pmbus",
+        "build_opts" : {
+            "CONFIG_SENSORS_MP2888" : "m"
+        }
+    },
+    "mlx-platform": {
+        "path": "drivers/platform/x86",
+        "build_opts": {
+            "CONFIG_HP_ACCEL": "n"
+        }
+    },
+    "mlxreg-hotplug": {
+        "path": "drivers/platform/mellanox"
     },
     "i2c-mlxcpld": {
         "path": "drivers/i2c/busses"
@@ -17,15 +29,6 @@
         "build_opts": {
             "CONFIG_MLXREG_LC": "m"
         }
-    },
-    "mlx-platform": {
-        "path": "drivers/platform/x86",
-        "build_opts": {
-            "CONFIG_HP_ACCEL": "n"
-        }
-    },
-    "mlxreg-hotplug": {
-        "path": "drivers/platform/mellanox"
     },
     "mlxsw_core": {
         "path": "drivers/net/ethernet/mellanox",
@@ -48,6 +51,12 @@
         "build_location" : "mlxsw",
         "build_opts": {
             "CONFIG_MLXSW_I2C" : "m"
+        }
+    },
+    "nvsw-sn2201": {
+        "path": "drivers/platform/mellanox",
+        "build_opts": {
+            "CONFIG_NVSW_SN2201" : "m"
         }
     }
 }
