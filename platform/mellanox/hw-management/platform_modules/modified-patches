@@ -1,0 +1,10 @@
+0052-hwmon-mlxreg-fan-Return-non-zero-value-when-fan-curr.patch
+0061-platform-mellanox-mlxreg-lc-Add-initial-support-for-.patch
+0064-hwmon-mlxreg-fan-Extend-the-maximum-number-of-tachom.patch
+0093-hwmon-mlxreg-fan-Extend-driver-to-support-multiply-P.patch
+0094-hwmon-mlxreg-fan-Extend-driver-to-support-multiply-c.patch
+0095-hwmon-mlxreg-fan-Fix-out-of-bounds-read-on-array-fan.patch
+0096-hwmon-mlxreg-fan-Modify-PWM-connectivity-validation.patch
+0097-hwmon-mlxreg-fan-Support-distinctive-names-per-diffe.patch
+0163-platform-mellanox-Add-COME-board-revision-register.patch
+0167-DS-leds-leds-mlxreg-Send-udev-event-from-leds-mlxreg.patch
