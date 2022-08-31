@@ -21,7 +21,7 @@ export DPU_SAI_VERSION
 
 DPU_SAI = mlnx-sai_1.mlnx.$(DPU_SAI_VERSION)_arm64.deb
 $(DPU_SAI)_SRC_PATH = $(PLATFORM_PATH)/dpu-sai
-$(DPU_SAI)_DEPENDS = $(SDN_APPL) $(SDN_APPL_DEV)
+$(DPU_SAI)_DEPENDS = $(SDN_APPL)
 $(DPU_SAI)_RDEPENDS = $(SDN_APPL)
 
 DPU_SAI_DBGSYM = mlnx-sai-dbgsym_1.mlnx.$(DPU_SAI_VERSION)_arm64.deb

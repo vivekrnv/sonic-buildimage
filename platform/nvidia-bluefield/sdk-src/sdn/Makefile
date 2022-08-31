@@ -19,7 +19,7 @@
 SHELL = /bin/bash
 
 MAIN_TARGET = $(SDN_APPL)
-DERIVED_TARGETS = $(SDN_APPL_DEV)
+DERIVED_TARGETS = $(SDN_APPL_DERIVED_DEBS)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	# Make sure errors will be reported
