@@ -263,6 +263,9 @@ PMAOS_DISABLE = 2
 PMMP_LPMODE_BIT = 8
 MCION_TX_DISABLE_BIT = 1
 
+BYTES_IN_DWORD = 4
+ETHOOL_EEPROM_U_BOUND = 640 # 00h (Upper and Lower), 01h, 02h, 03h (Upper)
+
 #on page 0
 #i2c address 0x50
 MCIA_ADDR_TX_CHANNEL_DISABLE = 86
@@ -312,6 +315,56 @@ def deinitialize_sdk_handle(sdk_handle):
          logger.log_warning("Sdk handle is none")
          return False
 
+
+class MlxregManager:
+    def __init__(self, slot_id, sdk_index):
+        self.mst_pci_device = self.get_mst_pci_device()
+        self.slot_id = slot_id
+        self.sdk_index = sdk_index
+
+    def read_mlxred_eeprom(self, device_address, page, num_bytes):
+        try:
+            cmd = "mlxreg -d /dev/mst/{} --reg_name MCIA --indexes \
+                    slot_index={},module={},device_address={},page_number={},i2c_device_address=0x50,size={},bank_number=0 \
+                    --get".format(self.mst_pci_device, self.slot_id, self.sdk_index, device_address, page, num_bytes)
+            result = subprocess.check_output(cmd, universal_newlines=True, shell=True)
+        except subprocess.CalledProcessError as e:
+            logger.log_error("Error! Unable to read data for {} port, page {} device_address {}, rc = {}, err msg: {}".format(self.sdk_index, page, device_address, e.returncode, e.output))
+            return None
+        return result
+
+    def parse_mlxreg_read_output(self, read_output, num_bytes):
+        if not read_output:
+            return None
+
+        res = []
+        dword_num = num_bytes // BYTES_IN_DWORD
+        used_bytes_in_dword = num_bytes % BYTES_IN_DWORD
+        arr = [value for value in read_output.split('\n') if value[0:5] == "dword"]
+        for i in range(dword_num):
+            dword = arr[i].split()[2][2:]
+            res.extend([dword[0:2], dword[2:4], dword[4:6], dword[6:8]])
+
+        if used_bytes_in_dword > 0:
+            # Cut needed info and insert into final hex string
+            # Example: 3 bytes : 0x12345600
+            #                      ^    ^
+            dword = arr[dword_num].split()[2]
+            for i in range(0, used_bytes_in_dword):
+                res.append(dword[i*2:i*2+2])
+
+        return res
+
+    # get MST PCI device name
+    def get_mst_pci_device(self):
+        device_name = None
+        try:
+            device_name = subprocess.check_output("ls /dev/mst/ | grep pciconf", universal_newlines=True, shell=True).strip()
+        except subprocess.CalledProcessError as e:
+            logger.log_error("Failed to find mst PCI device rc={} err.msg={}".format(e.returncode, e.output))
+        return device_name
+
+
 class SFP(SfpBase):
     """Platform-specific SFP class"""
 
@@ -329,6 +382,9 @@ class SFP(SfpBase):
         # initialize SFP thermal list
         from .thermal import initialize_sfp_thermals
         initialize_sfp_thermals(platform, self._thermal_list, self.index)
+
+        self.slot_index = 0
+        self.mlxreg_handle = MlxregManager(self.slot_index, self.sdk_index)
 
     @property
     def sdk_handle(self):
@@ -370,8 +426,7 @@ class SFP(SfpBase):
         return presence
 
 
-    # Read out any bytes from any offset
-    def _read_eeprom_specific_bytes(self, offset, num_bytes):
+    def _read_ethtool(self, offset, num_bytes):
         eeprom_raw = []
         ethtool_cmd = "ethtool -m sfp{} hex on offset {} length {}".format(self.index, offset, num_bytes)
         try:
@@ -389,6 +444,18 @@ class SFP(SfpBase):
 
         return eeprom_raw
 
+    # Read out any bytes from any offset
+    def _read_eeprom_specific_bytes(self, offset, num_bytes):
+        if offset + num_bytes < ETHOOL_EEPROM_U_BOUND:
+            return self._read_ethtool(offset, num_bytes)
+
+        page  = int(offset / 128)
+        device_address = offset % 128 + 128 #(upper page)
+        if num_bytes > 48:
+            logger.log_error("size is greater than 48, mlxreg won't work")
+            return None
+        read_output = self.mlxreg_handle.read_mlxred_eeprom(device_address, page, num_bytes)
+        return self.mlxreg_handle.parse_mlxreg_read_output(read_output, num_bytes)
 
     def _detect_sfp_type(self, sfp_type):
         eeprom_raw = []
@@ -996,7 +1063,7 @@ class SFP(SfpBase):
 
             if self.dom_rx_tx_power_bias_supported:
                 # page 11h
-                offset = 512
+                offset = 17 * 128
                 dom_data_raw = self._read_eeprom_specific_bytes(offset + QSFP_DD_CHANNL_MON_OFFSET, QSFP_DD_CHANNL_MON_WIDTH)
                 if dom_data_raw is None:
                     return transceiver_dom_info_dict
@@ -1323,7 +1390,7 @@ class SFP(SfpBase):
         elif self.sfp_type == QSFP_DD_TYPE:
             # page 11h
             if self.dom_rx_tx_power_bias_supported:
-                offset = 512
+                offset = 17 * 128
                 dom_channel_monitor_raw = self._read_eeprom_specific_bytes((offset + QSFP_DD_CHANNL_RX_LOS_STATUS_OFFSET), QSFP_DD_CHANNL_RX_LOS_STATUS_WIDTH)
                 if dom_channel_monitor_raw is not None:
                     rx_los_data = int(dom_channel_monitor_raw[0], 8)
@@ -1372,10 +1439,9 @@ class SFP(SfpBase):
                 tx_fault_list.append(tx_fault_data & 0x08 != 0)
 
         elif self.sfp_type == QSFP_DD_TYPE:
-            return None
             # page 11h
             if self.dom_rx_tx_power_bias_supported:
-                offset = 512
+                offset = 17 * 128
                 dom_channel_monitor_raw = self._read_eeprom_specific_bytes((offset + QSFP_DD_CHANNL_TX_FAULT_STATUS_OFFSET), QSFP_DD_CHANNL_TX_FAULT_STATUS_WIDTH)
                 if dom_channel_monitor_raw is not None:
                     tx_fault_data = int(dom_channel_monitor_raw[0], 8)
@@ -1671,12 +1737,12 @@ class SFP(SfpBase):
         elif self.sfp_type == QSFP_DD_TYPE:
             # page 11h
             if self.dom_rx_tx_power_bias_supported:
-                offset = 512
+                offset = 17 * 128
                 sfpd_obj = qsfp_dd_Dom()
                 if sfpd_obj is None:
                     return None
 
-                if dom_tx_bias_power_supported:
+                if self.dom_tx_bias_power_supported:
                     dom_tx_bias_raw = self._read_eeprom_specific_bytes((offset + QSFP_DD_TX_BIAS_OFFSET), QSFP_DD_TX_BIAS_WIDTH)
                     if dom_tx_bias_raw is not None:
                         dom_tx_bias_data = sfpd_obj.parse_dom_tx_bias(dom_tx_bias_raw, 0)
@@ -1748,7 +1814,7 @@ class SFP(SfpBase):
         elif self.sfp_type == QSFP_DD_TYPE:
             # page 11
             if self.dom_rx_tx_power_bias_supported:
-                offset = 512
+                offset = 17 * 512
                 sfpd_obj = qsfp_dd_Dom()
                 if sfpd_obj is None:
                     return None
@@ -1823,10 +1889,9 @@ class SFP(SfpBase):
                 return None
 
         elif self.sfp_type == QSFP_DD_TYPE:
-            return None
             # page 11
             if self.dom_rx_tx_power_bias_supported:
-                offset = 512
+                offset = 17 * 128
                 sfpd_obj = qsfp_dd_Dom()
                 if sfpd_obj is None:
                     return None
