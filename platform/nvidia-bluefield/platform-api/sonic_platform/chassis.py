@@ -17,6 +17,7 @@
 
 try:
     from sonic_platform_base.chassis_base import ChassisBase
+    from sonic_platform_base.watchdog_base import WatchdogBase
     from sonic_py_common.logger import Logger
     import os
     from functools import reduce
@@ -26,6 +27,7 @@ try:
     from .device_data import DeviceDataManager
     from .sfp import Sfp
     from .eeprom import Eeprom
+    from .watchdog import Watchdog
 except ImportError as e:
     raise ImportError(str(e) + "- required module not found")
 
@@ -49,6 +51,7 @@ class Chassis(ChassisBase):
         self._initialize_sfp()
         self.sfp_event = None
         self._eeprom = Eeprom()
+        self._watchdog = Watchdog()
         logger.log_info("Chassis loaded successfully")
 
     def _initialize_sfp(self):
