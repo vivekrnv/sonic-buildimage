@@ -19,12 +19,13 @@
 # This script generates the corresponding SONiC installer images for Bluefield
 # 1) BFB Image
 # 2) PXE Archive for Network Booting
+# 3) BIN Image for SONiC-SONiC Installation
 
 set -e
 
 WDIR=
-IMAGE_VER=
-KERNEL=
+IMAGE_VERSION=
+KERNEL_VERSION=
 CHROOT_DIR=
 INITRD=
 VMLINUZ=
@@ -41,6 +42,8 @@ TARGET_MACHINE=nvidia-bluefield
 BFB="${BFB:-/lib/firmware/mellanox/boot/default.bfb}"
 GRUB_AA64=grubnetaa64.efi
 CONSOLE_PARAM="console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000"
+GRUB_CFG="" # Common Grub Config
+DEFAULT_GRUB_CMDLINE_LINUX="$CONSOLE_PARAM quiet"
 
 usage() {
 cat << EOF
@@ -65,7 +68,7 @@ parse_args() {
                 ;;
             -k|--kernel)
                 shift
-                KERNEL=$1
+                KERNEL_VERSION=$1
                 ;;
             *)
                 usage
@@ -76,12 +79,81 @@ parse_args() {
     done
 }
 
-validate_config() {
-    if [[ ! -d "$CHROOT_DIR" ]]; then
-        echo "[create_sonic_image] Error! Path to CHROOT not found"
+clean_dir()
+{
+    rm -rf $1
+    exit $2
+}
+
+generate_s2s_installer_image_bluefield()
+{
+    if  [ ! -d /sonic/installer ] || [ ! -r /sonic/installer/sharch_body.sh ] ; then
+        echo "Error: Invalid installer script directory: installer"
         exit 1
     fi
 
+    if  [ ! -d /sonic/installer/bluefield ] || [ ! -r /sonic/installer/bluefield/sonic_to_sonic.sh.j2 ] ; then
+        echo "Error: Invalid arch installer directory: installer/bluefield"
+        exit 1
+    fi
+
+    # Copy platform-specific installer config files
+    rm -rf /sonic/installer/bluefield/platforms/
+    mkdir -p /sonic/installer/bluefield/platforms/
+    for PLATFORM in `ls ./device/nvidia-bluefield`; do
+        if [ -f /sonic/device/nvidia-bluefield/$PLATFORM/installer.conf ]; then
+            cp /sonic/device/nvidia-bluefield/$PLATFORM/installer.conf /sonic/installer/bluefield/platforms/$PLATFORM
+        fi
+    done
+
+    echo -n "Building self-extracting installer image ."
+    tmp_dir=$(mktemp --directory)
+    tmp_installdir="$tmp_dir/installer"
+    mkdir $tmp_installdir || clean_dir $tmp_dir 1
+
+    # Replace the build time flags inside the sonic_to_sonic.sh script
+    j2 /sonic/installer/bluefield/sonic_to_sonic.sh.j2 -o $tmp_installdir/install.sh || clean_dir $tmp_dir 1
+    chmod 0755 $tmp_installdir/install.sh
+
+    # Copy the payload file
+    cp $ONIE_INSTALLER_PAYLOAD $tmp_installdir || clean_dir $tmp_dir 1
+
+    # Create machine.conf file
+    echo "machine=nvidia-bluefield" > $tmp_installdir/machine.conf
+    echo "platform=arm64" >> $tmp_installdir/machine.conf
+
+    sharch="$tmp_dir/sharch.tar"
+    tar -C $tmp_dir -cf $sharch installer || {
+        echo "Error: Problems creating $sharch archive"
+        clean_dir $tmp_dir 1
+    }
+
+    [ -f "$sharch" ] || {
+        echo "Error: $sharch not found"
+        clean_dir $tmp_dir 1
+    }
+
+    sha1=$(cat $sharch | sha1sum | awk '{print $1}')
+    echo -n "."
+
+    cp /sonic/installer/sharch_body.sh /sonic/$OUTPUT_ONIE_IMAGE || {
+        echo "Error: Problems copying sharch_body.sh"
+        clean_dir 1
+    }
+
+    # Replace variables in the sharch template
+    sed -i -e "s/%%IMAGE_SHA1%%/$sha1/" /sonic/$OUTPUT_ONIE_IMAGE
+    echo -n "."
+    cat $sharch >> /sonic/$OUTPUT_ONIE_IMAGE
+    rm -rf $tmp_dir
+
+    echo " Done."
+    echo "Success: sonic-sonic installer install image for bluefield is ready in /sonic/${OUTPUT_ONIE_IMAGE}:"
+
+    clean_dir $tmp_dir  0
+}
+
+validate_config() {
     if [[ ! -f "$INITRD" ]]; then
         echo "[create_sonic_image] Error! SONiC INITRD not found"
         exit 1
@@ -160,15 +232,8 @@ add_sonic_to_initramfs() {
     # Add the logic to put second stage installer into bfb initramfs
     mkdir -p debian
 
-    cp ${SDIR}/install.sh temp_install.sh
-    sed -i -e "s/%%IMAGE_VERSION%%/$IMAGE_VER/g" temp_install.sh
-    sed -i -e "s/%%INSTALLER_PAYLOAD%%/$ONIE_INSTALLER_PAYLOAD/g" temp_install.sh
-    sed -i -e "s/%%FILESYSTEM_DOCKERFS%%/$FILESYSTEM_DOCKERFS/g" temp_install.sh
-    sed -i -e "s/%%DOCKERFS_DIR%%/$DOCKERFS_DIR/g" temp_install.sh
-    sed -i -e "s/%%FILESYSTEM_SQUASHFS%%/$FILESYSTEM_SQUASHFS/g" temp_install.sh
-    sed -i -e "s/%%KERNEL_VERSION%%/$KERNEL/g" temp_install.sh
-    install -m 0755 temp_install.sh ./debian/install.sh
-    rm -f temp_install.sh
+    j2 ${SDIR}/install.sh.j2 -o ./debian/install.sh
+    chmod 0755 ./debian/install.sh
 
     # Copy the INSTALLER payload
     cp $CDIR/$ONIE_INSTALLER_PAYLOAD ./debian/
@@ -182,7 +247,7 @@ printf_msg()
 	return 0
 }
 
-depmod -a $KERNEL > /dev/null 2>&1
+depmod -a $KERNEL_VERSION > /dev/null 2>&1
 insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio.ko > /dev/null 2>&1
 insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio_ring.ko > /dev/null 2>&1
 insmod /efivarfs.ko > /dev/null 2>&1
@@ -318,7 +383,7 @@ create_bfb_image() {
         copy_bin $tool
     done
 
-    sudo depmod -a -b ./ $KERNEL
+    sudo depmod -a -b ./ $KERNEL_VERSION
     mkdir -p usr/share/misc/ bin/ var/log/watchdog
     sudo cp /etc/watchdog.conf etc
     sudo cp /usr/share/misc/pci.ids usr/share/misc/
@@ -390,22 +455,40 @@ main() {
 
     . $CDIR/onie-image-arm64.conf
 
+    # Export ENV Variables for j2cli
     CHROOT_DIR=$CDIR/$FILESYSTEM_ROOT
-    INITRD=$CDIR/$FILESYSTEM_ROOT/boot/initrd.img-$KERNEL
-    VMLINUZ=$CDIR/$FILESYSTEM_ROOT/boot/vmlinuz-$KERNEL
-    MODULES_DIR=$CDIR/$FILESYSTEM_ROOT/lib/modules/$KERNEL
-    EFIVARS_MOD=$MODULES_DIR/kernel/fs/efivarfs/efivarfs.ko
-    WATCHDOG=$MODULES_DIR/kernel/drivers/watchdog/sbsa_gwdt.ko
-    IMAGE_VER=$(cat $CHROOT_DIR/etc/sonic/sonic_version.yml | grep "build_version" | sed -e "s/build_version: //g;s/'//g")
-    validate_config
+    if [[ ! -d "$CHROOT_DIR" ]]; then
+        echo "[create_sonic_image] Error! Path to CHROOT not found"
+        exit 1
+    fi
 
-    create_workdir
-    echo "Work directory: $WDIR"
+    export GRUB_CFG=$(cat /sonic/installer/bluefield/sonic-grub.cfg)
+    export IMAGE_VERSION=$(cat $CHROOT_DIR/etc/sonic/sonic_version.yml | grep "build_version" | sed -e "s/build_version: //g;s/'//g")
+    export DEFAULT_GRUB_CMDLINE_LINUX ONIE_INSTALLER_PAYLOAD FILESYSTEM_DOCKERFS DOCKERFS_DIR FILESYSTEM_SQUASHFS KERNEL_VERSION
 
-    create_bfb_image
+    if [[ $IMAGE_TYPE == bin ]]; then
+        # bluefield Doesn't have ONiE Support yet and this *.bin image generated can only be used for SONiC-SONiC installation
+        echo "Build SONiC to SONiC installer for Bluefield"
+        mkdir -p `dirname $OUTPUT_ONIE_IMAGE`
+        sudo rm -f $OUTPUT_ONIE_IMAGE
+        generate_s2s_installer_image_bluefield
+    else
+        INITRD=$CDIR/$FILESYSTEM_ROOT/boot/initrd.img-$KERNEL_VERSION
+        VMLINUZ=$CDIR/$FILESYSTEM_ROOT/boot/vmlinuz-$KERNEL_VERSION
+        MODULES_DIR=$CDIR/$FILESYSTEM_ROOT/lib/modules/$KERNEL_VERSION
+        EFIVARS_MOD=$MODULES_DIR/kernel/fs/efivarfs/efivarfs.ko
+        WATCHDOG=$MODULES_DIR/kernel/drivers/watchdog/sbsa_gwdt.ko
 
-    if [[ $IMAGE_TYPE == pxe ]]; then
-        create_pxe_archive
+        validate_config
+
+        create_workdir
+        echo "Work directory: $WDIR"
+
+        create_bfb_image
+
+        if [[ $IMAGE_TYPE == pxe ]]; then
+            create_pxe_archive
+        fi
     fi
 }
 

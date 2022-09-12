@@ -19,12 +19,13 @@
 # This will setup the disk, grub etc for the actual SONiC to boot from
 
 # NOTE: Replace these flag at build time
-IMAGE_VERSION="%%IMAGE_VERSION%%"
-INSTALLER_PAYLOAD="%%INSTALLER_PAYLOAD%%"
-FILESYSTEM_DOCKERFS="%%FILESYSTEM_DOCKERFS%%"
-DOCKERFS_DIR="%%DOCKERFS_DIR%%"
-FILESYSTEM_SQUASHFS="%%FILESYSTEM_SQUASHFS%%"
-KERNEL_VERSION="%%KERNEL_VERSION%%"
+IMAGE_VERSION="{{IMAGE_VERSION}}"
+INSTALLER_PAYLOAD="{{ONIE_INSTALLER_PAYLOAD}}"
+FILESYSTEM_DOCKERFS="{{FILESYSTEM_DOCKERFS}}"
+DOCKERFS_DIR="{{DOCKERFS_DIR}}"
+FILESYSTEM_SQUASHFS="{{FILESYSTEM_SQUASHFS}}"
+KERNEL_VERSION="{{KERNEL_VERSION}}"
+DEFAULT_GRUB_CMDLINE_LINUX="{{DEFAULT_GRUB_CMDLINE_LINUX}}"
 
 image_dir="image-$IMAGE_VERSION"
 demo_volume_revision_label="SONiC-OS-${IMAGE_VERSION}"
@@ -204,26 +205,8 @@ ex grub-install \
 grub_cfg=$(mktemp)
 
 # Modify GRUB_CMDLINE_LINUX from bf.cfg file if required
-# GRUB_CMDLINE_LINUX
-
-DEFAULT_GRUB_CMDLINE_LINUX="console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000 quiet"
 GRUB_CMDLINE_LINUX=${GRUB_CMDLINE_LINUX:-"$DEFAULT_GRUB_CMDLINE_LINUX"}
 export GRUB_CMDLINE_LINUX
-
-# Add the logic to support grub-reboot and grub-set-default
-cat <<EOF >> $grub_cfg
-if [ -s \$prefix/grubenv ]; then
-    load_env
-fi
-if [ "\${saved_entry}" ]; then
-    set default="\${saved_entry}"
-fi
-if [ "\${next_entry}" ]; then
-    set default="\${next_entry}"
-    unset next_entry
-    save_env next_entry
-fi
-EOF
 
 # Add a menu entry for the SONiC OS
 # Note: assume that apparmor is supported in the kernel
@@ -237,27 +220,9 @@ else
 	grub_cfg_root=UUID=$uuid
 fi
 
-# Add common configuration, like the timeout
-cat <<EOF >> $grub_cfg
-set timeout=5
-EOF
 
 cat <<EOF >> $grub_cfg
-menuentry '$demo_grub_entry' {
-        insmod gzio
-        insmod part_gpt
-        insmod ext2
-        search --no-floppy --label --set=root SONiC-OS
-        if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
-        echo 'Loading SONiC-OS Kernel'
-        linux   /$image_dir/boot/vmlinuz-$KERNEL_VERSION root=$grub_cfg_root rw $GRUB_CMDLINE_LINUX fixrtc \
-                loop=$image_dir/$FILESYSTEM_SQUASHFS loopfstype=squashfs                       \
-                systemd.unified_cgroup_hierarchy=0 \
-                apparmor=1 security=apparmor varlog_size=4096 systemd.unified_cgroup_hierarchy=0 \
-                isolcpus=1-7 nohz_full=1-7 rcu_nocbs=1-7
-        echo    'Loading SONiC-OS initial ramdisk ...'
-        initrd  /$image_dir/boot/initrd.img-$KERNEL_VERSION
-}
+{{GRUB_CFG}}
 EOF
 
 # Copy the grub.cfg onto the boot-directory as specified in the grub-install
