@@ -23,6 +23,7 @@ BSD_REV=12027
 BFB_IMG_TYPE=prod
 export BSD_VER BSD_REV BFB_IMG_TYPE
 
+override TARGET_BOOTLOADER=grub
 
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bfinstall.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/tmfifo.mk
