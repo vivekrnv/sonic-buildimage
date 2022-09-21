@@ -3,10 +3,10 @@
 	url = https://github.com/sonic-net/sonic-swss-common
 [submodule "sonic-linux-kernel"]
 	path = src/sonic-linux-kernel
-	url = ssh://git@github.com/nvidia-sonic/sonic-linux-kernel
+	url = https://github.com/nvidia-sonic/sonic-linux-kernel.git
 [submodule "sonic-sairedis"]
 	path = src/sonic-sairedis
-	url = ssh://git@github.com/nvidia-sonic/sonic-sairedis
+	url = https://github.com/nvidia-sonic/sonic-sairedis.git
 [submodule "sonic-swss"]
 	path = src/sonic-swss
 	url = https://github.com/sonic-net/sonic-swss
@@ -102,13 +102,13 @@
 	url = https://github.com/Mellanox/bfscripts
 [submodule "platform/nvidia-bluefield/sdk-src/sonic-bluefield-packages"]
 	path = platform/nvidia-bluefield/sdk-src/sonic-bluefield-packages
-	url = ssh://git@github.com/nvidia-sonic/sonic-bluefield-packages
+	url = https://github.com/nvidia-sonic/sonic-bluefield-packages.git
 [submodule "src/sonic-p4rt/sonic-pins"]
 	path = src/sonic-p4rt/sonic-pins
 	url = https://github.com/sonic-net/sonic-pins.git
 [submodule "platform/nvidia-bluefield/dpu-sai/sai-dpu"]
 	path = platform/nvidia-bluefield/dpu-sai/sai-dpu
-	url = ssh://git@github.com/nvidia-sonic/sai-dpu
+	url = https://github.com/nvidia-sonic/sai-dpu.git
 [submodule "src/ptf-py3"]
 	path = src/ptf-py3
 	url = https://github.com/p4lang/ptf.git
@@ -121,4 +121,3 @@
 [submodule "src/sonic-gnmi"]
 	path = src/sonic-gnmi
 	url = https://github.com/nvidia-sonic/sonic-gnmi.git
-	branch = bluefield
