@@ -79,6 +79,13 @@ jobs:
           variables:
             PLATFORM_ARCH: arm64
 
+        - name: nvidia-bluefield
+          ${{ if not(parameters.qemuOrCrossBuild) }}:
+            pool: sonicbld-arm64
+          timeoutInMinutes: 2880
+          variables:
+            PLATFORM_ARCH: arm64
+
         - name: generic
           variables:
             dbg_image: yes
