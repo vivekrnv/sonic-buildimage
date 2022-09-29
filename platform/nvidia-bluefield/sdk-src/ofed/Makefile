@@ -56,7 +56,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	sudo mv /tmp/uname /bin/uname
 
 	# Build the Debs
-	sudo ./install.pl -k $(KVERSION) --kernel-only --build-only --without-depcheck --kernel-extra-args "--with-core-mod --with-user_mad-mod --with-user_access-mod --with-addr_trans-mod --with-mlxfw-mod --with-mlx5-mod --with-ipoib-mod --with-mlxdevm-mod --with-mlx5-ipsec --with-gds" --force
+	sudo ./install.pl -k $(KVERSION) --kernel-only --build-only --without-depcheck --kernel-extra-args --force
 
 	sudo chown -R ${USER} ./*
 
