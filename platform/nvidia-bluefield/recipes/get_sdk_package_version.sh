@@ -36,7 +36,7 @@ else
   cmd="cat"
 fi
 
-version=$($cmd $path | grep $package | sed -e "s/$package -//g")
+version=$($cmd $path | grep ^$package | sed -e "s/$package -//g")
 
 if [[ $short == true ]]; then
   echo $(echo $version | tr "-" " " | awk '{print $1}')

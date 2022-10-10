@@ -22,7 +22,10 @@ $(SONIC_BF2_IMAGE_BASE)_MACHINE = nvidia-bluefield
 
 $(SONIC_BF2_IMAGE_BASE)_DEPENDS += $(MLXBF_BOOTCTL_DEB) \
                                    $(BOOTIMAGES) \
-                                   $(MLNX_BLUEFIELD_BUILD_SCRIPTS)
+                                   $(MLNX_BLUEFIELD_BUILD_SCRIPTS) \
+                                   $(MLNX_TOOLS) \
+                                   $(OFED_KERNEL_UTILS) \
+                                   $(MLNX_IPROUTE2)
 
 # Install the packages during the build_debian phase
 $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
@@ -37,7 +40,10 @@ $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
                                     $(MLX_OPENIPMI_DEB) \
                                     $(MLX_OPENIPMI_SERVER_DEB) \
                                     $(BF2_PLATFORM_MODULE) \
-                                    $(OFED_KERNEL)
+                                    $(OFED_KERNEL) \
+                                    $(MLNX_TOOLS) \
+                                    $(OFED_KERNEL_UTILS) \
+                                    $(MLNX_IPROUTE2)
 
 $(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(SONIC_INSTALL_DOCKER_IMAGES)
 

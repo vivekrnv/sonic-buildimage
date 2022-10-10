@@ -1,0 +1,25 @@
+From 75aae8eddcc446677da337820528383f7494193d Mon Sep 17 00:00:00 2001
+From: Oleksandr Ivantsiv <oivantsiv@nvidia.com>
+Date: Tue, 11 Oct 2022 14:09:49 +0300
+Subject: [PATCH] Allow compilation with warnings.
+
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 8433e84..097d72d 100644
+--- a/meson.build
++++ b/meson.build
+@@ -15,7 +15,7 @@ project('DOCA', 'C', 'CPP',
+ 	# Fallback to "more" for Windows compatibility.
+ 	version: run_command(find_program('cat', 'more'), files('VERSION'), check: true).stdout().strip(),
+ 	default_options: ['buildtype=debug',
+-			  'werror=true',
++			  'werror=false',
+ 			  'warning_level=2',
+ 			  'b_staticpic=true',
+ 			  'prefix=/opt/mellanox/doca'],
+-- 
+2.25.1
+

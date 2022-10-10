@@ -18,30 +18,27 @@
 .ONESHELL:
 SHELL = /bin/bash
 
-MAIN_TARGET = $(DOCA_LIBS)
-DERIVED_TARGETS = $(DOCA_LIBS_DEV) $(DOCA_LIBS_DBG)
+MAIN_TARGET = $(MLNX_IPROUTE2)
+DERIVED_TARGETS = $(MLNX_IPROUTE2_DERIVED_DEBS)
+
+OFED_TAR = MLNX_OFED_SRC-debian-$(OFED_VER_FULL).tgz
+OFED_SRC = MLNX_OFED_SRC-$(OFED_VER_FULL)
+MLNX_IPROUTE2_TAR = mlnx-iproute2_*.orig.tar.gz
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	# Make sure errors will be reported
 	set -e
 
-	# get sources
-	rm -rf doca/ doca.zip
-
-	# get sources
-	wget $(SDK_SOURCE_URL)/doca.zip
-	unzip doca.zip
-
-	pushd doca/
+	sudo rm -rf MLNX_OFED_SRC*
+	wget $(SDK_SOURCE_URL)/$(OFED_TAR)
+	tar xf $(OFED_TAR)
+	pushd $(OFED_SRC)/SOURCES
+	tar xf $(MLNX_IPROUTE2_TAR)
+	pushd mlnx-iproute2-*/
 	find . -type f -exec touch {} +
 
-	patch -p1 < ../0001-Allow-compilation-with-warnings.patch
-
-	source /etc/profile.d/libgrpc.sh
-	source /etc/profile.d/mlnx-dpdk-aarch64-linux-gnu.sh
-
 	# Build the Debs
-	PATH=/opt/mellanox/grpc/bin:/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 
 	popd
 	mv $(DERIVED_TARGETS) $* $(DEST)/

@@ -18,30 +18,28 @@
 .ONESHELL:
 SHELL = /bin/bash
 
-MAIN_TARGET = $(DOCA_LIBS)
-DERIVED_TARGETS = $(DOCA_LIBS_DEV) $(DOCA_LIBS_DBG)
+MAIN_TARGET = $(FLEXIO)
+DERIVED_TARGETS =
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	# Make sure errors will be reported
 	set -e
 
 	# get sources
-	rm -rf doca/ doca.zip
+	rm -rf flexio-sdk/ flexio-sdk.zip
 
 	# get sources
-	wget $(SDK_SOURCE_URL)/doca.zip
-	unzip doca.zip
+	wget $(SDK_SOURCE_URL)/flexio-sdk.zip
+	unzip flexio-sdk.zip
 
-	pushd doca/
+	pushd flexio-sdk/
 	find . -type f -exec touch {} +
 
-	patch -p1 < ../0001-Allow-compilation-with-warnings.patch
-
-	source /etc/profile.d/libgrpc.sh
-	source /etc/profile.d/mlnx-dpdk-aarch64-linux-gnu.sh
+	patch -p1 < ../0001-Allow-warning-during-package-compilation.patch
+	patch -p1 < ../0001-Install-LD-configuration.patch
 
 	# Build the Debs
-	PATH=/opt/mellanox/grpc/bin:/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 
 	popd
 	mv $(DERIVED_TARGETS) $* $(DEST)/
