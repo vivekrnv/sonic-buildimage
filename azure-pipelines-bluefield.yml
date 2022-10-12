@@ -28,7 +28,7 @@ resources:
   - repository: buildimage
     type: github
     name: nvidia-sonic/sonic-buildimage
-    endpoint: nvidia-sonic
+    endpoint: mssonicbld
     ref: bluefield
 
 variables:
