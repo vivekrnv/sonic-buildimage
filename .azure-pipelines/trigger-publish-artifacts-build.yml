@@ -53,6 +53,8 @@ steps:
               **/*.raw\n
               **/*.img.gz\n
               **/*-rpc.gz\n
+              **/*.tar.gz\n
+              **/*.bfb\n
               **/python-saithrift*.deb"},
       publishContext: {"publishPrefix":"${{ parameters.publishPrefix }}",
         "keepArtifactName":false,

@@ -84,6 +84,8 @@ jobs:
             pool: sonicbld-arm64
           timeoutInMinutes: 2880
           variables:
+            pxe_image: yes
+            bfb_image: yes
             PLATFORM_ARCH: arm64
 
         - name: generic
@@ -153,6 +155,12 @@ jobs:
             if [ $(syncd_rpc_image) == yes ]; then
               make $BUILD_OPTIONS ENABLE_SYNCD_RPC=y target/sonic-$(GROUP_NAME).bin
               mv target/sonic-mellanox.bin target/sonic-$(GROUP_NAME)-rpc.bin
+            fi
+            if [ $(bfb_image) == yes ]; then
+              make $BUILD_OPTIONS target/sonic-$(GROUP_NAME).bfb
+            fi
+            if [ $(pxe_image) == yes ]; then
+              make $BUILD_OPTIONS target/sonic-$(GROUP_NAME).tar.gz
             fi
             make $BUILD_OPTIONS target/sonic-$(GROUP_NAME).bin
           fi
