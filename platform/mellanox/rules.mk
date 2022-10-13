@@ -53,6 +53,7 @@ TARGET_BOOTLOADER = grub
 
 # Set y to include non upstream patches for mellanox
 INCLUDE_MLNX_PATCHES = n
-MLNX_PATCH_LOC = $(PLATFORM_PATH)/non-upstream-patches/patches.tar.gz
+MLNX_PATCH_LOC = $(BUILD_WORKDIR)/$(PLATFORM_PATH)/non-upstream-patches/patches.tar.gz
 
-export MLNX_PATCH_LOC SONIC_BUFFER_MODEL=dynamic
+export SONIC_BUFFER_MODEL=dynamic
+export MLNX_PATCH_LOC
