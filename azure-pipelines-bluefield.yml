@@ -46,13 +46,6 @@ stages:
   - template: .azure-pipelines/azure-pipelines-build.yml
     parameters:
       buildOptions: 'USERNAME=admin SONIC_BUILD_JOBS=$(nproc) ${{ variables.VERSION_CONTROL_OPTIONS }}'
-      preSteps:
-      - task: InstallSSHKey@0
-        displayName: 'Install an SSH key'
-        inputs:
-          knownHostsEntry: '$(myHostsEntry)'
-          sshPublicKey: '$(myPubKey)'
-          sshKeySecureFile: 'id_rsa'
       jobGroups:
       - name: nvidia-bluefield
         pool: sonicbld-arm64
