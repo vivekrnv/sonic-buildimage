@@ -1,0 +1,70 @@
+{% from "dockers/dockerfile-macros.j2" import install_debian_packages, install_python_wheels, copy_files %}
+FROM docker-config-engine-bullseye-{{DOCKER_USERNAME}}:{{DOCKER_USERTAG}}
+
+ARG docker_container_name
+ARG image_version
+RUN [ -f /etc/rsyslog.conf ] && sed -ri "s/%syslogtag%/$docker_container_name#%syslogtag%/;" /etc/rsyslog.conf
+
+## Make apt-get non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Pass the image_version to container
+ENV IMAGE_VERSION=$image_version
+
+RUN apt-get update \
+ && apt-get install -y \
+      redis-server
+
+{% if docker_gnmi_test_debs.strip() -%}
+# Copy locally-built Debian package dependencies
+{{ copy_files("debs/", docker_gnmi_test_debs.split(' '), "/debs/") }}
+
+# Install locally-built Debian packages and implicitly install their dependencies
+{{ install_debian_packages(docker_gnmi_test_debs.split(' ')) }}
+{%- endif %}
+
+RUN apt-get clean -y      && \
+    apt-get autoclean -   && \
+    apt-get autoremove -y && \
+    rm -rf /debs
+
+RUN mkdir -p /etc/sonic
+
+# Adjust redis configurations
+RUN sed -ri 's/^# unixsocket/unixsocket/' /etc/redis/redis.conf
+RUN sed -ri 's/^unixsocketperm .../unixsocketperm 777/' /etc/redis/redis.conf
+RUN sed -ri 's/redis-server.sock/redis.sock/' /etc/redis/redis.conf
+
+COPY gnmi_cmd.sh /root/
+COPY dash_example.sh /root/
+
+COPY supervisor.conf /etc/supervisor/conf.d/
+COPY gnmi.conf /etc/supervisor/conf.d/
+
+COPY start.sh /usr/bin
+RUN chmod +x /usr/bin/start.sh
+
+COPY dsmsroot.conf /root/
+COPY server.conf /root/
+COPY client.conf /root/
+
+# Create Root key and cert
+RUN openssl genrsa -out /root/dsmsroot.key 2048
+RUN openssl req -new -sha256 -out /root/dsmsroot.csr -key /root/dsmsroot.key -config /root/dsmsroot.conf -batch
+RUN openssl x509 -req -days 3650 -in /root/dsmsroot.csr -signkey /root/dsmsroot.key -out /root/dsmsroot.cer
+
+# Create server key and cert
+RUN openssl genrsa -out /root/gnmiserver.key 2048
+RUN openssl req -new -sha256 -out /root/gnmiserver.csr -key /root/gnmiserver.key -config /root/server.conf -batch
+RUN openssl x509 -req -days 3650 -CA /root/dsmsroot.cer -CAkey /root/dsmsroot.key -CAcreateserial -in /root/gnmiserver.csr -out /root/gnmiserver.cer -extensions req_ext -extfile /root/server.conf
+
+# Create client key and cert
+RUN openssl genrsa -out /root/gnmiclient.key 2048
+RUN openssl req -new -sha256 -out /root/gnmiclient.csr -key /root/gnmiclient.key -config /root/client.conf -batch
+RUN openssl x509 -req -days 3650 -CA /root/dsmsroot.cer -CAkey /root/dsmsroot.key -CAcreateserial -in /root/gnmiclient.csr -out /root/gnmiclient.cer -extensions req_ext -extfile /root/client.conf
+
+RUN cp /root/dsmsroot.cer /etc/sonic/
+RUN cp /root/gnmiserver.cer /etc/sonic/
+RUN cp /root/gnmiserver.key /etc/sonic/
+
+ENTRYPOINT ["/usr/local/bin/supervisord"]
