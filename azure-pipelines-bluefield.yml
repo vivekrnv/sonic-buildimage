@@ -64,6 +64,7 @@ stages:
         variables:
           pxe_image: yes
           bfb_image: yes
+          syncd_rpc_image: yes
           PLATFORM_ARCH: arm64
 
 
