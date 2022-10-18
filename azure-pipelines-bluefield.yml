@@ -62,8 +62,6 @@ stages:
         pool: sonicbld-arm64
         timeoutInMinutes: 2880
         variables:
-          pxe_image: yes
-          bfb_image: yes
           PLATFORM_ARCH: arm64
 
 
