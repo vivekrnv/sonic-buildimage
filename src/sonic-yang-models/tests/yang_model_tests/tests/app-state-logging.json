@@ -1,0 +1,12 @@
+{
+    "APP_STATE_LOGGING_ENABLED": {
+        "desc": "Configure an entry in APP_STATE_LOGGING table with enabled state"
+    },
+    "APP_STATE_LOGGING_DISABLED": {
+        "desc": "Configure an entry in APP_STATE_LOGGING table with disabled state"
+    },
+    "APP_STATE_LOGGING_INVALID_FIELD": {
+        "desc": "Configuration of APP_STATE_LOGGING state field with an incorrect value",
+        "eStr" : ["Invalid value"]
+    }
+}

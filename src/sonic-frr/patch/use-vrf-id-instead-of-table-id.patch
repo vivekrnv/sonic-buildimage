@@ -1,0 +1,103 @@
+From c721612eb8e9fb33c688e4ac1b11e7dbcedf293a Mon Sep 17 00:00:00 2001
+From: Stepan Blyschak <stepanb@nvidia.com>
+Date: Thu, 20 Oct 2022 11:03:14 +0000
+Subject: [PATCH 1/4] use vrf id instead of table id
+
+Signed-off-by: Stepan Blyschak <stepanb@nvidia.com>
+---
+ zebra/rt_netlink.c | 64 ++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 51 insertions(+), 13 deletions(-)
+
+diff --git a/zebra/rt_netlink.c b/zebra/rt_netlink.c
+index 24c01b7f5..0a9fdb909 100644
+--- a/zebra/rt_netlink.c
++++ b/zebra/rt_netlink.c
+@@ -388,6 +388,30 @@ vrf_id_t vrf_lookup_by_table(uint32_t table_id, ns_id_t ns_id)
+ 	return VRF_DEFAULT;
+ }
+ 
++static uint32_t table_lookup_by_vrf(vrf_id_t vrf_id, ns_id_t ns_id)
++{
++	struct vrf *vrf;
++	struct zebra_vrf *zvrf;
++
++	RB_FOREACH (vrf, vrf_id_head, &vrfs_by_id) {
++		zvrf = vrf->info;
++		if (zvrf == NULL)
++			continue;
++		/* case vrf with netns : match the netnsid */
++		if (vrf_is_backend_netns()) {
++			if (ns_id == zvrf_id(zvrf))
++                return zvrf->table_id;
++		} else {
++			/* VRF is VRF_BACKEND_VRF_LITE */
++			if (zvrf_id(zvrf) != vrf_id)
++				continue;
++            return zvrf->table_id;
++		}
++	}
++
++	return RT_TABLE_UNSPEC;
++}
++
+ /**
+  * @parse_encap_mpls() - Parses encapsulated mpls attributes
+  * @tb:         Pointer to rtattr to look for nested items in.
+@@ -754,14 +778,23 @@ static int netlink_route_change_read_unicast(struct nlmsghdr *h, ns_id_t ns_id,
+ 	if (rtm->rtm_family == AF_MPLS)
+ 		return 0;
+ 
+-	/* Table corresponding to route. */
+-	if (tb[RTA_TABLE])
+-		table = *(int *)RTA_DATA(tb[RTA_TABLE]);
+-	else
+-		table = rtm->rtm_table;
++	if (!ctx) {
++		/* Table corresponding to route. */
++		if (tb[RTA_TABLE])
++			table = *(int *)RTA_DATA(tb[RTA_TABLE]);
++		else
++			table = rtm->rtm_table;
++
++		/* Map to VRF */
++		vrf_id = vrf_lookup_by_table(table, ns_id);
++	} else {
++		/* With FPM, rtm_table contains vrf id, see netlink_route_multipath_msg_encode */
++		vrf_id = rtm->rtm_table;
++
++		/* Map to table */
++		table = table_lookup_by_vrf(vrf_id, ns_id);
++	}
+ 
+-	/* Map to VRF */
+-	vrf_id = vrf_lookup_by_table(table, ns_id);
+ 	if (vrf_id == VRF_DEFAULT) {
+ 		if (!is_zebra_valid_kernel_table(table)
+ 		    && !is_zebra_main_routing_table(table))
+@@ -1969,12 +2002,17 @@ ssize_t netlink_route_multipath_msg_encode(int cmd,
+ #endif
+ 	/* Table corresponding to this route. */
+ 	table_id = dplane_ctx_get_table(ctx);
+-	if (table_id < 256)
+-		req->r.rtm_table = table_id;
+-	else {
+-		req->r.rtm_table = RT_TABLE_UNSPEC;
+-		if (!nl_attr_put32(&req->n, datalen, RTA_TABLE, table_id))
+-			return 0;
++	if (!fpm) {
++		if (table_id < 256)
++			req->r.rtm_table = table_id;
++		else {
++			req->r.rtm_table = RT_TABLE_UNSPEC;
++			if (!nl_attr_put32(&req->n, datalen, RTA_TABLE, table_id))
++				return 0;
++		}
++	} else {
++		/* Put vrf if_index instead of table id */
++		req->r.rtm_table = dplane_ctx_get_vrf(ctx);
+ 	}
+ 
+ 	if (IS_ZEBRA_DEBUG_KERNEL)
+-- 
+2.30.2
+

@@ -321,5 +321,66 @@
                 }
             }
         }
+    },
+    "DEVICE_METADATA_BGP_SUPPRESS_FIB_PENDING_ENABLED": {
+        "sonic-device_metadata:sonic-device_metadata": {
+            "sonic-device_metadata:DEVICE_METADATA": {
+                "sonic-device_metadata:localhost": {
+                    "synchronous_mode": "enable",
+                    "bgp-suppress-fib-pending": "enabled"
+                }
+            }
+        },
+	"sonic-app-state-logging:sonic-app-state-logging": {
+            "sonic-app-state-logging:APP_STATE_LOGGING": {
+                "sonic-app-state-logging:ROUTE_TABLE": {
+                        "state": "enabled"
+                }
+            }
+        }
+    },
+    "DEVICE_METADATA_BGP_SUPPRESS_FIB_PENDING_DISABLED": {
+        "sonic-device_metadata:sonic-device_metadata": {
+            "sonic-device_metadata:DEVICE_METADATA": {
+                "sonic-device_metadata:localhost": {
+                    "synchronous_mode": "disable",
+                    "bgp-suppress-fib-pending": "disabled"
+                }
+            }
+        }
+    },
+    "DEVICE_METADATA_BGP_SUPPRESS_FIB_PENDING_ENABLED_SYNCHRONOUS_MODE_DISABLED": {
+        "sonic-device_metadata:sonic-device_metadata": {
+            "sonic-device_metadata:DEVICE_METADATA": {
+                "sonic-device_metadata:localhost": {
+                    "synchronous_mode": "disable",
+                    "bgp-suppress-fib-pending": "enabled"
+                }
+            }
+        },
+	"sonic-app-state-logging:sonic-app-state-logging": {
+            "sonic-app-state-logging:APP_STATE_LOGGING": {
+                "sonic-app-state-logging:ROUTE_TABLE": {
+                        "state": "enabled"
+                }
+            }
+        }
+    },
+    "DEVICE_METADATA_BGP_SUPPRESS_FIB_PENDING_ENABLED_ROUTE_LOGGING_DISABLED": {
+        "sonic-device_metadata:sonic-device_metadata": {
+            "sonic-device_metadata:DEVICE_METADATA": {
+                "sonic-device_metadata:localhost": {
+                    "synchronous_mode": "enable",
+                    "bgp-suppress-fib-pending": "enabled"
+                }
+            }
+        },
+	"sonic-app-state-logging:sonic-app-state-logging": {
+            "sonic-app-state-logging:APP_STATE_LOGGING": {
+                "sonic-app-state-logging:ROUTE_TABLE": {
+                        "state": "disabled"
+                }
+            }
+        }
     }
 }

@@ -1,0 +1,35 @@
+module sonic-app-state-logging {
+    yang-version 1.1;
+
+    namespace "http://github.com/Azure/sonic-app-state-logging";
+    prefix app-state-logging;
+
+    description "APP_STATE_LOGGING YANG module for SONiC OS";
+
+    revision 2022-09-15 {
+        description "Initial revision";
+    }
+
+    container sonic-app-state-logging {
+        container APP_STATE_LOGGING {
+            description "Controls the enablement of a response channel per APPL_DB table";
+
+            container ROUTE_TABLE {
+                description "Configure response channel for ASIC route configuration";
+
+                leaf state {
+                    description "Enablement state of response channel for the given table";
+                    type enumeration {
+                        enum enabled;
+                        enum disabled;
+                    }
+                    default disabled;
+                }
+            }
+            /* end of container ROUTE_TABLE */
+        }
+        /* end of container APP_STATE_LOGGING */
+    }
+    /* end of container of top level container */
+}
+/* end of module sonic-app-state-logging */
