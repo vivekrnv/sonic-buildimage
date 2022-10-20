@@ -6,6 +6,7 @@
 0008-Link-local-scope-was-not-set-while-binding-socket-for-bgp-ipv6-link-local-neighbors.patch
 Disable-ipv6-src-address-test-in-pceplib.patch
 cross-compile-changes.patch
+bgpd-Allow-network-XXX-to-work-with-bgp-suppress-fib.patch
 Add-ability-for-dplane_fpm_nl-to-receive-RTM_NEWROUT.patch
 use-vrf-id-instead-of-table-id.patch
 dplane_fpm_nl-ignore-route-from-default-table.patch
