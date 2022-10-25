@@ -25,7 +25,6 @@ export BSD_VER BSD_REV BFB_IMG_TYPE
 
 override TARGET_BOOTLOADER=grub
 
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/bfinstall.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/tmfifo.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mlxbf-gige.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/gpio-mlxbf2.mk
