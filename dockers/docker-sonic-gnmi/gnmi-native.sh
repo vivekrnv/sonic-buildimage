@@ -69,6 +69,6 @@ else
     TELEMETRY_ARGS+=" -v=2"
 fi
 
-TELEMETRY_ARGS+=" -gnmi_native_write=false"
+TELEMETRY_ARGS+=" -gnmi_native_write=true"
 
 exec /usr/sbin/telemetry ${TELEMETRY_ARGS}

@@ -1846,6 +1846,23 @@ def parse_xml(filename, platform=None, port_config_file=None, asic_name=None, hw
             'ca_crt': '/etc/sonic/telemetry/dsmsroot.cer'
         }
     }
+    results['FEATURE'] = {
+        'gnmi': {
+            'state': 'enabled'
+        }
+    }
+    results['GNMI'] = {
+        'gnmi': {
+            'client_auth': 'true',
+            'port': '50052',
+            'log_level': '2'
+        },
+        'certs': {
+            'server_crt': '/etc/sonic/telemetry/gnmiserver.cer',
+            'server_key': '/etc/sonic/telemetry/gnmiserver.key',
+            'ca_crt': '/etc/sonic/telemetry/dsmsroot.cer'
+        }
+    }
     results['RESTAPI'] = {
         'config': {
             'client_auth': 'true',
