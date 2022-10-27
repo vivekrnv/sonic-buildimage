@@ -13,7 +13,7 @@ To include non-upstream patches into the sonic-linux image during build time, th
   ```
   2. All the patches should be present in the same folder where series resides.
   3. Developers should make sure patches apply cleanly over the existing patches present in the src/sonic-linux-kernel .
-  4. Name of the tarball should match with the one specified under MLNX_PATCH_LOC
+  4. Name of the tarball should match with the one specified under EXTERNAL_KERNEL_PATCH_TAR
 
 #### Example
 ```
@@ -27,5 +27,5 @@ admin@build-server:/sonic-buildimage/platform/mellanox/non-upstream-patches$ tar
 
 ### Include the archive while building sonic linux kernel
 
-Set `INCLUDE_MLNX_PATCHES=y` using `SONIC_OVERRIDE_BUILD_VARS` to include these changes before building the kernel.
-- Eg: `NOJESSIE=1 NOSTRETCH=1 NOBUSTER=1 make SONIC_OVERRIDE_BUILD_VARS=' INCLUDE_MLNX_PATCHES=y ' target/debs/bullseye/linux-headers-5.10.0-12-2-common_5.10.103-1_all.deb`
+Set `INCLUDE_EXTERNAL_PATCH_TAR=y` using `SONIC_OVERRIDE_BUILD_VARS` to include these changes before building the kernel.
+- Eg: `NOJESSIE=1 NOSTRETCH=1 NOBUSTER=1 make SONIC_OVERRIDE_BUILD_VARS=' INCLUDE_EXTERNAL_PATCH_TAR=y ' target/debs/bullseye/linux-headers-5.10.0-12-2-common_5.10.103-1_all.deb`
