@@ -51,9 +51,7 @@ $(DOCKER_PLATFORM_MONITOR)_DEPENDS += $(APPLIBS) $(SX_COMPLIB) $(SXD_LIBS) $(SX_
 # Force the target bootloader for mellanox platforms to grub regardless of arch
 TARGET_BOOTLOADER = grub
 
-# Set y to include non upstream patches for mellanox
-INCLUDE_MLNX_PATCHES = n
-MLNX_PATCH_LOC = $(BUILD_WORKDIR)/$(PLATFORM_PATH)/non-upstream-patches/patches.tar.gz
+# location for the platform specific external kernel patches tarball
+override EXTERNAL_KERNEL_PATCH_TAR := $(BUILD_WORKDIR)/$(PLATFORM_PATH)/non-upstream-patches/patches.tar.gz
 
 export SONIC_BUFFER_MODEL=dynamic
-export MLNX_PATCH_LOC
