@@ -2,6 +2,29 @@
 
 . /usr/local/bin/syncd_common.sh
 
+function collect_mlnx_saisdkdump() {
+    TMP_DMP_DIR="/tmp/orch_abrt_sdkdump/"
+    local sdk_dump_path=$(docker exec syncd cat /tmp/sai.profile | grep "SAI_DUMP_STORE_PATH" |cut -d = -f2)
+    local sai_dump_filename="sai_sdk_dump_$(date +"%m_%d_%Y_%I_%M_%p")"
+    local sai_dump_filename_epoch="sai_sdk_dump_$(date +%s)"
+
+    docker exec syncd rm -rf ${TMP_DMP_DIR}
+    docker exec syncd mkdir -p ${TMP_DMP_DIR}
+    docker exec syncd saisdkdump -f ${TMP_DMP_DIR}/${sai_dump_filename} > /dev/null
+    sleep 1
+    docker exec syncd tar -cf ${sdk_dump_path}/${sai_dump_filename_epoch}.tar -C ${TMP_DMP_DIR} .
+
+    if [[ $? == 0 ]]; then
+        # This is used to notify and will be cleared by auto-techsupport
+        touch /tmp/saidump_collection_notify_flag
+        debug "${sdk_dump_path}/${sai_dump_filename_epoch}.tar collected before taking stopping syncd"
+        # Maintaining the recent 3 files and removing the rest
+        ls -1td ${sdk_dump_path}/sai_sdk_dump_* | tail -n +4 | xargs rm -rf
+    else
+        debug "Failed to collect saisdkdump before stopping syncd"
+    fi
+}
+
 function startplatform() {
 
     # platform specific tasks
@@ -79,6 +102,12 @@ function stopplatform1() {
         debug "Stopping pmon service ahead of syncd..."
         /bin/systemctl stop pmon
         debug "Stopped pmon service"
+
+        if [[ x"$(sonic-db-cli STATE_DB GET ORCH_ABRT_STATUS)" == x"1" ]]; then
+            # Collecting saisdkdump before restarting syncd
+            # Only run when orchagent is aborted because of SAI failure.
+            collect_mlnx_saisdkdump
+        fi
     fi
 
     if [[ x$sonic_asic_platform != x"mellanox" ]] || [[ x$TYPE != x"cold" ]]; then
