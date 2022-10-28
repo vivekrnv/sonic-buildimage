@@ -7,7 +7,7 @@ trigger:
   branches:
     include:
       - master
-      - 202012
+      - 202???
   paths:
     exclude:
       - .github
@@ -16,8 +16,7 @@ pr:
   branches:
     include:
       - master
-      - 202012
-      - bullseye
+      - 202???
   paths:
     exclude:
       - .github
@@ -92,10 +91,16 @@ stages:
     displayName: "vstest"
     timeoutInMinutes: 60
     steps:
+    - template: .azure-pipelines/cleanup.yml
     - checkout: self
       clean: true
       submodules: recursive
       displayName: 'Checkout code'
+
+    - script: |
+        sudo rm -rf ../target
+        sudo rm -rf ../*.deb
+      displayName: "Cleanup"
 
     - task: DownloadPipelineArtifact@2
       inputs:
