@@ -44,24 +44,12 @@ COPY gnmi.conf /etc/supervisor/conf.d/
 COPY start.sh /usr/bin
 RUN chmod +x /usr/bin/start.sh
 
-COPY dsmsroot.conf /root/
-COPY server.conf /root/
-COPY client.conf /root/
-
-# Create Root key and cert
-RUN openssl genrsa -out /root/dsmsroot.key 2048
-RUN openssl req -new -sha256 -out /root/dsmsroot.csr -key /root/dsmsroot.key -config /root/dsmsroot.conf -batch
-RUN openssl x509 -req -days 3650 -in /root/dsmsroot.csr -signkey /root/dsmsroot.key -out /root/dsmsroot.cer
-
-# Create server key and cert
-RUN openssl genrsa -out /root/gnmiserver.key 2048
-RUN openssl req -new -sha256 -out /root/gnmiserver.csr -key /root/gnmiserver.key -config /root/server.conf -batch
-RUN openssl x509 -req -days 3650 -CA /root/dsmsroot.cer -CAkey /root/dsmsroot.key -CAcreateserial -in /root/gnmiserver.csr -out /root/gnmiserver.cer -extensions req_ext -extfile /root/server.conf
-
-# Create client key and cert
-RUN openssl genrsa -out /root/gnmiclient.key 2048
-RUN openssl req -new -sha256 -out /root/gnmiclient.csr -key /root/gnmiclient.key -config /root/client.conf -batch
-RUN openssl x509 -req -days 3650 -CA /root/dsmsroot.cer -CAkey /root/dsmsroot.key -CAcreateserial -in /root/gnmiclient.csr -out /root/gnmiclient.cer -extensions req_ext -extfile /root/client.conf
+COPY dsmsroot.key /root/
+COPY dsmsroot.cer /root/
+COPY gnmiserver.key /root/
+COPY gnmiserver.cer /root/
+COPY gnmiclient.key /root/
+COPY gnmiclient.cer /root/
 
 RUN cp /root/dsmsroot.cer /etc/sonic/
 RUN cp /root/gnmiserver.cer /etc/sonic/
