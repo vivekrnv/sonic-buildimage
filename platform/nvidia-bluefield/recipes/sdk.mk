@@ -19,7 +19,7 @@ SDK_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin
 
 # Place here URL where SDK sources exist
 SDK_SOURCE_BASE_URL =
-SDK_VERSION = 0.2-RC9
+SDK_VERSION = 0.2-RC16
 
 ifneq ($(SDK_SOURCE_BASE_URL), )
 SDK_FROM_SRC = y
