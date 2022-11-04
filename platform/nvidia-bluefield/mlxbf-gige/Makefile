@@ -25,7 +25,7 @@ MODULE_DIR := $(shell pwd)/${MLXBF_GIGE}
 
 $(addprefix $(DEST)/, $(MLXBF_GIGE_DRIVER)): $(DEST)/% :
 	rm -rf ./mlxbf-gige-$(MLXBF_GIGE_DRIVER_VERSION)
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLXBF_GIGE_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_GIGE_TAR)"
 	tar -z -f $(MLXBF_GIGE_TAR) -x
 
 	pushd ${MLXBF_GIGE}

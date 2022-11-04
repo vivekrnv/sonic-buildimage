@@ -24,7 +24,7 @@ MLX_BOOTCTL_TAR = ${MLX_BOOTCTL}.tar.gz
 
 $(addprefix $(DEST)/, $(MLX_BOOTCTL_DRIVER)): $(DEST)/% :
 	rm -rf ${MLX_BOOTCTL} ${MLX_BOOTCTL_TAR} *.buildinfo *.changes *.deb
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLX_BOOTCTL_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(MLX_BOOTCTL_TAR)"
 	tar -z -f $(MLX_BOOTCTL_TAR) -x
 
 	pushd ${MLX_BOOTCTL}  

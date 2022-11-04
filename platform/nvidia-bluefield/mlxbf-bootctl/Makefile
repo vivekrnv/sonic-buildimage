@@ -24,7 +24,7 @@ MLXBF_BOOTCTL_TAR = ${MLXBF_BOOTCTL}.tar.gz
 
 $(addprefix $(DEST)/, $(MLXBF_BOOTCTL_DEB)): $(DEST)/% :
 	rm -rf ${MLXBF_BOOTCTL} ${MLXBF_BOOTCTL_TAR} *.buildinfo *.changes *.deb
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLXBF_BOOTCTL_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_BOOTCTL_TAR)"
 	tar -z -f $(MLXBF_BOOTCTL_TAR) -x
 
 	pushd ${MLXBF_BOOTCTL}

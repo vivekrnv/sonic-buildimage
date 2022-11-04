@@ -24,7 +24,7 @@ LIBPKA_TAR = ${LIBPKA}.tgz
 
 $(addprefix $(DEST)/, $(LIBPKA_DEB)): $(DEST)/% :
 	rm -rf ${LIBPKA} ${LIBPKA_TAR} *.buildinfo *.changes *.deb
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(LIBPKA_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(LIBPKA_TAR)"
 	tar -z -f $(LIBPKA_TAR) -x
 
 	pushd ${LIBPKA}

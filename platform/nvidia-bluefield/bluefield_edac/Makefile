@@ -24,7 +24,7 @@ BLUEFIELD_EDAC_TAR = ${BLUEFIELD_EDAC}.tar.gz
 
 $(addprefix $(DEST)/, $(BLUEFIELD_EDAC_DRIVER)): $(DEST)/% :
 	rm -rf ${BLUEFIELD_EDAC} ${BLUEFIELD_EDAC_TAR} *.buildinfo *.changes *.deb
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(BLUEFIELD_EDAC_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(BLUEFIELD_EDAC_TAR)"
 	tar -z -f $(BLUEFIELD_EDAC_TAR) -x
 
 	pushd ${BLUEFIELD_EDAC}

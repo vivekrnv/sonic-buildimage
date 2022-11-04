@@ -24,7 +24,7 @@ IPMB_DEV_INT_TAR = ${IPMB_DEV_INT}.tar.gz
 
 $(addprefix $(DEST)/, $(IPMB_DEV_INT_DRIVER)): $(DEST)/% :
 	rm -rf ${IPMB_DEV_INT} ${IPMB_DEV_INT_TAR} *.buildinfo *.changes *.deb
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(IPMB_DEV_INT_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(IPMB_DEV_INT_TAR)"
 	tar -z -f $(IPMB_DEV_INT_TAR) -x
 
 	pushd ${IPMB_DEV_INT}

@@ -25,7 +25,7 @@ MODULE_DIR := $(shell pwd)/${MLXBF_LIVEFISH}
 
 $(addprefix $(DEST)/, $(MLXBF_LIVEFISH_DRIVER)): $(DEST)/% :
 	rm -rf ./mlxbf-livefish-$(MLXBF_LIVEFISH_DRIVER_VERSION)
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLXBF_LIVEFISH_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_LIVEFISH_TAR)"
 	tar -z -f $(MLXBF_LIVEFISH_TAR) -x
 
 	pushd ${MLXBF_LIVEFISH}

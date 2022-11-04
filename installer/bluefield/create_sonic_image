@@ -35,7 +35,7 @@ EFIVARS_MOD=
 CDIR=/sonic/
 SDIR=$CDIR/installer/bluefield
 DDIR=$CDIR
-CAPSULE=$CDIR/$FILES_PATH/update.cap
+CAPSULE=/lib/firmware/mellanox/boot/capsule/boot_update2.cap
 BOOTCTL_DRIVER=$CDIR/$FILES_PATH/mlx-bootctl.ko
 TMFIFO_DRIVER=$CDIR/$FILES_PATH/mlxbf-tmfifo.ko
 TARGET_MACHINE=nvidia-bluefield
@@ -396,7 +396,6 @@ create_bfb_image() {
     mkdir -p ./lib/firmware/mellanox/boot/
     cp /lib/firmware/mellanox/boot/default.bfb ./lib/firmware/mellanox/boot/default.bfb
     cp -a /lib/firmware/mellanox/boot/capsule ./lib/firmware/mellanox/boot/
-    cp $CAPSULE ./lib/firmware/mellanox/boot/capsule/
     mkdir -p mnt dev sys proc
 
     add_sonic_to_initramfs

@@ -24,12 +24,10 @@ MLXBF_I2C_TAR = ${MLXBF_I2C}.tar.gz
 
 $(addprefix $(DEST)/, $(MLXBF_I2C_DRIVER)): $(DEST)/% :
 	rm -rf ${MLXBF_I2C} ${MLXBF_I2C_TAR} *.buildinfo *.changes *.deb
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLXBF_I2C_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_I2C_TAR)"
 	tar -z -f $(MLXBF_I2C_TAR) -x
 
 	pushd ${MLXBF_I2C}
-
-	patch -p1 < ../ioremap.patch
 
 	# Build the package
 	DEB_BUILD_OPTIONS=nocheck KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)

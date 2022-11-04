@@ -25,7 +25,7 @@ MODULE_DIR := $(shell pwd)/${MLX_TRIO}
 
 $(addprefix $(DEST)/, $(MLX_TRIO_DRIVER)): $(DEST)/% :
 	rm -rf ${MLX_TRIO} ${MLX_TRIO_TAR}
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLX_TRIO_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(MLX_TRIO_TAR)"
 	tar -z -f $(MLX_TRIO_TAR) -x
 
 	pushd ${MLX_TRIO}

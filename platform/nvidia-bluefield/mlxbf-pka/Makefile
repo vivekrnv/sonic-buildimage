@@ -25,12 +25,10 @@ MODULE_DIR := $(shell pwd)/${MLXBF_PKA}
 
 $(addprefix $(DEST)/, $(MLXBF_PKA_DRIVER)): $(DEST)/% :
 	rm -rf ./mlxbf-pka-$(MLXBF_PKA_DRIVER_VERSION)
-	wget -N https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLXBF_PKA_TAR)
+	wget -N ${BSD_BASE_SOURCE_URL}/$(MLXBF_PKA_TAR)
 	tar -z -f $(MLXBF_PKA_TAR) -x
 
 	pushd ${MLXBF_PKA}
-
-	patch -p1 < ../ioremap.patch
 
 	# Build the package
 	make -C /lib/modules/$(KVERSION)/build M=$(MODULE_DIR)

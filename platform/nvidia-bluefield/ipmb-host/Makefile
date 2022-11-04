@@ -24,7 +24,7 @@ IPMB_HOST_TAR = ${IPMB_HOST}.tar.gz
 
 $(addprefix $(DEST)/, $(IPMB_HOST_DRIVER)): $(DEST)/% :
 	rm -rf ${IPMB_HOST} ${IPMB_HOST_TAR} *.buildinfo *.changes *.deb
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(IPMB_HOST_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(IPMB_HOST_TAR)"
 	tar -z -f $(IPMB_HOST_TAR) -x
 
 	pushd ${IPMB_HOST}  

@@ -27,7 +27,7 @@ DERIVED_TARGETS = $(MLX_OPENIPMI_SERVER_DEB)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf ${MLX_OPENIPMI} ${MLX_OPENIPMI_TAR} *.buildinfo *.changes *.deb
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLX_OPENIPMI_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(MLX_OPENIPMI_TAR)"
 	tar -z -f $(MLX_OPENIPMI_TAR) -x
 	
 	pushd ${MLX_OPENIPMI}

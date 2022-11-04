@@ -25,7 +25,7 @@ MODULE_DIR := $(shell pwd)/${MLXBF_PMC}
 
 $(addprefix $(DEST)/, $(MLXBF_PMC_DRIVER)): $(DEST)/% :
 	rm -rf ./mlxbf-pmc-$(MLXBF_PMC_DRIVER_VERSION)
-	wget -N https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLXBF_PMC_TAR)
+	wget -N ${BSD_BASE_SOURCE_URL}/$(MLXBF_PMC_TAR)
 	tar -z -f $(MLXBF_PMC_TAR) -x
 
 	pushd ${MLXBF_PMC}

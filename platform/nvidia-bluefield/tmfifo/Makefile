@@ -25,7 +25,7 @@ MODULE_DIR := $(shell pwd)/${TMFIFO}
 
 $(addprefix $(DEST)/, $(TMFIFO_DRIVER)): $(DEST)/% :
 	rm -rf ./tmfifo-${TMFIFO_DRIVER_VERSION}.tar.gz ./tmfifo-${TMFIFO_DRIVER_VERSION}
-	wget -N https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/tmfifo-${TMFIFO_DRIVER_VERSION}.tar.gz 
+	wget -N ${BSD_BASE_SOURCE_URL}/tmfifo-${TMFIFO_DRIVER_VERSION}.tar.gz 
 	tar -z -f tmfifo-${TMFIFO_DRIVER_VERSION}.tar.gz -x
 
 	pushd ./tmfifo-${TMFIFO_DRIVER_VERSION}

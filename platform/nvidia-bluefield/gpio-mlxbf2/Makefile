@@ -25,7 +25,7 @@ MODULE_DIR := $(shell pwd)/${MLXBF2_GPIO}
 
 $(addprefix $(DEST)/, $(MLXBF2_GPIO_DRIVER)): $(DEST)/% :
 	rm -rf ./gpio-mlxbf2-$(MLXBF2_GPIO_DRIVER_VERSION)
-	wget -N "https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/extras/SOURCES/$(MLXBF2_GPIO_TAR)"
+	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF2_GPIO_TAR)"
 	tar -z -f $(MLXBF2_GPIO_TAR) -x
 
 	pushd ${MLXBF2_GPIO}
