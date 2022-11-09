@@ -1,7 +1,7 @@
 From 25cb22d541d265253f076000c9860c840ea3e54d Mon Sep 17 00:00:00 2001
 From: Stepan Blyschak <stepanb@nvidia.com>
 Date: Thu, 20 Oct 2022 11:03:14 +0000
-Subject: [PATCH 03/13] use vrf id instead of table id
+Subject: [PATCH 03/13] Use vrf_id for vrf, not tabled_id
 
 Signed-off-by: Stepan Blyschak <stepanb@nvidia.com>
 ---
@@ -15,7 +15,7 @@ index 24c01b7f5..03c84d6dc 100644
 @@ -388,6 +388,30 @@ vrf_id_t vrf_lookup_by_table(uint32_t table_id, ns_id_t ns_id)
  	return VRF_DEFAULT;
  }
- 
+
 +static uint32_t table_lookup_by_vrf(vrf_id_t vrf_id, ns_id_t ns_id)
 +{
 +	struct vrf *vrf;
@@ -65,8 +65,8 @@ index 24c01b7f5..03c84d6dc 100644
 +		/* Put vrf if_index instead of table id */
 +		req->r.rtm_table = dplane_ctx_get_vrf(ctx);
  	}
- 
+
  	if (IS_ZEBRA_DEBUG_KERNEL)
--- 
+--
 2.30.2
 
