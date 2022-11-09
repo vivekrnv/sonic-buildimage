@@ -78,8 +78,6 @@ setup(
     cmdclass={'build_py': my_build_py},
     data_files=[
         ('yang-models', ['./yang-models/sonic-acl.yang',
-                         './yang-models/sonic-app-state-logging.yang',
-                         './yang-models/sonic-auto_techsupport.yang',
                          './yang-models/sonic-bgp-common.yang',
                          './yang-models/sonic-bgp-device-global.yang',
                          './yang-models/sonic-bgp-global.yang',
