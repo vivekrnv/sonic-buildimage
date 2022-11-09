@@ -1,7 +1,7 @@
-From 88aaa7b28f1660c82bb03d86ee5718cf96459386 Mon Sep 17 00:00:00 2001
+From ca66350aecf7db3354019480d11754fabae3a97c Mon Sep 17 00:00:00 2001
 From: Stepan Blyschak <stepanb@nvidia.com>
 Date: Thu, 20 Oct 2022 13:07:18 +0000
-Subject: [PATCH 3/4] [dplane_fpm_nl] ignore route from default table
+Subject: [PATCH 09/13] [dplane_fpm_nl] ignore route from default table
 
 Signed-off-by: Stepan Blyschak <stepanb@nvidia.com>
 ---
@@ -9,10 +9,10 @@ Signed-off-by: Stepan Blyschak <stepanb@nvidia.com>
  1 file changed, 9 insertions(+)
 
 diff --git a/zebra/dplane_fpm_nl.c b/zebra/dplane_fpm_nl.c
-index 912d08e6b..a8f60310a 100644
+index 3b02128c9..da8504adf 100644
 --- a/zebra/dplane_fpm_nl.c
 +++ b/zebra/dplane_fpm_nl.c
-@@ -774,6 +774,15 @@ static int fpm_nl_enqueue(struct fpm_nl_ctx *fnc, struct zebra_dplane_ctx *ctx)
+@@ -699,6 +699,15 @@ static int fpm_nl_enqueue(struct fpm_nl_ctx *fnc, struct zebra_dplane_ctx *ctx)
  		|| op == DPLANE_OP_NH_UPDATE))
  		return 0;
  

@@ -1,7 +1,7 @@
-From 9cb41b6c92ffcc613554b2535c118224c982c57a Mon Sep 17 00:00:00 2001
+From 369bbb4d62aa47d5a6d5157ca6ea819c4cb80f15 Mon Sep 17 00:00:00 2001
 From: Stepan Blyschak <stepanb@nvidia.com>
 Date: Thu, 20 Oct 2022 13:19:31 +0000
-Subject: [PATCH 3/3] Added support for L3VNI for EVPN
+Subject: [PATCH 07/13] Added support for L3VNI for EVPN
 
 This is temp patch till Prefix to ARP indirection is add in neighorch
 
@@ -16,7 +16,7 @@ Signed-off-by: Stepan Blyschak <stepanb@nvidia.com>
  5 files changed, 26 insertions(+), 3 deletions(-)
 
 diff --git a/lib/nexthop.c b/lib/nexthop.c
-index e17eeb830..6ed83b84f 100644
+index a1ce22e3b..10a87f072 100644
 --- a/lib/nexthop.c
 +++ b/lib/nexthop.c
 @@ -813,6 +813,7 @@ void nexthop_copy_no_recurse(struct nexthop *copy,
@@ -53,10 +53,10 @@ index 320b46315..77eea3674 100644
  
  	/* SR-TE color used for matching SR-TE policies */
 diff --git a/zebra/rt_netlink.c b/zebra/rt_netlink.c
-index 4dd73fe90..a2fcd6cfc 100644
+index 03c84d6dc..a56a95276 100644
 --- a/zebra/rt_netlink.c
 +++ b/zebra/rt_netlink.c
-@@ -1893,6 +1893,7 @@ static int netlink_route_nexthop_encap(struct nlmsghdr *n, size_t nlen,
+@@ -1869,6 +1869,7 @@ static int netlink_route_nexthop_encap(struct nlmsghdr *n, size_t nlen,
  				       struct nexthop *nh)
  {
  	struct rtattr *nest;
@@ -64,7 +64,7 @@ index 4dd73fe90..a2fcd6cfc 100644
  
  	switch (nh->nh_encap_type) {
  	case NET_VXLAN:
-@@ -1903,9 +1904,21 @@ static int netlink_route_nexthop_encap(struct nlmsghdr *n, size_t nlen,
+@@ -1879,9 +1880,21 @@ static int netlink_route_nexthop_encap(struct nlmsghdr *n, size_t nlen,
  		if (!nest)
  			return false;
  
@@ -110,10 +110,10 @@ index 5cf7d815d..529cbb44b 100644
  				api_nh->vrf_id, &api_nh->rmac, &vtep_ip, p);
  		}
 diff --git a/zebra/zebra_dplane.c b/zebra/zebra_dplane.c
-index 336056abb..c79e7cc27 100644
+index 656ebcf3b..bd59df189 100644
 --- a/zebra/zebra_dplane.c
 +++ b/zebra/zebra_dplane.c
-@@ -2460,7 +2460,7 @@ int dplane_ctx_route_init(struct zebra_dplane_ctx *ctx, enum dplane_op_e op,
+@@ -2420,7 +2420,7 @@ int dplane_ctx_route_init(struct zebra_dplane_ctx *ctx, enum dplane_op_e op,
  		zl3vni = zl3vni_from_vrf(nexthop->vrf_id);
  		if (zl3vni && is_l3vni_oper_up(zl3vni)) {
  			nexthop->nh_encap_type = NET_VXLAN;
