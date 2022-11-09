@@ -30,10 +30,7 @@ stderr_logfile=syslog
 dependent_startup=true
 
 [program:zebra]
-{% if DEVICE_METADATA['localhost']['bgp-suppress-fib-pending'] == 'enabled' -%}
-{% set zebra_extra_arguments = "--asic-offload=notify_on_offload" %}
-{% endif -%}
-command=/usr/lib/frr/zebra -A 127.0.0.1 -s 90000000 -M dplane_fpm_nl -M snmp {{ zebra_extra_arguments }}
+command=/usr/lib/frr/zebra -A 127.0.0.1 -s 90000000 -M dplane_fpm_nl -M snmp
 priority=4
 autostart=false
 autorestart=false

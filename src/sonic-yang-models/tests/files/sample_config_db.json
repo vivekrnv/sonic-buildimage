@@ -2054,7 +2054,7 @@
                 "enabled": "yes"
             }
         },
-        "STATIC_ROUTE": {
+	"STATIC_ROUTE": {
             "default|20.20.20.0/24": {
                 "blackhole": "false",
                 "distance": "1",
@@ -2062,10 +2062,6 @@
                 "nexthop": "10.184.229.212",
                 "nexthop-vrf": "default"
             }
-        },
-        "APP_STATE_LOGGING": {
-            "ROUTE_TABLE": {
-                "state": "enabled"
         },
         "KUBERNETES_MASTER": {
             "SERVER": {
