@@ -1,49 +1,18 @@
-From 25cb22d541d265253f076000c9860c840ea3e54d Mon Sep 17 00:00:00 2001
+From e307d456ba0acae53af4b0690c3c0c81b87d51e2 Mon Sep 17 00:00:00 2001
 From: Stepan Blyschak <stepanb@nvidia.com>
 Date: Thu, 20 Oct 2022 11:03:14 +0000
-Subject: [PATCH 03/13] Use vrf_id for vrf, not tabled_id
+Subject: [PATCH 03/15] Use vrf_id for vrf, not tabled_id
 
 Signed-off-by: Stepan Blyschak <stepanb@nvidia.com>
 ---
- zebra/rt_netlink.c | 41 +++++++++++++++++++++++++++++++++++------
- 1 file changed, 35 insertions(+), 6 deletions(-)
+ zebra/rt_netlink.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
 diff --git a/zebra/rt_netlink.c b/zebra/rt_netlink.c
-index 24c01b7f5..03c84d6dc 100644
+index 24c01b7f5..439b10eeb 100644
 --- a/zebra/rt_netlink.c
 +++ b/zebra/rt_netlink.c
-@@ -388,6 +388,30 @@ vrf_id_t vrf_lookup_by_table(uint32_t table_id, ns_id_t ns_id)
- 	return VRF_DEFAULT;
- }
-
-+static uint32_t table_lookup_by_vrf(vrf_id_t vrf_id, ns_id_t ns_id)
-+{
-+	struct vrf *vrf;
-+	struct zebra_vrf *zvrf;
-+
-+	RB_FOREACH (vrf, vrf_id_head, &vrfs_by_id) {
-+		zvrf = vrf->info;
-+		if (zvrf == NULL)
-+			continue;
-+		/* case vrf with netns : match the netnsid */
-+		if (vrf_is_backend_netns()) {
-+			if (ns_id == zvrf_id(zvrf))
-+                return zvrf->table_id;
-+		} else {
-+			/* VRF is VRF_BACKEND_VRF_LITE */
-+			if (zvrf_id(zvrf) != vrf_id)
-+				continue;
-+            return zvrf->table_id;
-+		}
-+	}
-+
-+	return RT_TABLE_UNSPEC;
-+}
-+
- /**
-  * @parse_encap_mpls() - Parses encapsulated mpls attributes
-  * @tb:         Pointer to rtattr to look for nested items in.
-@@ -1969,12 +1993,17 @@ ssize_t netlink_route_multipath_msg_encode(int cmd,
+@@ -1969,12 +1969,17 @@ ssize_t netlink_route_multipath_msg_encode(int cmd,
  #endif
  	/* Table corresponding to this route. */
  	table_id = dplane_ctx_get_table(ctx);
@@ -65,8 +34,8 @@ index 24c01b7f5..03c84d6dc 100644
 +		/* Put vrf if_index instead of table id */
 +		req->r.rtm_table = dplane_ctx_get_vrf(ctx);
  	}
-
+ 
  	if (IS_ZEBRA_DEBUG_KERNEL)
---
+-- 
 2.30.2
 
