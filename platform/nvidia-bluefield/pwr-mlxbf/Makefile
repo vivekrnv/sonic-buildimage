@@ -19,19 +19,19 @@
 SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
-MLXBF_BOOTCTL = mlxbf-bootctl-${MLXBF_BOOTCTL_DEB_VERSION}
-MLXBF_BOOTCTL_TAR = ${MLXBF_BOOTCTL}.tar.gz
+PWR_MLXBF = pwr-mlxbf-$(PWR_MLXBF_DRIVER_VERSION)
+PWR_MLXBF_TAR = $(PWR_MLXBF).tar.gz
+MODULE_DIR := $(shell pwd)/$(PWR_MLXBF)
 
-$(addprefix $(DEST)/, $(MLXBF_BOOTCTL_DEB)): $(DEST)/% :
-	rm -rf ${MLXBF_BOOTCTL} ${MLXBF_BOOTCTL_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_BOOTCTL_TAR)"
-	tar -z -f $(MLXBF_BOOTCTL_TAR) -x
+$(addprefix $(DEST)/, $(PWR_MLXBF_DRIVER)): $(DEST)/% :
+	rm -rf mlxbf-pka-$(PWR_MLXBF_DRIVER_VERSION)
+	wget -N $(BSD_BASE_SOURCE_URL)/$(PWR_MLXBF_TAR)
+	tar -z -f $(PWR_MLXBF_TAR) -x
 
-	pushd ${MLXBF_BOOTCTL}
+	pushd $(PWR_MLXBF)
 
 	# Build the package
-	DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	make -C /lib/modules/$(KVERSION)/build M=$(MODULE_DIR)
 
+	mv $(PWR_MLXBF_DRIVER) $(DEST)/
 	popd
-
-	mv $* $(DEST)/
