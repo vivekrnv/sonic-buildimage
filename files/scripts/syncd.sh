@@ -5,7 +5,6 @@
 function collect_saisdkdump() {
     TMP_DMP_DIR="/tmp/orch_abrt_sdkdump/"
     HOST_SDKDUMP_LOC="/var/log/orch_abrt_sdkdump/"
-    # local sdk_dump_path=$(docker exec syncd cat /tmp/sai.profile | grep "SAI_DUMP_STORE_PATH" |cut -d = -f2)
     local sai_dump_filename="sai_sdk_dump_$(date +"%m_%d_%Y_%I_%M_%p")"
     local sai_dump_filename_epoch="sai_sdk_dump_$(date +%s)"
 
