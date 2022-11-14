@@ -152,14 +152,6 @@ function stopplatform2() {
     fi
 }
 
-function test() {
-    if [[ x"$(${SONIC_DB_CLI} STATE_DB GET ORCH_ABRT_STATUS)" == x"1" ]]; then
-        # Collecting saisdkdump before restarting syncd
-        # Only run when orchagent is aborted because of SAI failure.
-        collect_saisdkdump
-    fi
-}
-
 OP=$1
 DEV=$2
 
@@ -177,7 +169,7 @@ else
 fi
 
 case "$1" in
-    start|wait|stop|test)
+    start|wait|stop)
         $1
         ;;
     *)
