@@ -8,21 +8,19 @@ function collect_saisdkdump() {
     local sai_dump_filename="sai_sdk_dump_$(date +"%m_%d_%Y_%I_%M_%p")"
     local sai_dump_filename_epoch="sai_sdk_dump_$(date +%s)"
 
-    docker exec syncd$DEV rm -rf ${TMP_DMP_DIR}
-    docker exec syncd$DEV rm -f /tmp/${sai_dump_filename_epoch}.tar
-    docker exec syncd$DEV mkdir -p ${TMP_DMP_DIR}
-    docker exec syncd$DEV saisdkdump -f ${TMP_DMP_DIR}/${sai_dump_filename} > /dev/null
+    /usr/bin/docker exec syncd$DEV rm -rf ${TMP_DMP_DIR}
+    /usr/bin/docker exec syncd$DEV rm -f /tmp/${sai_dump_filename_epoch}.tar
+    /usr/bin/docker exec syncd$DEV mkdir -p ${TMP_DMP_DIR}
+    /usr/bin/docker exec syncd$DEV saisdkdump -f ${TMP_DMP_DIR}/${sai_dump_filename} > /dev/null
     sleep 1
-    docker exec syncd$DEV tar -cf /tmp/${sai_dump_filename_epoch}.tar -C ${TMP_DMP_DIR} .
-    mkdir -p ${HOST_SDKDUMP_LOC}
-    docker cp syncd$DEV:/tmp/${sai_dump_filename_epoch}.tar ${HOST_SDKDUMP_LOC}
+    /usr/bin/docker exec syncd$DEV tar -czf /tmp/${sai_dump_filename_epoch}.tar.gz -C ${TMP_DMP_DIR} .
 
     if [[ $? == 0 ]]; then
-        # This is used to notify and will be cleared by auto-techsupport
-        touch /tmp/saidump_collection_notify_flag
-        debug "${HOST_SDKDUMP_LOC}/${sai_dump_filename_epoch}.tar collected before taking stopping syncd"
-        # Maintaining the recent 10 files and removing the rest
-        ls -1td ${HOST_SDKDUMP_LOC}/sai_sdk_dump_* | tail -n +10 | xargs rm -rf
+        mkdir -p ${HOST_SDKDUMP_LOC}
+        # Only retain the latest 10 files
+        ls -1td ${HOST_SDKDUMP_LOC}/sai_sdk_dump_* | tail -n +9 | xargs rm -rf
+        /usr/bin/docker cp syncd$DEV:/tmp/${sai_dump_filename_epoch}.tar.gz ${HOST_SDKDUMP_LOC}
+        debug "${HOST_SDKDUMP_LOC}/${sai_dump_filename_epoch}.tar.gz collected before taking stopping syncd"
     else
         debug "Failed to collect saisdkdump before stopping syncd"
     fi
@@ -101,16 +99,21 @@ function waitplatform() {
 
 function stopplatform1() {
 
+    if [[ x"$(${SONIC_DB_CLI} STATE_DB GET ORCH_ABRT_STATUS)" == x"1" ]]; then
+        # Collecting saisdkdump before restarting syncd
+        # Runs when orchagent is aborted because of SAI failure.
+        # Only enabled for mellanox platform
+        if [[ x$sonic_asic_platform == x"mellanox" ]]; then
+            collect_saisdkdump
+        fi
+        # This is used to notify auto-techsupport process
+        touch /tmp/saidump_collection_notify_flag
+    fi
+
     if [[ x$sonic_asic_platform == x"mellanox" ]] && [[ x$TYPE == x"cold" ]]; then
         debug "Stopping pmon service ahead of syncd..."
         /bin/systemctl stop pmon
         debug "Stopped pmon service"
-
-        if [[ x"$(${SONIC_DB_CLI} STATE_DB GET ORCH_ABRT_STATUS)" == x"1" ]]; then
-            # Collecting saisdkdump before restarting syncd
-            # Only run when orchagent is aborted because of SAI failure.
-            collect_saisdkdump
-        fi
     fi
 
     if [[ x$sonic_asic_platform != x"mellanox" ]] || [[ x$TYPE != x"cold" ]]; then
