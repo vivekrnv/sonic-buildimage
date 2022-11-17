@@ -12,7 +12,6 @@ function collect_saisdkdump() {
     /usr/bin/docker exec syncd$DEV rm -f /tmp/${sai_dump_filename_epoch}.tar
     /usr/bin/docker exec syncd$DEV mkdir -p ${TMP_DMP_DIR}
     /usr/bin/docker exec syncd$DEV saisdkdump -f ${TMP_DMP_DIR}/${sai_dump_filename} > /dev/null
-    sleep 1
     /usr/bin/docker exec syncd$DEV tar -czf /tmp/${sai_dump_filename_epoch}.tar.gz -C ${TMP_DMP_DIR} .
 
     if [[ $? == 0 ]]; then
