@@ -1,0 +1,40 @@
+From 9b482095b76506b4c53959da9be20eea093f4716 Mon Sep 17 00:00:00 2001
+From: Oleksandr Ivantsiv <oivantsiv@nvidia.com>
+Date: Fri, 18 Nov 2022 19:12:43 +0200
+Subject: [PATCH] Remove meson from dependencies.
+
+---
+ debian/control | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index bbd9a66..2f4d726 100644
+--- a/debian/control
++++ b/debian/control
+@@ -4,7 +4,6 @@ Maintainer: <networking-support@nvidia.com>
+ Build-Depends: debhelper (>= 10~),
+ 	       gcc,
+ 	       g++,
+-	       meson,
+ 	       pkg-config,
+ 	       librxpcompiler-dev,
+ 	       collectx-clxapidev,
+@@ -75,7 +74,6 @@ Depends: ${misc:Depends},
+ 	 doca-apps,
+ 	 libdoca-libs-dev,
+ 	 gcc,
+-	 meson,
+ 	 pkg-config,
+ 	 mlnx-dpdk-dev,
+ 	 ucx,
+@@ -92,7 +90,6 @@ Architecture: amd64 arm64 armhf i386 ppc64el
+ Depends: ${misc:Depends},
+ 	 libdoca-libs-dev,
+ 	 gcc,
+-	 meson,
+ 	 pkg-config,
+ 	 mlnx-dpdk-dev,
+ 	 libjson-c-dev
+-- 
+2.25.1
+

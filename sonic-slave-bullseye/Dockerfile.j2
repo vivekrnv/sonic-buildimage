@@ -436,7 +436,6 @@ RUN apt-get update && apt-get install -y \
         python3-pyelftools \
         hwdata \
         pciutils \
-        meson/bullseye-backports \
         liburiparser-dev \
         libnghttp2-dev \
         libbfd-dev \
@@ -650,6 +649,15 @@ RUN pip3 install m2crypto==0.36.0
 
 # Install swi tools
 RUN pip3 install git+https://github.com/aristanetworks/swi-tools.git@bead66bf261770237f7dd21ace3774ba04a017e9
+
+# Install meson build system
+RUN pip3 install meson
+
+# Install ninja build system
+RUN pip3 install ninja
+
+# Install python virtualenv
+RUN pip3 install virtualenv
 
 {% if CONFIGURED_ARCH != "amd64" -%}
 # Install node.js for azure pipeline

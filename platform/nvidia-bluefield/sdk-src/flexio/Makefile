@@ -37,6 +37,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
 	patch -p1 < ../0001-Allow-warning-during-package-compilation.patch
 	patch -p1 < ../0001-Install-LD-configuration.patch
+	patch -p1 < ../0001-Remove-meson-from-dependencies.patch
 
 	# Build the Debs
 	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
