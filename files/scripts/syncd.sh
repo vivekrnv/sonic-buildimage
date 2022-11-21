@@ -16,9 +16,9 @@ function collect_saisdkdump() {
 
     if [[ $? == 0 ]]; then
         mkdir -p ${HOST_SDKDUMP_LOC}
-        # Only retain the latest 10 files
-        ls -1td ${HOST_SDKDUMP_LOC}/sai_sdk_dump_* | tail -n +9 | xargs rm -rf
         /usr/bin/docker cp syncd$DEV:/tmp/${sai_dump_filename_epoch}.tar.gz ${HOST_SDKDUMP_LOC}
+        # Only retain the latest 10 files
+        ls -1td ${HOST_SDKDUMP_LOC}/sai_sdk_dump_* | tail -n +10 | xargs rm -rf
         debug "${sai_dump_filename_epoch}.tar.gz collected before taking stopping syncd"
     else
         debug "Failed to collect saisdkdump before stopping syncd"
