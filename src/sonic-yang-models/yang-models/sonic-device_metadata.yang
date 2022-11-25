@@ -200,7 +200,7 @@ module sonic-device_metadata {
                                  By default SONiC advertises /128 subnet prefix in Loopback0 as /64 subnet route";
                 }
 
-                leaf suppress-pending-fib {
+                leaf suppress-fib-pending {
                     description "Enable BGP suppress FIB pending feature. BGP will wait for route FIB installation before announcing routes";
                     type enumeration {
                         enum enabled;

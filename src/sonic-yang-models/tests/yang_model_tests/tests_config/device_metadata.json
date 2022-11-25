@@ -338,7 +338,7 @@
             "sonic-device_metadata:DEVICE_METADATA": {
                 "sonic-device_metadata:localhost": {
                     "synchronous_mode": "enable",
-                    "suppress-pending-fib": "enabled"
+                    "suppress-fib-pending": "enabled"
                 }
             }
         }
@@ -348,7 +348,7 @@
             "sonic-device_metadata:DEVICE_METADATA": {
                 "sonic-device_metadata:localhost": {
                     "synchronous_mode": "disable",
-                    "suppress-pending-fib": "disabled"
+                    "suppress-fib-pending": "disabled"
                 }
             }
         }
@@ -358,7 +358,7 @@
             "sonic-device_metadata:DEVICE_METADATA": {
                 "sonic-device_metadata:localhost": {
                     "synchronous_mode": "disable",
-                    "suppress-pending-fib": "enabled"
+                    "suppress-fib-pending": "enabled"
                 }
             }
         }
