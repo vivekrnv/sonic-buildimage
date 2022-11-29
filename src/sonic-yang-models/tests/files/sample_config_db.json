@@ -332,7 +332,8 @@
                 "max_cores": "8",
                 "sub_role": "FrontEnd",
                 "dhcp_server": "disabled",
-                "bgp_adv_lo_prefix_as_128": "true"
+                "bgp_adv_lo_prefix_as_128": "true",
+                "yang_config_validation": "disable"
             }
         },
         "VLAN": {
@@ -834,6 +835,20 @@
                 "role": "Int",
                 "speed": "40000",
                 "tpid": "0x8100"
+            }
+        },
+        "LOGGER": {
+            "orchagent": {
+                "LOGLEVEL": "NOTICE",
+                "LOGOUTPUT": "SYSLOG"
+            },
+            "syncd": {
+                "LOGLEVEL": "NOTICE",
+                "LOGOUTPUT": "SYSLOG"
+            },
+            "SAI_API_LAG": {
+                "LOGLEVEL": "SAI_LOG_LEVEL_NOTICE",
+                "LOGOUTPUT": "SYSLOG"
             }
         },
         "ACL_TABLE": {
@@ -1559,7 +1574,7 @@
             "lldp": {
                 "auto_restart": "enabled",
                 "has_global_scope": "false",
-                "has_per_asic_scope": "true",
+                "has_per_asic_scope": "{% if not DEVICE_RUNTIME_METADATA['ETHERNET_PORTS_PRESENT'] or ('CHASSIS_METADATA' in DEVICE_RUNTIME_METADATA and DEVICE_RUNTIME_METADATA['CHASSIS_METADATA']['module_type'] in ['supervisor']) %}False{% else %}True{% endif %}",
                 "has_timer": "false",
                 "high_mem_alert": "disabled",
                 "state": "enabled",
