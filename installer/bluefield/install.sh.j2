@@ -36,12 +36,13 @@ CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 rshimlog=`which bfrshlog 2> /dev/null`
 distro="SONiC"
 
+capsule=/lib/firmware/mellanox/boot/capsule/boot_update2.cap
+
 log()
 {
+	echo "INFO: $*"
 	if [ -n "$rshimlog" ]; then
-		$rshimlog "$*"
-	else
-		echo "$*"
+		$rshimlog "INFO: $*"
 	fi
 }
 
@@ -60,7 +61,7 @@ if [ -e "${boot_fifo_path}" ]; then
 	#
 	offset=$(strings -a -t d ${cfg_file} | grep -m 1 "7zXZ" | awk '{print $1}')
 	if [ -s "${cfg_file}" -a ."${offset}" != ."1" ]; then
-		log "INFO: Found bf.cfg"
+		log "Found bf.cfg"
 		cat ${cfg_file} | tr -d '\0' > /etc/bf.cfg
 	fi
 	rm -f $cfg_file
@@ -70,35 +71,23 @@ if [ -e /etc/bf.cfg ]; then
 	. /etc/bf.cfg
 fi
 
-# Read kernel cmdline parameters to check if logging is enabled
-set -- $(cat /proc/cmdline)
-for x in "$@"; do
-    case "$x" in
-        logging=true)
-            DEBUG="yes"
-            ;;
-    esac
-done
+ex() {
+    if [[ ${DEBUG} == "all" ]]; then
+        log "Executing command: $@"
+    fi
 
-log_file=/sonic_install_log_file.log
-if [ "X${DEBUG}" == "Xyes" ]; then
-    touch $log_file
-fi
+    local rc=0
+    $@
+    rc=$?
 
-ex(){
-    if [ "X${DEBUG}" == "Xyes" ]; then
-        # Execute the command and redirect the logs to the log file
-        echo "COMMAND: $@" >> $log_file
-        echo "STDOUT & STDERR:" >> $log_file
-        "$@" >> $log_file 2>&1
-        echo "EXT STATUS: $?" >> $log_file
-        echo -e "\n" >> $log_file
-    else
-        "$@" > /dev/null 2>&1
+    if [[ ${DEBUG} == "all" ]] || [[ ${DEBUG} == "error" ]]; then
+        if [[ $rc -ne 0 ]]; then
+            log "RC: $rc"
+        fi
     fi
 }
 
-log "INFO: $distro installation started"
+log "$distro installation started"
 
 device=/dev/mmcblk0
 
@@ -161,9 +150,7 @@ ex mount -t ext4 ${device}p2 /mnt
 mkdir -p /mnt/boot/efi
 ex mount -t vfat ${device}p1 /mnt/boot/efi
 
-if [ "X${DEBUG}" == "Xyes" ]; then
-    log "Extracting SONiC files"
-fi
+log "Extracting SONiC files"
 
 mkdir -p /mnt/$image_dir
 
@@ -187,9 +174,7 @@ chmod a+r /mnt/machine.conf
 
 sync
 
-if [ "X${DEBUG}" == "Xyes" ]; then
-    log "Installing GRUB"
-fi
+log "Installing GRUB"
 
 ex grub-install \
     --bootloader-id="SONiC-OS" \
@@ -231,9 +216,7 @@ ex cp $grub_cfg /mnt/grub/grub.cfg
 
 sync
 
-if [ "X${DEBUG}" == "Xyes" ]; then
-    log "GRUB CFG Updated"
-fi
+log "GRUB CFG Updated"
 
 # Update HW-dependant files
 if (/usr/bin/lspci -n -d 15b3: | grep -wq 'a2d2'); then
@@ -258,8 +241,9 @@ ex blockdev --rereadpt ${device}
 ex fsck.vfat -a ${device}p1
 sync
 
-if [ -e /lib/firmware/mellanox/boot/capsule/update.cap ]; then
-	ex bfrec --capsule /lib/firmware/mellanox/boot/capsule/update.cap
+if [ -e ${capsule} ]; then
+    log "Update capsule: ${capsule}"
+    ex bfrec --capsule ${capsule}
 fi
 
 ex bfbootmgr --cleanall
@@ -271,14 +255,12 @@ if [ ! -d /sys/firmware/efi/efivars ]; then
 	mounted_efivarfs=1
 fi
 
+log "Updating EFIBootMgr"
+
 if efibootmgr | grep SONiC-OS; then
     ex efibootmgr -b "$(efibootmgr | grep SONiC-OS | cut -c 5-8)" -B
 fi
 ex efibootmgr -c -d "$device" -p 1 -L SONiC-OS -l "\EFI\SONiC-OS\grubaa64.efi"
-
-if [ "X${DEBUG}" == "Xyes" ]; then
-    log "EFIBootMgr Updated"
-fi
 
 BFCFG=`which bfcfg 2> /dev/null`
 if [ -n "$BFCFG" ]; then
@@ -318,15 +300,7 @@ if function_exists bfb_post_install; then
 	ex bfb_post_install
 fi
 
-if [ "X${DEBUG}" == "Xyes" ]; then
-    # Copy the log file to Persistent Storage
-    mount -t ext4 ${device}p2 /mnt
-    mkdir -p /mnt/bfb-boot-logs/
-    dmesg > /mnt/bfb-boot-logs/installer_bfb_dmesg.log
-    mv $log_file /mnt/bfb-boot-logs/$log_file
-    umount /mnt
-    log "Rebooting..."
-    log "Installation finished"
-    # Wait for these messages to be pulled by the rshim service
-    sleep 3
-fi
+log "Installation finished"
+log "Rebooting..."
+# Wait for these messages to be pulled by the rshim service
+sleep 3
