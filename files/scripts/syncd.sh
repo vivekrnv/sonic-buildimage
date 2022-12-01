@@ -11,7 +11,7 @@ function collect_saisdkdump() {
     /usr/bin/docker exec syncd$DEV rm -rf ${TMP_DMP_DIR}
     /usr/bin/docker exec syncd$DEV rm -f /tmp/${sai_dump_filename_epoch}.tar
     /usr/bin/docker exec syncd$DEV mkdir -p ${TMP_DMP_DIR}
-    timeout 1m bash -c "/usr/bin/docker exec syncd$DEV saisdkdump -f ${TMP_DMP_DIR}/${sai_dump_filename} > /dev/null"
+    timeout 30s bash -c "/usr/bin/docker exec syncd$DEV saisdkdump -f ${TMP_DMP_DIR}/${sai_dump_filename} > /dev/null"
     /usr/bin/docker exec syncd$DEV tar -czf /tmp/${sai_dump_filename_epoch}.tar.gz -C ${TMP_DMP_DIR} .
 
     if [[ $? == 0 ]]; then
