@@ -46,6 +46,12 @@ log()
 	fi
 }
 
+function_exists()
+{
+	declare -f -F "$1" > /dev/null
+	return $?
+}
+
 #
 # Check auto configuration passed from boot-fifo
 #
