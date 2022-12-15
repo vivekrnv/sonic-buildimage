@@ -30,4 +30,3 @@ index 3b02128c9..da8504adf 100644
  	frr_mutex_lock_autounlock(&fnc->obuf_mutex);
 --
 2.30.2
-
