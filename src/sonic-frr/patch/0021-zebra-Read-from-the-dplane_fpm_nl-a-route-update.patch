@@ -1,7 +1,7 @@
-From a66db58a4ad3c5c7c7c076554e9a9ca6969176e3 Mon Sep 17 00:00:00 2001
+From 95fac14ae8076ef4f5749aa3b761a7603b8c05cc Mon Sep 17 00:00:00 2001
 From: Donald Sharp <sharpd@nvidia.com>
 Date: Fri, 7 Oct 2022 08:02:44 -0400
-Subject: [PATCH 11/11] zebra: Read from the dplane_fpm_nl a route update
+Subject: [PATCH 7/8] zebra: Read from the dplane_fpm_nl a route update
 
 Read from the fpm dplane a route update that will
 include status about whether or not the asic was
@@ -12,12 +12,12 @@ this data as appropriate.
 
 Signed-off-by: Donald Sharp <sharpd@nvidia.com>
 ---
- doc/developer/fpm.rst | 16 +++++++++
- zebra/dplane_fpm_nl.c | 80 +++++++++++++++++++++++++++++++++++++++++--
- zebra/zebra_dplane.c  | 10 ++++--
- zebra/zebra_dplane.h  |  2 +-
- zebra/zebra_rib.c     | 16 +++++++--
- 5 files changed, 116 insertions(+), 8 deletions(-)
+ doc/developer/fpm.rst |  16 ++++++
+ zebra/dplane_fpm_nl.c | 122 +++++++++++++++++++++++++++++++++++++++++-
+ zebra/zebra_dplane.c  |  10 ++--
+ zebra/zebra_dplane.h  |   2 +-
+ zebra/zebra_rib.c     |  16 +++++-
+ 5 files changed, 158 insertions(+), 8 deletions(-)
 
 diff --git a/doc/developer/fpm.rst b/doc/developer/fpm.rst
 index 984986913..56d33671d 100644
@@ -44,7 +44,7 @@ index 984986913..56d33671d 100644
 +RTM_F_OFFLOAD, RTM_F_TRAP and or RTM_F_OFFLOAD_FAILED to signify
 +what has happened to the route in the ASIC.
 diff --git a/zebra/dplane_fpm_nl.c b/zebra/dplane_fpm_nl.c
-index 8d41f3b07..912d08e6b 100644
+index 8d41f3b07..893ee5845 100644
 --- a/zebra/dplane_fpm_nl.c
 +++ b/zebra/dplane_fpm_nl.c
 @@ -51,6 +51,7 @@
@@ -55,19 +55,21 @@ index 8d41f3b07..912d08e6b 100644
  
  #define SOUTHBOUND_DEFAULT_ADDR INADDR_LOOPBACK
  #define SOUTHBOUND_DEFAULT_PORT 2620
-@@ -461,7 +462,11 @@ static void fpm_reconnect(struct fpm_nl_ctx *fnc)
+@@ -461,7 +462,13 @@ static void fpm_reconnect(struct fpm_nl_ctx *fnc)
  static int fpm_read(struct thread *t)
  {
  	struct fpm_nl_ctx *fnc = THREAD_ARG(t);
 +	fpm_msg_hdr_t fpm;
  	ssize_t rv;
-+	char buf[8192];
++	char buf[65535];
 +	struct nlmsghdr *hdr;
 +	struct zebra_dplane_ctx *ctx;
++	size_t available_bytes;
++	size_t hdr_available_bytes;
  
  	/* Let's ignore the input at the moment. */
  	rv = stream_read_try(fnc->ibuf, fnc->socket,
-@@ -493,12 +498,83 @@ static int fpm_read(struct thread *t)
+@@ -493,12 +500,123 @@ static int fpm_read(struct thread *t)
  	if (rv == -2)
  		return 0;
  
@@ -77,14 +79,10 @@ index 8d41f3b07..912d08e6b 100644
  	atomic_fetch_add_explicit(&fnc->counters.bytes_read, rv,
  				  memory_order_relaxed);
  
-+	while (rv) {
-+		if (rv < (ssize_t)FPM_MSG_HDR_LEN) {
-+			stream_reset(fnc->ibuf);
-+			zlog_warn(
-+				"%s: Received %zd bytes but cannot even read fpm header, ignoring",
-+				__func__, rv);
-+
-+			FPM_RECONNECT(fnc);
++	available_bytes = STREAM_READABLE(fnc->ibuf);
++	while (available_bytes) {
++		if (available_bytes < (ssize_t)FPM_MSG_HDR_LEN) {
++			stream_pulldown(fnc->ibuf);
 +			return 0;
 +		}
 +
@@ -103,31 +101,75 @@ index 8d41f3b07..912d08e6b 100644
 +			return 0;
 +		}
 +
-+		if (fpm.msg_len != rv) {
-+			stream_reset(fnc->ibuf);
-+			zlog_warn(
-+				"%s: Received message length %u but read only got %zd, ignoring message",
-+				__func__, fpm.msg_len, rv);
-+
-+			FPM_RECONNECT(fnc);
-+			return 0;
-+		}
-+
 +		/*
-+		 * Place the data from the stream into a buffer
++		 * If the passed in length doesn't even fill in the header
++		 * something is wrong and reset.
 +		 */
-+		hdr = (struct nlmsghdr *)buf;
-+		if (sizeof(buf) < fpm.msg_len) {
-+			stream_reset(fnc->ibuf);
++		if (fpm.msg_len < FPM_MSG_HDR_LEN) {
 +			zlog_warn(
-+				"%s: Received unexpected large message data: %u",
++				"%s: Received message length: %u that does not even fill the FPM header",
 +				__func__, fpm.msg_len);
 +			FPM_RECONNECT(fnc);
 +			return 0;
 +		}
 +
++		/*
++		 * If we have not received the whole payload, reset the stream
++		 * back to the beginning of the header and move it to the
++		 * top.
++		 */
++		if (fpm.msg_len > available_bytes) {
++			stream_rewind_getp(fnc->ibuf, FPM_MSG_HDR_LEN);
++			stream_pulldown(fnc->ibuf);
++			return 0;
++		}
++
++		available_bytes -= FPM_MSG_HDR_LEN;
++
++		/*
++		 * Place the data from the stream into a buffer
++		 */
++		hdr = (struct nlmsghdr *)buf;
 +		stream_get(buf, fnc->ibuf, fpm.msg_len - FPM_MSG_HDR_LEN);
-+		rv -= fpm.msg_len;
++		hdr_available_bytes = fpm.msg_len - FPM_MSG_HDR_LEN;
++		available_bytes -= hdr_available_bytes;
++
++		/* Sanity check: must be at least header size. */
++		if (hdr->nlmsg_len < sizeof(*hdr)) {
++			zlog_warn(
++				"%s: [seq=%u] invalid message length %u (< %zu)",
++				__func__, hdr->nlmsg_seq, hdr->nlmsg_len,
++				sizeof(*hdr));
++			continue;
++		}
++
++		if (hdr->nlmsg_len > fpm.msg_len) {
++			zlog_warn(
++				"%s: Received a inner header length of %u that is greater than the fpm total length of %u",
++				__func__, hdr->nlmsg_len, fpm.msg_len);
++			FPM_RECONNECT(fnc);
++		}
++
++		/* Not enough bytes available. */
++		if (hdr->nlmsg_len > hdr_available_bytes) {
++			zlog_warn(
++				"%s: [seq=%u] invalid message length %u (> %zu)",
++				__func__, hdr->nlmsg_seq, hdr->nlmsg_len,
++				available_bytes);
++			continue;
++		}
++
++		if (!(hdr->nlmsg_flags & NLM_F_REQUEST)) {
++			if (IS_ZEBRA_DEBUG_FPM)
++				zlog_debug(
++					"%s: [seq=%u] not a request, skipping",
++					__func__, hdr->nlmsg_seq);
++
++			/*
++			 * This request is a bust, go to the next one
++			 */
++			continue;
++		}
 +
 +		switch (hdr->nlmsg_type) {
 +		case RTM_NEWROUTE:

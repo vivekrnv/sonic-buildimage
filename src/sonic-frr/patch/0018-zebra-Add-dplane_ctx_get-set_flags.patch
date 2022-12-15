@@ -1,7 +1,7 @@
-From de380fe01d9a0a5602eb71bc828ed9efe8e6d56c Mon Sep 17 00:00:00 2001
+From 77d430e04359417d6fca8226e256ee2845fbbc58 Mon Sep 17 00:00:00 2001
 From: Donald Sharp <sharpd@nvidia.com>
 Date: Mon, 3 Oct 2022 15:28:48 -0400
-Subject: [PATCH 08/11] zebra: Add dplane_ctx_get|set_flags
+Subject: [PATCH 4/8] zebra: Add dplane_ctx_get|set_flags
 
 Zebra needs the ability to pass this data around.
 Add it to the dplanes ability to pass.
