@@ -14,6 +14,8 @@ BUILD_WEB_VERSION_FILE=$BUILD_VERSION_PATH/versions-web
 REPR_MIRROR_URL_PATTERN='http:\/\/packages.trafficmanager.net\/debian'
 DPKG_INSTALLTION_LOCK_FILE=/tmp/.dpkg_installation.lock
 
+sudo chmod -R a+rw $BUILDINFO_PATH
+
 . $BUILDINFO_PATH/config/buildinfo.config
 if [ -e /vcache ]; then
 	PKG_CACHE_PATH=/vcache/${IMAGENAME}
