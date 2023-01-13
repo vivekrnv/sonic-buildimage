@@ -11,7 +11,7 @@ UID = $(shell id -u)
 GUID = $(shell id -g)
 
 ifeq ($(SONIC_IMAGE_VERSION),)
-	override SONIC_IMAGE_VERSION = $(shell export BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) && export BUILD_NUMBER=$(BUILD_NUMBER) && . functions.sh && sonic_get_version)
+	override SONIC_IMAGE_VERSION := $(shell export BUILD_TIMESTAMP=$(BUILD_TIMESTAMP) && export BUILD_NUMBER=$(BUILD_NUMBER) && . functions.sh && sonic_get_version)
 endif
 
 .SECONDEXPANSION:
@@ -86,6 +86,8 @@ export DOCKER_BASE_ARCH
 export CROSS_BUILD_ENVIRON
 export BLDENV
 export BUILD_WORKDIR
+export GZ_COMPRESS_PROGRAM
+export MIRROR_SNAPSHOT
 
 ###############################################################################
 ## Utility rules
@@ -431,6 +433,7 @@ ifeq ($(CONFIGURED_PLATFORM),vs)
 $(info "BUILD_MULTIASIC_KVM"             : "$(BUILD_MULTIASIC_KVM)")
 endif
 $(info "CROSS_BUILD_ENVIRON"             : "$(CROSS_BUILD_ENVIRON)")
+$(info "GZ_COMPRESS_PROGRAM"             : "$(GZ_COMPRESS_PROGRAM)")
 $(info )
 else
 $(info SONiC Build System for $(CONFIGURED_PLATFORM):$(CONFIGURED_ARCH))
@@ -471,7 +474,7 @@ export vs_build_prepare_mem=$(VS_PREPARE_MEM)
 # $(1) => Docker name
 
 define docker-get-tag
-$(shell [ ! -z $(filter $(1).gz,$(SONIC_PACKAGES_LOCAL)) ] && echo $(SONIC_IMAGE_VERSION) || echo latest)
+$(shell [ ! -z $(filter $(1).gz,$(SONIC_PACKAGES_LOCAL)) ] && [ x$(SONIC_CONFIG_USE_NATIVE_DOCKERD_FOR_BUILD) == x"y" ] && echo $(SONIC_IMAGE_VERSION) || echo latest)
 endef
 
 # $(call docker-image-save,from,to)
@@ -489,7 +492,7 @@ define docker-image-save
     @echo "Tagging docker image $(1)-$(DOCKER_USERNAME):$(DOCKER_USERTAG) as $(1):$(call docker-get-tag,$(1))" $(LOG)
     docker tag $(1)-$(DOCKER_USERNAME):$(DOCKER_USERTAG) $(1):$(call docker-get-tag,$(1)) $(LOG)
     @echo "Saving docker image $(1):$(call docker-get-tag,$(1))" $(LOG)
-        docker save $(1):$(call docker-get-tag,$(1)) | gzip -c > $(2)
+        docker save $(1):$(call docker-get-tag,$(1)) | $(GZ_COMPRESS_PROGRAM) -c > $(2)
     if [ x$(SONIC_CONFIG_USE_NATIVE_DOCKERD_FOR_BUILD) == x"y" ]; then
         @echo "Removing docker image $(1):$(call docker-get-tag,$(1))" $(LOG)
         docker rmi -f $(1):$(call docker-get-tag,$(1)) $(LOG)
@@ -1252,6 +1255,8 @@ $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
 	export enable_organization_extensions="$(ENABLE_ORGANIZATION_EXTENSIONS)"
 	export enable_dhcp_graph_service="$(ENABLE_DHCP_GRAPH_SERVICE)"
 	export enable_ztp="$(ENABLE_ZTP)"
+	export include_teamd="$(INCLUDE_TEAMD)"
+	export include_router_advertiser="$(INCLUDE_ROUTER_ADVERTISER)"
 	export include_system_telemetry="$(INCLUDE_SYSTEM_TELEMETRY)"
 	export include_restapi="$(INCLUDE_RESTAPI)"
 	export include_nat="$(INCLUDE_NAT)"
