@@ -1,7 +1,7 @@
-From 350f6a99ddf6383ace6be18be2ddb22b943a8ec9 Mon Sep 17 00:00:00 2001
+From 1ecc146b19ea78a34fc5cba08d55aca72527d7c3 Mon Sep 17 00:00:00 2001
 From: Donald Sharp <sharpd@nvidia.com>
 Date: Mon, 3 Oct 2022 13:22:22 -0400
-Subject: [PATCH 09/11] zebra: Rearrange dplane_ctx_route_init
+Subject: [PATCH 5/8] zebra: Rearrange dplane_ctx_route_init
 
 In order for a future commit to abstract the dplane_ctx_route_init
 so that the kernel can use it, let's move some stuff around

@@ -1,7 +1,7 @@
-From 39c780b3676c99b8d124b6a88ab922daa5aaa8fc Mon Sep 17 00:00:00 2001
+From 01e267d98c63ee4464f96fead11dda9ee0ad911b Mon Sep 17 00:00:00 2001
 From: Donald Sharp <sharpd@nvidia.com>
 Date: Wed, 5 Oct 2022 10:04:11 -0400
-Subject: [PATCH 06/11] zebra: Add `zrouter.asic_notification_nexthop_control`
+Subject: [PATCH 2/8] zebra: Add `zrouter.asic_notification_nexthop_control`
 
 Volta submitted notification changes for the dplane that had a
 special use case for their system.  Volta is no more, the code

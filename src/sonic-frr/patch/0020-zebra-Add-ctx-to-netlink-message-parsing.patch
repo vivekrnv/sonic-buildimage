@@ -1,7 +1,7 @@
-From 0209b198c284d646600c8978cf7439387520e6b3 Mon Sep 17 00:00:00 2001
+From aebf87ce244c5189cec686ddf1278ae343807a53 Mon Sep 17 00:00:00 2001
 From: Donald Sharp <sharpd@nvidia.com>
 Date: Tue, 4 Oct 2022 15:41:36 -0400
-Subject: [PATCH 10/11] zebra: Add ctx to netlink message parsing
+Subject: [PATCH 6/8] zebra: Add ctx to netlink message parsing
 
 Add the initial step of passing in a dplane context
 to reading route netlink messages.  This code

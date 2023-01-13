@@ -20,5 +20,7 @@ cross-compile-changes.patch
 0019-zebra-Rearrange-dplane_ctx_route_init.patch
 0020-zebra-Add-ctx-to-netlink-message-parsing.patch
 0021-zebra-Read-from-the-dplane_fpm_nl-a-route-update.patch
-0022-Use-vrf_id-for-vrf-not-tabled_id.patch
+0022-zebra-Fix-code-because-missing-backport.patch
+0023-Use-vrf_id-for-vrf-not-tabled_id.patch
+0024-zebra-continue-fpm-read-when-we-decide-a-netlink-message-is-not-needed.patch
 

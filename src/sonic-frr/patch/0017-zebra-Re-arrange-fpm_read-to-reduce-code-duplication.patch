@@ -1,7 +1,7 @@
-From ac12bb53b89beba19232bbc691fee074bdc5655c Mon Sep 17 00:00:00 2001
+From 88ba9ad950d461847a159b0f4899375ecd23d4b9 Mon Sep 17 00:00:00 2001
 From: Donald Sharp <sharpd@nvidia.com>
 Date: Wed, 5 Oct 2022 11:28:43 -0400
-Subject: [PATCH 07/11] zebra: Re-arrange fpm_read to reduce code duplication
+Subject: [PATCH 3/8] zebra: Re-arrange fpm_read to reduce code duplication
 
 Signed-off-by: Donald Sharp <sharpd@nvidia.com>
 ---
