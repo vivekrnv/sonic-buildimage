@@ -1,18 +1,18 @@
-From e307d456ba0acae53af4b0690c3c0c81b87d51e2 Mon Sep 17 00:00:00 2001
+From 5dba497fb3810f9e5cb4b23bec151ec44d8dcec4 Mon Sep 17 00:00:00 2001
 From: Stepan Blyschak <stepanb@nvidia.com>
-Date: Thu, 20 Oct 2022 11:03:14 +0000
-Subject: [PATCH 03/15] Use vrf_id for vrf, not tabled_id
+Date: Mon, 16 Jan 2023 11:24:16 +0000
+Subject: [PATCH] Use vrf_id for vrf, not tabled_id
 
 Signed-off-by: Stepan Blyschak <stepanb@nvidia.com>
 ---
- zebra/rt_netlink.c | 17 +++++++++++------
- 1 file changed, 11 insertions(+), 6 deletions(-)
+ zebra/rt_netlink.c | 24 ++++++++++++++++++------
+ 1 file changed, 18 insertions(+), 6 deletions(-)
 
 diff --git a/zebra/rt_netlink.c b/zebra/rt_netlink.c
-index 24c01b7f5..439b10eeb 100644
+index 24c01b7f5..d4567990e 100644
 --- a/zebra/rt_netlink.c
 +++ b/zebra/rt_netlink.c
-@@ -1969,12 +1969,17 @@ ssize_t netlink_route_multipath_msg_encode(int cmd,
+@@ -1969,12 +1969,24 @@ ssize_t netlink_route_multipath_msg_encode(int cmd,
  #endif
  	/* Table corresponding to this route. */
  	table_id = dplane_ctx_get_table(ctx);
@@ -32,7 +32,14 @@ index 24c01b7f5..439b10eeb 100644
 +		}
 +	} else {
 +		/* Put vrf if_index instead of table id */
-+		req->r.rtm_table = dplane_ctx_get_vrf(ctx);
++		vrf_id_t vrf = dplane_ctx_get_vrf(ctx);
++		if (vrf < 256)
++			req->r.rtm_table = vrf;
++		else {
++			req->r.rtm_table = RT_TABLE_UNSPEC;
++			if (!nl_attr_put32(&req->n, datalen, RTA_TABLE, vrf))
++				return 0;
++			}
  	}
  
  	if (IS_ZEBRA_DEBUG_KERNEL)
