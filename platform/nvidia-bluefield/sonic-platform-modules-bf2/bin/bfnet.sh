@@ -19,12 +19,10 @@
 start()
 {
     modprobe mlx5_core
-    modprobe bonding miimon=100 mode=2
 }
 
 stop()
 {
-    rmmod bonding
     rmmod mlx5_ib mlx5_core
 }
 
