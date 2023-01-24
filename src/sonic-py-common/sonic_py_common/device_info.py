@@ -579,13 +579,13 @@ def get_system_mac(namespace=None):
     iplink_cmd2 = ['awk', '{print $2}']
     version_info = get_sonic_version_info()
 
-    if (version_info['asic_type'] == 'mellanox'):
+    if (version_info['asic_type'] in ['mellanox', 'nvidia-bluefield']):
         # With Mellanox ONIE release(2019.05-5.2.0012) and above
         # "onie_base_mac" was added to /host/machine.conf:
         # onie_base_mac=e4:1d:2d:44:5e:80
         # So we have another way to get the mac address besides decode syseeprom
         # By this can mitigate the dependency on the hw-management service
-        base_mac_key = "onie_base_mac"
+        base_mac_key = "onie_base_mac" if version_info['asic_type'] == 'mellanox' else 'bf_base_mac'
         machine_vars = get_machine_info()
         if machine_vars is not None and base_mac_key in machine_vars:
             mac = machine_vars[base_mac_key]

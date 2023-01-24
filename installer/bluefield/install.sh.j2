@@ -169,11 +169,15 @@ unzip -op /debian/$INSTALLER_PAYLOAD "$FILESYSTEM_DOCKERFS" | tar xz --warning=n
 mkdir -p /mnt/$image_dir/platform
 unzip -op /debian/$INSTALLER_PAYLOAD "platform.tar.gz" | tar xz --warning=no-timestamp -f - -C /mnt/$image_dir/platform
 
+# Query the base mac via mlxfwmanager
+base_mac=$(mlxfwmanager | grep 'Base MAC' | awk '{split($0,a," "); print a[3]}' | fold -w2 | paste -sd ":" -)
+
 # Copy in the machine.conf file
 cat <<EOF > /mnt/machine.conf
 bf_vendor=nvidia
 bf_machine=nvidia-bluefield
 bf_arch=arm64
+bf_base_mac=$base_mac
 EOF
 
 chmod a+r /mnt/machine.conf
