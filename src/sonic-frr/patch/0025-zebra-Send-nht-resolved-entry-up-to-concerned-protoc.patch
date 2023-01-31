@@ -1,7 +1,7 @@
-From 46ed39bc50d9f0e159ed302c666ceb015d827f8c Mon Sep 17 00:00:00 2001
+From 49c14222cb0d3cb60b32340976b4e42e5644a563 Mon Sep 17 00:00:00 2001
 From: Stepan Blyschak <stepanb@nvidia.com>
-Date: Mon, 30 Jan 2023 20:34:24 +0000
-Subject: [PATCH] zebra: Send nht resolved entry up to concerned protocols in
+Date: Tue, 31 Jan 2023 10:24:30 +0000
+Subject: [PATCH] zebra: Send nht resolved entry up to concerned protocols in 
  all cases
 
 There existed the idea, from Volta, that a nexthop group would not have
@@ -21,11 +21,11 @@ notification about a route being installed or not.
 Fixes: #12706
 Signed-off-by: Donald Sharp <sharpd@nvidia.com>
 ---
- zebra/zebra_rib.c | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
+ zebra/zebra_rib.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/zebra/zebra_rib.c b/zebra/zebra_rib.c
-index 50f19adcc..072e7a8a4 100644
+index 50f19adcc..a8dbe4470 100644
 --- a/zebra/zebra_rib.c
 +++ b/zebra/zebra_rib.c
 @@ -1666,9 +1666,12 @@ no_nexthops:
@@ -44,15 +44,6 @@ index 50f19adcc..072e7a8a4 100644
  
  check_backups:
  
-@@ -2283,7 +2286,7 @@ static void rib_process_dplane_notify(struct zebra_dplane_ctx *ctx)
- 			/* Redistribute, lsp, and nht update */
- 			redistribute_delete(rn, re, NULL);
- 		}
--	}
-+    }
- 
- 	if (!zebra_router_notify_on_ack()) {
- 		if (CHECK_FLAG(re->flags, ZEBRA_FLAG_OFFLOADED))
 -- 
 2.30.2
 
