@@ -15,7 +15,7 @@
 # limitations under the License.
 
 MFT_VERSION = 4.23.0
-MFT_REVISION = 102
+MFT_REVISION = 104
 
 export MFT_VERSION MFT_REVISION
 
