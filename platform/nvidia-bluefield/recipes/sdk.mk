@@ -19,7 +19,7 @@ SDK_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin
 
 # Place here URL where SDK sources exist
 SDK_SOURCE_BASE_URL =
-SDK_VERSION = 0.3-RC3
+SDK_VERSION = 0.3-RC4
 
 ifneq ($(SDK_SOURCE_BASE_URL), )
 SDK_FROM_SRC = y
@@ -146,14 +146,14 @@ SDK_SRC_TARGETS += $(RDMA_CORE)
 
 # FlexIO
 
-FLEXIO_VER = $(call get_sdk_package_version_full,"flexio")
-
-FLEXIO = flexio_$(FLEXIO_VER)_arm64.deb
-$(FLEXIO)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/flexio
-$(FLEXIO)_DEPENDS = $(IB_VERBS_PROV) $(IB_VERBS) $(IB_VERBS_DEV)
-$(FLEXIO)_RDEPENDS = $(IB_VERBS_PROV) $(IB_VERBS) $(IB_VERBS_DEV)
-
-export FLEXIO_VER FLEXIO
+#FLEXIO_VER = $(call get_sdk_package_version_full,"flexio")
+#
+#FLEXIO = flexio_$(FLEXIO_VER)_arm64.deb
+#$(FLEXIO)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/flexio
+#$(FLEXIO)_DEPENDS = $(IB_VERBS_PROV) $(IB_VERBS) $(IB_VERBS_DEV)
+#$(FLEXIO)_RDEPENDS = $(IB_VERBS_PROV) $(IB_VERBS) $(IB_VERBS_DEV)
+#
+#export FLEXIO_VER FLEXIO
 
 SDK_DEBS += $(FLEXIO)
 SDK_SRC_TARGETS += $(FLEXIO)
