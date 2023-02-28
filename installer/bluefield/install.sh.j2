@@ -25,7 +25,8 @@ FILESYSTEM_DOCKERFS="{{FILESYSTEM_DOCKERFS}}"
 DOCKERFS_DIR="{{DOCKERFS_DIR}}"
 FILESYSTEM_SQUASHFS="{{FILESYSTEM_SQUASHFS}}"
 KERNEL_VERSION="{{KERNEL_VERSION}}"
-DEFAULT_GRUB_CMDLINE_LINUX="{{DEFAULT_GRUB_CMDLINE_LINUX}}"
+BF2_GRUB_CFG="{{BF2_GRUB_CFG}}"
+BF3_GRUB_CFG="{{BF3_GRUB_CFG}}"
 
 image_dir="image-$IMAGE_VERSION"
 demo_volume_revision_label="SONiC-OS-${IMAGE_VERSION}"
@@ -44,6 +45,9 @@ log()
 	if [ -n "$rshimlog" ]; then
 		$rshimlog "INFO: $*"
 	fi
+	if [ -N /dev/ttyAMA0 ]; then
+		echo "INFO: $*"
+	fi
 }
 
 function_exists()
@@ -55,6 +59,7 @@ function_exists()
 #
 # Check auto configuration passed from boot-fifo
 #
+
 boot_fifo_path="/sys/bus/platform/devices/MLNXBF04:00/bootfifo"
 if [ -e "${boot_fifo_path}" ]; then
 	cfg_file=$(mktemp)
@@ -94,13 +99,11 @@ ex() {
 }
 
 log "$distro installation started"
-
-device=/dev/mmcblk0
-
+device=${device:-/dev/mmcblk0}
 # We cannot use wait-for-root as it expects the device to contain a
 # known filesystem, which might not be the case here.
 while [ ! -b $device ]; do
-    printf "Waiting for %s to be ready\n" "$device"
+    log "Waiting for $device to be ready"
     sleep 1
 done
 
@@ -113,7 +116,6 @@ boot_size_bytes=$(($boot_size_megs * $mega))
 
 disk_sectors=`fdisk -l $device | grep "Disk $device:" | awk '{print $7}'`
 disk_end=$((disk_sectors - reserved))
-
 boot_start=2048
 boot_size=$(($boot_size_bytes/$bs))
 root_start=$((2048 + $boot_size))
@@ -121,7 +123,6 @@ root_end=$disk_end
 root_size=$(($root_end - $root_start + 1))
 
 dd if=/dev/zero of="$device" bs="$bs" count=1
-
 sfdisk -f "$device" << EOF
 label: gpt
 label-id: A2DF9E70-6329-4679-9C1F-1DAF38AE25AE
@@ -133,29 +134,23 @@ last-lba: $disk_end
 ${device}p1 : start=$boot_start, size=$boot_size, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, uuid=CEAEF8AC-B559-4D83-ACB1-A4F45B26E7F0, name="EFI System", bootable
 ${device}p2 : start=$root_start ,size=$root_size, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=F093FF4B-CC26-408F-81F5-FF2DD6AE139F, name="SONiC-OS"
 EOF
-
 sync
 
 # Refresh partition table
 ex blockdev --rereadpt ${device}
-
 if function_exists bfb_pre_install; then
+	log "Running bfb_pre_install from bf.cfg"
 	bfb_pre_install
 fi
-
 # Generate some entropy
-ex mke2fs  ${device}p2 >> /dev/null
-
+ex mke2fs -F ${device}p2
 ex mkdosfs ${device}p1 -n "system-boot"
 ex mkfs.ext4 -F ${device}p2 -L "SONiC-OS"
-
 ex fsck.vfat -a ${device}p1
-
 mkdir -p /mnt
 ex mount -t ext4 ${device}p2 /mnt
 mkdir -p /mnt/boot/efi
 ex mount -t vfat ${device}p1 /mnt/boot/efi
-
 log "Extracting SONiC files"
 
 mkdir -p /mnt/$image_dir
@@ -200,6 +195,13 @@ ex grub-install \
 grub_cfg=$(mktemp)
 
 # Modify GRUB_CMDLINE_LINUX from bf.cfg file if required
+
+if (lspci -n -d 15b3: | grep -wq 'a2dc'); then
+    DEFAULT_GRUB_CMDLINE_LINUX=$BF3_GRUB_CFG
+else
+    DEFAULT_GRUB_CMDLINE_LINUX=$BF2_GRUB_CFG
+fi
+
 GRUB_CMDLINE_LINUX=${GRUB_CMDLINE_LINUX:-"$DEFAULT_GRUB_CMDLINE_LINUX"}
 export GRUB_CMDLINE_LINUX
 

@@ -38,12 +38,15 @@ DDIR=$CDIR
 CAPSULE=/lib/firmware/mellanox/boot/capsule/boot_update2.cap
 BOOTCTL_DRIVER=$CDIR/$FILES_PATH/mlx-bootctl.ko
 TMFIFO_DRIVER=$CDIR/$FILES_PATH/mlxbf-tmfifo.ko
+SDHCI_OF_DWCMSHC_DRIVER=$CDIR/$FILES_PATH/sdhci-of-dwcmshc.ko
 TARGET_MACHINE=nvidia-bluefield
 BFB="${BFB:-/lib/firmware/mellanox/boot/default.bfb}"
 GRUB_AA64=grubnetaa64.efi
-CONSOLE_PARAM="console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000"
 GRUB_CFG="" # Common Grub Config
-DEFAULT_GRUB_CMDLINE_LINUX="$CONSOLE_PARAM quiet"
+BF2_BOOT_ARGS="console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x01000000 earlycon=pl011,0x01800000"
+BF2_GRUB_CFG="$BF2_BOOT_ARGS isolcpus=1-7 nohz_full=1-7 rcu_nocbs=1-7"
+BF3_BOOT_ARGS="console=ttyAMA1 console=hvc0 console=ttyAMA0 earlycon=pl011,0x13010000"
+BF3_GRUB_CFG="$BF3_BOOT_ARGS"
 
 usage() {
 cat << EOF
@@ -200,6 +203,11 @@ validate_config() {
         exit 1
     fi
 
+    if [[ ! -f $SDHCI_OF_DWCMSHC_DRIVER ]]; then
+        echo "ERROR: Bootctl driver $SDHCI_OF_DWCMSHC_DRIVER does not exist"
+        exit 1
+    fi
+
     if [[ ! -f $EFIVARS_MOD  ]]; then
         echo "ERROR: EFIVARS driver $EFIVARS_MOD does not exist"
         exit 1
@@ -212,7 +220,7 @@ validate_config() {
 }
 
 cleanup_workdir() {
-    rm -rf $boot_args $boot_path $boot_desc $arxiv_wdir $WDIR
+    rm -rf $boot_args $boot_args2 $boot_path $boot_desc $arxiv_wdir $WDIR
 }
 
 create_workdir() {
@@ -222,6 +230,7 @@ create_workdir() {
         rm -rf $WDIR/*
     fi
     boot_args=$(mktemp /tmp/boot-args-XXXX)
+    boot_args2=$(mktemp /tmp/boot-args2-XXXX)
     boot_path=$(mktemp /tmp/boot-path-XXXX)
     boot_desc=$(mktemp /tmp/boot-desc-XXXX)
     arxiv_wdir=$(mktemp -d /tmp/pxe-wd-XXXX)
@@ -248,13 +257,14 @@ printf_msg()
 }
 
 depmod -a $KERNEL_VERSION > /dev/null 2>&1
-insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio.ko > /dev/null 2>&1
-insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio_ring.ko > /dev/null 2>&1
-insmod /efivarfs.ko > /dev/null 2>&1
-insmod /mlx-bootctl.ko > /dev/null 2>&1
-insmod /mlxbf-tmfifo.ko > /dev/null 2>&1
-insmod /sbsa_gwdt.ko > /dev/null 2>&1
-/usr/sbin/watchdog > /dev/null 2>&1
+insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio.ko
+insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio_ring.ko
+insmod /efivarfs.ko
+insmod /mlx-bootctl.ko
+insmod /mlxbf-tmfifo.ko
+insmod /sdhci-of-dwcmshc.ko
+insmod /sbsa_gwdt.ko
+/usr/sbin/watchdog
 
 printf_msg "================================="
 printf_msg "Installing SONiC. Please wait..."
@@ -390,6 +400,7 @@ create_bfb_image() {
     cp $CHROOT_DIR/usr/share/misc/pci.ids usr/share/misc/
     cp $BOOTCTL_DRIVER .
     cp $TMFIFO_DRIVER .
+    cp $SDHCI_OF_DWCMSHC_DRIVER .
     cp $EFIVARS_MOD .
     cp $WATCHDOG .
 
@@ -405,9 +416,11 @@ create_bfb_image() {
 
     popd
 
-    # Make bfb
-    printf "$CONSOLE_PARAM initrd=initramfs" > "$boot_args"
-       
+    printf "$BF2_BOOT_ARGS initrd=initramfs" > \
+        "$boot_args"
+    printf "$BF3_BOOT_ARGS initrd=initramfs" > \
+        "$boot_args2"
+
     printf "VenHw(F019E406-8C9C-11E5-8797-001ACA00BFC4)/Image" > "$boot_path"
     printf "Linux from rshim" > "$boot_desc"
     vmlinuz=$WDIR/vmlinuz
@@ -416,7 +429,8 @@ create_bfb_image() {
     $mkbfb --image "$vmlinuz" \
            --initramfs "$initramfs" \
            --capsule "$CAPSULE" \
-           --boot-args "$boot_args" \
+           --boot-args-v0 "$boot_args" \
+           --boot-args-v2 "$boot_args2" \
            --boot-path "$boot_path" \
            --boot-desc "$boot_desc" \
             ${BFB} ${DDIR}/${OUTPUT_BFB_IMAGE}
@@ -440,7 +454,8 @@ create_pxe_archive(){
     cp $WDIR/vmlinuz Image
     cp $WDIR/dump-initramfs-v0 initramfs
 
-    console_params=$CONSOLE_PARAM j2 /sonic/installer/bluefield/grub.cfg.j2 > grub.cfg
+    console_params=$BF2_BOOT_ARGS j2 /sonic/installer/bluefield/grub.cfg.j2 > bluefield-2.grub.cfg
+    console_params=$BF3_BOOT_ARGS j2 /sonic/installer/bluefield/grub.cfg.j2 > bluefield-3.grub.cfg
     cp /sonic/installer/bluefield/PXE_README.txt .
 
     tar -C $arxiv_wdir -cvzf ${DDIR}/${OUTPUT_PXE_IMAGE} .
@@ -463,7 +478,7 @@ main() {
 
     export GRUB_CFG=$(cat /sonic/installer/bluefield/sonic-grub.cfg)
     export IMAGE_VERSION=$(cat $CHROOT_DIR/etc/sonic/sonic_version.yml | grep "build_version" | sed -e "s/build_version: //g;s/'//g")
-    export DEFAULT_GRUB_CMDLINE_LINUX ONIE_INSTALLER_PAYLOAD FILESYSTEM_DOCKERFS DOCKERFS_DIR FILESYSTEM_SQUASHFS KERNEL_VERSION
+    export BF2_BOOT_ARGS BF3_BOOT_ARGS BF2_GRUB_CFG BF3_GRUB_CFG ONIE_INSTALLER_PAYLOAD FILESYSTEM_DOCKERFS DOCKERFS_DIR FILESYSTEM_SQUASHFS KERNEL_VERSION
 
     if [[ $IMAGE_TYPE == bin ]]; then
         # bluefield Doesn't have ONiE Support yet and this *.bin image generated can only be used for SONiC-SONiC installation

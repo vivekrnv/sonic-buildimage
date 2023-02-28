@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021-2022 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,21 +17,27 @@
 
 .ONESHELL:
 SHELL = /bin/bash
-.SHELLFLAGS += -ex
 
-MLX_BOOTCTL = mlx-bootctl-$(MLX_BOOTCTL_DRIVER_VERSION)
-MLX_BOOTCTL_TAR = ${MLX_BOOTCTL}.tar.gz
+SDHCI_OF_DWCMSHC = sdhci-of-dwcmshc-${SDHCI_OF_DWCMSHC_DRIVER_VERSION}
+SDHCI_OF_DWCMSHC_TAR = ${SDHCI_OF_DWCMSHC}.tar.gz
 
-$(addprefix $(DEST)/, $(MLX_BOOTCTL_DRIVER)): $(DEST)/% :
-	rm -rf ${MLX_BOOTCTL} ${MLX_BOOTCTL_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLX_BOOTCTL_TAR)"
-	tar -z -f $(MLX_BOOTCTL_TAR) -x
+MAIN_TARGET = $(SDHCI_OF_DWCMSHC_DRIVER)
+DERIVED_TARGETS =
 
-	pushd ${MLX_BOOTCTL}  
+$(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	# Make sure errors will be reported
+	set -e
 
-	# Build the package
+	rm -rf ${SDHCI_OF_DWCMSHC} ${SDHCI_OF_DWCMSHC_TAR}
+	wget -N "${BSD_BASE_SOURCE_URL}/${SDHCI_OF_DWCMSHC_TAR}"
+	tar -z -f ${SDHCI_OF_DWCMSHC_TAR} -x
+	pushd ${SDHCI_OF_DWCMSHC}
+	find . -type f -exec touch {} +
+
+	# Build the Debs
 	KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
-	
-	mv mlxbf-bootctl.ko $(DEST)/mlx-bootctl.ko
 
+	mv $(DERIVED_TARGETS) $* $(DEST)/
 	popd
+
+$(addprefix $(DEST)/, $(DERIVED_TARGETS)): $(DEST)/% : $(DEST)/$(MAIN_TARGET)
