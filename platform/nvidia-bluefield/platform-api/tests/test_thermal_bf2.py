@@ -38,13 +38,13 @@ class TestThermal:
     temp_test_mocked_vals = [123, 10.5, -1, None]
 
     def test_ipmi_mapping(self, *args):
-        from sonic_platform import thermal
+        from sonic_platform import thermal_bf2 as thermal
         thermal.ipmitool_get_sensor_field = MagicMock(return_value=10)
         assert thermal.ipmi_get_sensor_data('ASIC', 'invalid field') == None
 
 
     def test_chassis_thermal(self, *args):
-        from sonic_platform.thermal import SENSORS
+        from sonic_platform.thermal_bf2 import SENSORS
         chassis = Chassis()
         thermal_list = chassis.get_all_thermals()
         assert thermal_list
@@ -60,8 +60,8 @@ class TestThermal:
 
 
     def test_get_temperature(self, *args):
-        from sonic_platform import thermal
-        from sonic_platform.thermal import Thermal
+        from sonic_platform import thermal_bf2 as thermal
+        from sonic_platform.thermal_bf2 import Thermal
 
         for tv in TestThermal.temp_test_mocked_vals:
             thermal.ipmitool_get_sensor_field = MagicMock(return_value=tv)
@@ -70,8 +70,8 @@ class TestThermal:
 
 
     def test_get_high_threshold(self, *args):
-        from sonic_platform import thermal
-        from sonic_platform.thermal import Thermal
+        from sonic_platform import thermal_bf2 as thermal
+        from sonic_platform.thermal_bf2 import Thermal
 
         for tv in TestThermal.temp_test_mocked_vals:
             thermal.ipmitool_get_sensor_field = MagicMock(return_value=tv)
@@ -80,8 +80,8 @@ class TestThermal:
 
 
     def test_get_high_critical_threshold(self, *args):
-        from sonic_platform import thermal
-        from sonic_platform.thermal import Thermal
+        from sonic_platform import thermal_bf2 as thermal
+        from sonic_platform.thermal_bf2 import Thermal
 
         for tv in TestThermal.temp_test_mocked_vals:
             thermal.ipmitool_get_sensor_field = MagicMock(return_value=tv)
@@ -90,8 +90,8 @@ class TestThermal:
 
 
     def test_get_low_threshold(self, *args):
-        from sonic_platform import thermal
-        from sonic_platform.thermal import Thermal
+        from sonic_platform import thermal_bf2 as thermal
+        from sonic_platform.thermal_bf2 import Thermal
 
         for tv in TestThermal.temp_test_mocked_vals:
             thermal.ipmitool_get_sensor_field = MagicMock(return_value=tv)
@@ -100,8 +100,8 @@ class TestThermal:
 
 
     def test_get_low_critical_thresholdd(self, *args):
-        from sonic_platform import thermal
-        from sonic_platform.thermal import Thermal
+        from sonic_platform import thermal_bf2 as thermal
+        from sonic_platform.thermal_bf2 import Thermal
 
         for tv in TestThermal.temp_test_mocked_vals:
             thermal.ipmitool_get_sensor_field = MagicMock(return_value=tv)

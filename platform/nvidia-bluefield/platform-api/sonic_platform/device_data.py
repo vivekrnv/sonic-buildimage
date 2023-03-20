@@ -18,6 +18,7 @@
 import glob
 import os
 import json
+from enum import Enum
 from sonic_py_common import device_info
 
 from . import utils
@@ -29,6 +30,10 @@ class SfpData:
         self.name = name
         self.thermals = thermals
 
+
+class BFVersion(Enum):
+    BF2 = 2
+    BF3 = 3
 
 class DeviceDataManager:
 
@@ -69,3 +74,7 @@ class DeviceDataManager:
             raise RuntimeError("Wrong SFP index: {}".format(sfp_index))
         sfp_data = self._chassis['sfps'][sfp_index]
         return SfpData(**sfp_data)
+
+    def get_bf_version(self):
+        bf2_platforms = ['arm64-nvda_bf-mbf2h536c']
+        return BFVersion.BF2 if self.get_platform_name() in bf2_platforms else BFVersion.BF3

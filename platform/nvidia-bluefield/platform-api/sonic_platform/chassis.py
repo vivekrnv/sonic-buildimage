@@ -192,7 +192,7 @@ class Chassis(ChassisBase):
         if not self._thermal_list:
             from .thermal import initialize_chassis_thermals
             # Initialize thermals
-            self._thermal_list = initialize_chassis_thermals()
+            self._thermal_list = initialize_chassis_thermals(self.device_data.get_bf_version())
 
     def get_num_thermals(self):
         """

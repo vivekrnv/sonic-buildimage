@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,44 @@
 platform_sample = """
 {
     "chassis": {
-        "name": "Nvidia-MBF2H516A",
+        "name": "arm64-nvda_bf-mbf2h536c",
+        "components": [],
+        "fans": [],
+        "fan_drawers": [],
+        "psus": [],
+        "thermals": [],
+        "sfps": [
+            {
+                "name": "p0"
+            },
+            {
+                "name": "p1"
+            }
+        ]
+    },
+    "interfaces": {
+        "Ethernet0": {
+            "index": "1,1,1,1",
+            "lanes": "0,1,2,3",
+            "breakout_modes": {
+                "1x100G": ["etp1"]
+            }
+        },
+        "Ethernet4": {
+            "index": "2,2,2,2",
+            "lanes": "4,5,6,7",
+            "breakout_modes": {
+                "1x100G": ["etp2"]
+            }
+        }
+    }
+}
+"""
+
+platform_sample_bf3 = """
+{
+    "chassis": {
+        "name": "arm64-nvda_bf-9009d3b600cvaa",
         "components": [],
         "fans": [],
         "fan_drawers": [],
