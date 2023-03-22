@@ -1,5 +1,5 @@
 import sys
-import filecmp
+import shutil
 from unittest import mock, TestCase
 sys.path.append('../')
 from hwmgmt_kernel_patches import *
@@ -106,7 +106,6 @@ class TestHwMgmtPostAction(TestCase):
         Data.updated_kcfg.pop(-1)
         assert self.action.find_conflicts() == False
 
-    
     @mock.patch('helper.FileHandler.write_lines', side_effect=write_lines_mock)
     def test_write_final_slk_series(self, mock_write_lines):
         self.action.find_mlnx_hw_mgmt_markers()
@@ -118,5 +117,6 @@ class TestHwMgmtPostAction(TestCase):
         self.action.find_mlnx_hw_mgmt_markers()
         assert not self.action.find_conflicts()
         print(Data.updated_kcfg)
+        shutil.copy(MOCK_INPUTS_DIR+"/kconfig-inclusions", MOCK_WRITE_FILE)
         FileHandler.write_lines_marker(MOCK_WRITE_FILE, KCFG.get_writable_opts(Data.updated_kcfg), MLNX_KFG_MARKER)
         assert check_file_content(MOCK_INPUTS_DIR+"expected_data/kconfig-inclusions")
