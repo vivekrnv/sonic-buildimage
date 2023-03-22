@@ -31,7 +31,7 @@ NON_UP_PTCH_DIR = $(TEMP_HW_MGMT_DIR)/non_up_patch_dir/
 PTCH_LIST  = $(TEMP_HW_MGMT_DIR)/series
 KCFG_LIST = $(TEMP_HW_MGMT_DIR)/kconfig
 HWMGMT_NONUP_LIST = $(BUILD_WORKDIR)/$($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hwmgmt_nonup_patches
-USER_OUTFILE = $(BUILD_WORKDIR)/integrate-mlnx-hw-mgmt_jenkins.out
+USER_OUTFILE = $(BUILD_WORKDIR)/integrate-mlnx-hw-mgmt_user.out
 TMPFILE = /tmp/intg-hw-mgmt.out
 
 integrate-mlnx-hw-mgmt:
