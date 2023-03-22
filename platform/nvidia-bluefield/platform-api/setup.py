@@ -28,6 +28,7 @@ setup(
     maintainer_email='oivantsiv@nvidia.com',
     packages=[
         'sonic_platform',
+        'sonic_platform/throttling_checks',
         'tests'
     ],
     setup_requires= [

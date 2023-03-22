@@ -15,6 +15,9 @@
 # limitations under the License.
 #
 
+from dataclasses import dataclass
+from typing import List, ClassVar
+
 platform_sample = """
 {
     "chassis": {
@@ -88,3 +91,43 @@ platform_sample_bf3 = """
     }
 }
 """
+
+# Utilities for throttling tests
+class LogRecorderMock(object):
+    def __init__(self):
+        self.msgs = []
+
+    def log_warning(self, msg):
+        self.msgs.append(('warning', msg))
+
+    def log_error(self, msg):
+        self.msgs.append(('error', msg))
+
+    def get_messages(self):
+        return self.msgs
+
+@dataclass
+class TTestFSState:
+    sensors: List[int]
+    storage: List[int]
+    sensor_names: ClassVar = ['power_throttling_state', 'power_throttling_event_count',
+                              'thermal_throttling_state', 'thermal_throttling_event_count', 'ddr_temp']
+    def get_dicts(self):
+        return dict(zip(self.sensor_names, self.sensors)), dict(zip(self.sensor_names, self.storage))
+
+
+@dataclass
+class TTestData:
+    title: str
+    fs_state: TTestFSState
+    result: str
+    log_msgs: List[str]
+
+    def validate(self, result: str, log_recording: LogRecorderMock, t):
+        assert f'Throttling\n{t}:{self.result}' == result
+        assert len(self.log_msgs) == len(log_recording.get_messages()), log_recording.get_messages()
+        for expected, actual in zip(self.log_msgs, log_recording.get_messages()):
+            esev, emsg = expected
+            asev, amsg = actual
+            assert esev == asev
+            assert amsg.startswith(emsg), f'{amsg} != {emsg}'
