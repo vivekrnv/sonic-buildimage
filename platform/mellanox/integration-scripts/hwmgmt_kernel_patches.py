@@ -34,6 +34,8 @@ class Data:
     non_up_slk_series_diff = list()
     # current kcfg opts
     current_kcfg = list(tuple())
+    # current raw kconfig exclude data
+    kcfg_exclude = list()
 
 class HwMgmtAction(Action):
 
@@ -126,6 +128,8 @@ class PostProcess(HwMgmtAction):
         for hdr in HDRS:
             Data.current_kcfg.extend(all_kcfg.get(hdr, []))
         Data.current_kcfg = KCFG.parse_opts_strs(Data.current_kcfg)
+
+        Data.kcfg_exclude = FileHandler.read_raw(os.path.join(self.args.build_root, SLK_KCONFIG_EXCLUDE))
 
         new_up = set(FileHandler.read_dir(self.args.patches, "*.patch"))
         new_down = set(FileHandler.read_dir(self.args.non_up_patches, "*.patch"))
@@ -243,6 +247,25 @@ class PostProcess(HwMgmtAction):
                     has_conflict = True
         return has_conflict
 
+    def handle_exclusions(self):
+        new_lines = []
+        curr_hdr = ""
+        for line_raw in Data.kcfg_exclude:
+            line = line_raw.strip()
+            should_exclude = False
+            if line_raw.strip():
+                match = re.search(KCFG_HDR_RE, line)
+                if match:
+                    curr_hdr = match.group(1)
+                else:
+                    for (kcfg, _) in Data.updated_kcfg:
+                        if kcfg == line and curr_hdr in HDRS:
+                            should_exclude = True
+            if not should_exclude:
+                new_lines.append(line_raw)
+        FileHandler.write_lines(os.path.join(self.args.build_root, SLK_KCONFIG_EXCLUDE), new_lines, True)
+        print("-> INFO: updated kconfig-exclusion: \n{}".format("".join(FileHandler.read_raw(os.path.join(self.args.build_root, SLK_KCONFIG_EXCLUDE)))))
+
     def perform(self):
         """ Read the data output from the deploy_kernel_patches.py script 
             and move to appropriate locations """
@@ -256,6 +279,7 @@ class PostProcess(HwMgmtAction):
             # Write the new kcfg to the new file
             path = os.path.join(self.args.build_root, SLK_KCONFIG)
             FileHandler.write_lines_marker(path, KCFG.get_writable_opts(Data.updated_kcfg), MLNX_KFG_MARKER)
+        self.handle_exclusions()
         # Handle Upstream patches
         self.rm_old_up_mlnx()
         self.mv_new_up_mlnx()

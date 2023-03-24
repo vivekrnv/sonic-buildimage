@@ -83,6 +83,7 @@ class TestHwMgmtPostAction(TestCase):
         for hdr in HDRS:
             Data.current_kcfg.extend(all_kcfg.get(hdr, []))
         Data.current_kcfg = KCFG.parse_opts_strs(Data.current_kcfg)
+        Data.kcfg_exclude = FileHandler.read_raw(MOCK_INPUTS_DIR+"/kconfig-exclusions")
 
     def test_find_mlnx_hw_mgmt_markers(self):
         self.action.find_mlnx_hw_mgmt_markers()
@@ -120,3 +121,9 @@ class TestHwMgmtPostAction(TestCase):
         shutil.copy(MOCK_INPUTS_DIR+"/kconfig-inclusions", MOCK_WRITE_FILE)
         FileHandler.write_lines_marker(MOCK_WRITE_FILE, KCFG.get_writable_opts(Data.updated_kcfg), MLNX_KFG_MARKER)
         assert check_file_content(MOCK_INPUTS_DIR+"expected_data/kconfig-inclusions")
+    
+    @mock.patch('helper.FileHandler.write_lines', side_effect=write_lines_mock)
+    def test_handle_exclusions(self, mock_write_lines):
+        self.action.find_mlnx_hw_mgmt_markers()
+        self.action.handle_exclusions()
+        assert check_file_content(MOCK_INPUTS_DIR+"expected_data/kconfig-exclusions")

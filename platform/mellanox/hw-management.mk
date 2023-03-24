@@ -79,8 +79,11 @@ integrate-mlnx-hw-mgmt:
 	echo -en "\n###-> series file changes in sonic-linux-kernel <-###\n" >> ${USER_OUTFILE}
 	git diff --no-color  HEAD~1 HEAD -- patch/series >> ${USER_OUTFILE}
 
-	echo -en "\n###-> kconfig-inclusion file changes in sonic-linux-kernel <-###\n" >> ${USER_OUTFILE}
+	echo -en "\n###-> kconfig-inclusions file changes in sonic-linux-kernel <-###\n" >> ${USER_OUTFILE}
 	git diff --no-color  HEAD~1 HEAD -- patch/kconfig-inclusions >> ${USER_OUTFILE}
+
+	echo -en "\n###-> kconfig-exclusions file changes in sonic-linux-kernel <-###\n" >> ${USER_OUTFILE}
+	git diff --no-color  HEAD~1 HEAD -- patch/kconfig-exclusions >> ${USER_OUTFILE}
 
 	echo -en '\n###-> Summary of files updated in sonic-linux-kernel <-###\n' >> ${USER_OUTFILE}
 	git diff --no-color  HEAD~1 HEAD --stat --output=${TMPFILE}
