@@ -5,6 +5,7 @@ import math
 import os
 import sys
 import json
+import subprocess
 from collections import defaultdict
 
 from lxml import etree as ET
@@ -64,6 +65,10 @@ class minigraph_encoder(json.JSONEncoder):
             )):
             return str(obj)
         return json.JSONEncoder.default(self, obj)
+
+def exec_cmd(cmd):
+    p = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE)
+    outs, errs = p.communicate()
 
 def get_peer_switch_info(link_metadata, devices):
     peer_switch_table = {}
@@ -333,15 +338,13 @@ def parse_asic_external_link(link, asic_name, hostname):
     # if chassis internal is false, the interface name will be
     # interface alias which should be converted to asic port name
     if (enddevice.lower() == hostname.lower()):
-        if ((endport in port_alias_asic_map) and
-                (asic_name.lower() in port_alias_asic_map[endport].lower())):
+        if endport in port_alias_asic_map:
             endport = port_alias_asic_map[endport]
             neighbors[port_alias_map[endport]] = {'name': startdevice, 'port': startport}
             if bandwidth:
                 port_speeds[port_alias_map[endport]] = bandwidth
     elif (startdevice.lower() == hostname.lower()):
-        if ((startport in port_alias_asic_map) and
-                (asic_name.lower() in port_alias_asic_map[startport].lower())):
+        if startport in port_alias_asic_map:
             startport = port_alias_asic_map[startport]
             neighbors[port_alias_map[startport]] = {'name': enddevice, 'port': endport}
             if bandwidth:
@@ -1335,7 +1338,14 @@ def select_mmu_profiles(profile, platform, hwsku):
 
     files_to_copy = ['pg_profile_lookup.ini', 'qos.json.j2', 'buffers_defaults_t0.j2', 'buffers_defaults_t1.j2']
 
-    path = os.path.join('/usr/share/sonic/device', platform, hwsku)
+    if os.environ.get("CFGGEN_UNIT_TESTING", "0") == "2":
+        for dir_path, dir_name, files in os.walk('/sonic/device'):
+            if platform in dir_path:
+                new_path = os.path.split(dir_path)[0]
+                break
+    else:
+        new_path = '/usr/share/sonic/device'
+    path = os.path.join(new_path, platform, hwsku)
 
     dir_path = os.path.join(path, profile)
     if os.path.exists(dir_path):
@@ -1343,7 +1353,7 @@ def select_mmu_profiles(profile, platform, hwsku):
             file_in_dir = os.path.join(dir_path, file_item)
             if os.path.isfile(file_in_dir):
                 base_file = os.path.join(path, file_item)
-                exec_cmd("sudo cp {} {}".format(file_in_dir, base_file))
+                exec_cmd(["sudo", "cp", file_in_dir, base_file])
 
 ###############################################################################
 #
