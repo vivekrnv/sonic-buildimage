@@ -25,6 +25,8 @@ $(MLNX_HW_MANAGEMENT)_SRC_PATH = $(PLATFORM_PATH)/hw-management
 $(MLNX_HW_MANAGEMENT)_DEPENDS += $(LINUX_HEADERS) $(LINUX_HEADERS_COMMON)
 SONIC_MAKE_DEBS += $(MLNX_HW_MANAGEMENT)
 
+# override this for other branches
+SONIC_BRANCH = master
 TEMP_HW_MGMT_DIR = /tmp/hw_mgmt
 PTCH_DIR = $(TEMP_HW_MGMT_DIR)/patch_dir/
 NON_UP_PTCH_DIR = $(TEMP_HW_MGMT_DIR)/non_up_patch_dir/
@@ -33,6 +35,8 @@ KCFG_LIST = $(TEMP_HW_MGMT_DIR)/kconfig
 HWMGMT_NONUP_LIST = $(BUILD_WORKDIR)/$($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hwmgmt_nonup_patches
 USER_OUTFILE = $(BUILD_WORKDIR)/integrate-mlnx-hw-mgmt_user.out
 TMPFILE = /tmp/intg-hw-mgmt.out
+
+FIND_HEAD = $(eval COMMIT_HEAD=$(shell git rev-parse --short HEAD))
 
 integrate-mlnx-hw-mgmt:
 	$(FLUSH_LOG)
