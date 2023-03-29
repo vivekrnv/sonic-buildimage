@@ -41,8 +41,17 @@ integrate-mlnx-hw-mgmt:
 	touch $(PTCH_LIST) $(KCFG_LIST)
 
 	# clean up existing untracked files
-	pushd $(BUILD_WORKDIR); git stash; git clean -f -- platform/mellanox/; popd
-	pushd $(BUILD_WORKDIR)/src/sonic-linux-kernel; git stash; git clean -f -- patch/; popd
+	pushd $(BUILD_WORKDIR); git stash; git clean -f -- platform/mellanox/
+	$(FIND_HEAD)
+	echo $(BRANCH_SONIC)_$(COMMIT_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION) branch created
+	git checkout -B "$(BRANCH_SONIC)_$(COMMIT_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION)" $(COMMIT_HEAD)
+	git stash pop; popd
+
+	pushd $(BUILD_WORKDIR)/src/sonic-linux-kernel; git stash; git clean -f -- patch/
+	$(FIND_HEAD)
+	echo $(BRANCH_SONIC)_$(COMMIT_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION) branch created
+	git checkout -B "$(BRANCH_SONIC)_$(COMMIT_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION)" $(COMMIT_HEAD)
+	popd
 
 	echo "#### Integrate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Kernel Patches into SONiC" > ${USER_OUTFILE}
 	pushd $(BUILD_WORKDIR)/$(PLATFORM_PATH) $(LOG_SIMPLE)
