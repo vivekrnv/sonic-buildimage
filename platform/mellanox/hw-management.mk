@@ -26,7 +26,7 @@ $(MLNX_HW_MANAGEMENT)_DEPENDS += $(LINUX_HEADERS) $(LINUX_HEADERS_COMMON)
 SONIC_MAKE_DEBS += $(MLNX_HW_MANAGEMENT)
 
 # override this for other branches
-SONIC_BRANCH = master
+BRANCH_SONIC = master
 TEMP_HW_MGMT_DIR = /tmp/hw_mgmt
 PTCH_DIR = $(TEMP_HW_MGMT_DIR)/patch_dir/
 NON_UP_PTCH_DIR = $(TEMP_HW_MGMT_DIR)/non_up_patch_dir/
@@ -34,27 +34,25 @@ PTCH_LIST  = $(TEMP_HW_MGMT_DIR)/series
 KCFG_LIST = $(TEMP_HW_MGMT_DIR)/kconfig
 HWMGMT_NONUP_LIST = $(BUILD_WORKDIR)/$($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hwmgmt_nonup_patches
 USER_OUTFILE = $(BUILD_WORKDIR)/integrate-mlnx-hw-mgmt_user.out
-TMPFILE = /tmp/intg-hw-mgmt.out
-
-FIND_HEAD = $(eval COMMIT_HEAD=$(shell git rev-parse --short HEAD))
+TMPFILE_OUT := $(shell mktemp)
+SB_HEAD = $(shell git rev-parse --short HEAD)
+SLK_HEAD = $(shell cd src/sonic-linux-kernel; git rev-parse --short HEAD)
 
 integrate-mlnx-hw-mgmt:
 	$(FLUSH_LOG)
-	rm -rf $(TEMP_HW_MGMT_DIR) $(TMPFILE)
+	rm -rf $(TEMP_HW_MGMT_DIR) $(TMPFILE_OUT)
 	mkdir -p $(PTCH_DIR) $(NON_UP_PTCH_DIR)
 	touch $(PTCH_LIST) $(KCFG_LIST)
 
 	# clean up existing untracked files
-	pushd $(BUILD_WORKDIR); git stash; git clean -f -- platform/mellanox/
-	$(FIND_HEAD)
-	echo $(BRANCH_SONIC)_$(COMMIT_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION) branch created
-	git checkout -B "$(BRANCH_SONIC)_$(COMMIT_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION)" $(COMMIT_HEAD)
-	git stash pop; popd
+	pushd $(BUILD_WORKDIR); git clean -f -- platform/mellanox/
+	git checkout -B "$(BRANCH_SONIC)_$(SB_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION)" HEAD
+	echo $(BRANCH_SONIC)_$(SB_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION) branch created in sonic-buildimage
+	popd
 
-	pushd $(BUILD_WORKDIR)/src/sonic-linux-kernel; git stash; git clean -f -- patch/
-	$(FIND_HEAD)
-	echo $(BRANCH_SONIC)_$(COMMIT_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION) branch created
-	git checkout -B "$(BRANCH_SONIC)_$(COMMIT_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION)" $(COMMIT_HEAD)
+	pushd $(BUILD_WORKDIR)/src/sonic-linux-kernel; git clean -f -- patch/
+	git checkout -B "$(BRANCH_SONIC)_$(SLK_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION)" HEAD
+	echo $(BRANCH_SONIC)_$(SLK_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION) branch created in sonic-linux-kernel
 	popd
 
 	echo "#### Integrate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Kernel Patches into SONiC" > ${USER_OUTFILE}
@@ -99,8 +97,8 @@ integrate-mlnx-hw-mgmt:
 	git diff --no-color  HEAD~1 HEAD -- patch/kconfig-exclusions >> ${USER_OUTFILE}
 
 	echo -en '\n###-> Summary of files updated in sonic-linux-kernel <-###\n' >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD --stat --output=${TMPFILE}
-	cat ${TMPFILE} | tee -a ${USER_OUTFILE}
+	git diff --no-color  HEAD~1 HEAD --stat --output=${TMPFILE_OUT}
+	cat ${TMPFILE_OUT} | tee -a ${USER_OUTFILE}
 	popd
 
 	# Commit the changes in buildimage and log the diff
@@ -114,8 +112,8 @@ integrate-mlnx-hw-mgmt:
 	git diff --no-color  HEAD~1 HEAD -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hwmgmt_nonup_patches >> ${USER_OUTFILE}
 	
 	echo -en '\n###-> Summary of buildimage changes <-###\n' >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD --stat --output=${TMPFILE} -- $(PLATFORM_PATH)
-	cat ${TMPFILE} | tee -a ${USER_OUTFILE}
+	git diff --no-color  HEAD~1 HEAD --stat --output=${TMPFILE_OUT} -- $(PLATFORM_PATH)
+	cat ${TMPFILE_OUT} | tee -a ${USER_OUTFILE}
 	popd
 
 	popd $(LOG_SIMPLE)
