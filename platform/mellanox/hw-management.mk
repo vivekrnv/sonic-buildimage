@@ -67,9 +67,9 @@ endif
 	# Run tests
 	pushd integration-scripts/tests; pytest-3 -v; popd
 
-	# Checkout to the corresponding hw-mgmt version
-	pushd hw-mgmt; git checkout V.${MLNX_HW_MANAGEMENT_VERSION}; popd
-	sed -i "s/\(^MLNX_HW_MANAGEMENT_VERSION = \).*/\17.0020.5202/g" platform/mellanox/hw-management.mk
+	# Checkout to the corresponding hw-mgmt version and update mk file
+	pushd hw-management/hw-mgmt; git checkout V.${MLNX_HW_MANAGEMENT_VERSION}; popd
+	sed -i "s/\(^MLNX_HW_MANAGEMENT_VERSION = \).*/\17.0020.5202/g" hw-management.mk
 
 	# Pre-processing before runing hw_mgmt script
 	integration-scripts/hwmgmt_kernel_patches.py pre \
@@ -113,13 +113,22 @@ endif
 
 	# Commit the changes in buildimage and log the diff
 	pushd $(BUILD_WORKDIR)
-	git add -- $(PLATFORM_PATH); git commit -m "Intgerate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Changes";
+	git add -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)
+	git add -- non-upstream-patches/
+	git add -- hw-management.mk
+	git commit -m "Intgerate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Changes";
 
 	echo -en '\n###-> Non Upstream series.patch changes <-###\n' >> ${USER_OUTFILE}
 	git diff --no-color  HEAD~1 HEAD -- $(PLATFORM_PATH)/non-upstream-patches/series.patch >> ${USER_OUTFILE}
 
 	echo -en '\n###-> Non Upstream patch list file <-###\n' >> ${USER_OUTFILE}
 	git diff --no-color  HEAD~1 HEAD -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hwmgmt_nonup_patches >> ${USER_OUTFILE}
+
+	echo -en '\n###-> hw-mgmt submodule update <-###\n' >> ${USER_OUTFILE}
+	git diff --no-color  HEAD~1 HEAD -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hw-mgmt >> ${USER_OUTFILE}
+
+	echo -en '\n###-> hw-management make file version change <-###\n' >> ${USER_OUTFILE}
+	git diff --no-color  HEAD~1 HEAD -- $(PLATFORM_PATH)/hw-management.mk >> ${USER_OUTFILE}
 	
 	echo -en '\n###-> Summary of buildimage changes <-###\n' >> ${USER_OUTFILE}
 	git diff --no-color  HEAD~1 HEAD --stat --output=${TMPFILE_OUT} -- $(PLATFORM_PATH)
