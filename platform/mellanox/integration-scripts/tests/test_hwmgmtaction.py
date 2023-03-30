@@ -85,6 +85,12 @@ class TestHwMgmtPostAction(TestCase):
         Data.current_kcfg = KCFG.parse_opts_strs(Data.current_kcfg)
         Data.kcfg_exclude = FileHandler.read_raw(MOCK_INPUTS_DIR+"/kconfig-exclusions")
 
+    def tearDown(self):
+        try:
+            os.remove(MOCK_WRITE_FILE)
+        except:
+            pass
+
     def test_find_mlnx_hw_mgmt_markers(self):
         self.action.find_mlnx_hw_mgmt_markers()
         print(Data.i_mlnx_start, Data.i_mlnx_end)
