@@ -27,6 +27,8 @@ SONIC_MAKE_DEBS += $(MLNX_HW_MANAGEMENT)
 
 # override this for other branches
 BRANCH_SONIC = master
+# set this flag to y to create a branch instead of commit
+CREATE_BRANCH = n
 TEMP_HW_MGMT_DIR = /tmp/hw_mgmt
 PTCH_DIR = $(TEMP_HW_MGMT_DIR)/patch_dir/
 NON_UP_PTCH_DIR = $(TEMP_HW_MGMT_DIR)/non_up_patch_dir/
@@ -46,20 +48,28 @@ integrate-mlnx-hw-mgmt:
 
 	# clean up existing untracked files
 	pushd $(BUILD_WORKDIR); git clean -f -- platform/mellanox/
+ifeq ($(CREATE_BRANCH), y)
 	git checkout -B "$(BRANCH_SONIC)_$(SB_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION)" HEAD
 	echo $(BRANCH_SONIC)_$(SB_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION) branch created in sonic-buildimage
+endif
 	popd
 
 	pushd $(BUILD_WORKDIR)/src/sonic-linux-kernel; git clean -f -- patch/
+ifeq ($(CREATE_BRANCH), y)
 	git checkout -B "$(BRANCH_SONIC)_$(SLK_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION)" HEAD
 	echo $(BRANCH_SONIC)_$(SLK_HEAD)_integrate_$(MLNX_HW_MANAGEMENT_VERSION) branch created in sonic-linux-kernel
+endif
 	popd
 
-	echo "#### Integrate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Kernel Patches into SONiC" > ${USER_OUTFILE}
+	echo "#### Integrate HW-MGMT $(MLNX_HW_MANAGEMENT_VERSION) Kernel Patches into SONiC" > ${USER_OUTFILE}
 	pushd $(BUILD_WORKDIR)/$(PLATFORM_PATH) $(LOG_SIMPLE)
 
 	# Run tests
 	pushd integration-scripts/tests; pytest-3 -v; popd
+
+	# Checkout to the corresponding hw-mgmt version
+	pushd hw-mgmt; git checkout V.${MLNX_HW_MANAGEMENT_VERSION}; popd
+	sed -i "s/\(^MLNX_HW_MANAGEMENT_VERSION = \).*/\17.0020.5202/g" platform/mellanox/hw-management.mk
 
 	# Pre-processing before runing hw_mgmt script
 	integration-scripts/hwmgmt_kernel_patches.py pre \
