@@ -69,7 +69,7 @@ endif
 
 	# Checkout to the corresponding hw-mgmt version and update mk file
 	pushd hw-management/hw-mgmt; git checkout V.${MLNX_HW_MANAGEMENT_VERSION}; popd
-	sed -i "s/\(^MLNX_HW_MANAGEMENT_VERSION = \).*/\17.0020.5202/g" hw-management.mk
+	sed -i "s/\(^MLNX_HW_MANAGEMENT_VERSION = \).*/\1${MLNX_HW_MANAGEMENT_VERSION}/g" hw-management.mk
 
 	# Pre-processing before runing hw_mgmt script
 	integration-scripts/hwmgmt_kernel_patches.py pre \
