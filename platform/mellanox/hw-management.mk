@@ -114,8 +114,8 @@ endif
 	# Commit the changes in buildimage and log the diff
 	pushd $(BUILD_WORKDIR)
 	git add -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)
-	git add -- non-upstream-patches/
-	git add -- hw-management.mk
+	git add -- $(PLATFORM_PATH)/non-upstream-patches/
+	git add -- $(PLATFORM_PATH)/hw-management.mk
 	git commit -m "Intgerate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Changes";
 
 	echo -en '\n###-> Non Upstream series.patch changes <-###\n' >> ${USER_OUTFILE}
