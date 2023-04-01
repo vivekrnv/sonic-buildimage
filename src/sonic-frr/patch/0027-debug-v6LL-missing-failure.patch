@@ -1,0 +1,23 @@
+From 65b8446c902325517db234a20b3398979157b855 Mon Sep 17 00:00:00 2001
+From: Donald Sharp <sharpd@nvidia.com>
+Date: Fri, 31 Mar 2023 14:58:23 -0400
+Subject: [PATCH] debug stuff
+
+---
+ zebra/debug.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/zebra/debug.c b/zebra/debug.c
+index 525180d4eec..f5c38ba5507 100644
+--- a/zebra/debug.c
++++ b/zebra/debug.c
+@@ -714,6 +714,9 @@ void zebra_debug_init(void)
+ 	zebra_debug_nexthop = 0;
+ 	zebra_debug_pbr = 0;
+ 
++	SET_FLAG(zebra_debug_kernel, ZEBRA_DEBUG_KERNEL);
++	SET_FLAG(zebra_debug_kernel, ZEBRA_DEBUG_KERNEL_MSGDUMP_RECV);
++
+ 	install_node(&debug_node);
+ 
+ 	install_element(ENABLE_NODE, &show_debugging_zebra_cmd);
