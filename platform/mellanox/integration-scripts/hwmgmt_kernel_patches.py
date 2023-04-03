@@ -141,7 +141,8 @@ class PostProcess(HwMgmtAction):
                 Data.new_non_up.append(patch)
             else:
                 print("-> FATAL: Patch {} not found either in upstream or non-upstream list".format(patch))
-                sys.exit(1)
+                if not self.args.is_test:
+                    sys.exit(1)
 
     def find_mlnx_hw_mgmt_markers(self):
         """ Find the indexes where the current mlnx patches sits in SLK_SERIES file """
@@ -308,6 +309,7 @@ def create_parser():
     parser.add_argument("--series", type=str)
     parser.add_argument("--current_non_up_patches", type=str)
     parser.add_argument("--build_root", type=str)
+    parser.add_argument("--is_test", action="store_true")
     return parser
 
 

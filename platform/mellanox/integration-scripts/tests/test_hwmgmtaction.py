@@ -54,7 +54,8 @@ def mock_hwmgmt_args():
                                 "--config_inclusion", MOCK_INPUTS_DIR+"/new_kconfig",
                                 "--series", MOCK_INPUTS_DIR+"/new_series",
                                 "--current_non_up_patches", MOCK_INPUTS_DIR+"/hwmgmt_nonup_patches",
-                                "--build_root", "/sonic"]):
+                                "--build_root", "/sonic", 
+                                "--is_test"]):
         parser = create_parser()
         return parser.parse_args()
 
