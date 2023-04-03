@@ -95,20 +95,21 @@ endif
 	
 	# Commit the changes in linux kernel and and log the diff
 	pushd $(BUILD_WORKDIR)/src/sonic-linux-kernel
-	git add -- patch/; git commit -m "Intgerate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Changes";
 
 	echo -en "\n###-> series file changes in sonic-linux-kernel <-###\n" >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD -- patch/series >> ${USER_OUTFILE}
+	git diff --no-color --staged -- patch/series >> ${USER_OUTFILE}
 
 	echo -en "\n###-> kconfig-inclusions file changes in sonic-linux-kernel <-###\n" >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD -- patch/kconfig-inclusions >> ${USER_OUTFILE}
+	git diff --no-color --staged -- patch/kconfig-inclusions >> ${USER_OUTFILE}
 
 	echo -en "\n###-> kconfig-exclusions file changes in sonic-linux-kernel <-###\n" >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD -- patch/kconfig-exclusions >> ${USER_OUTFILE}
+	git diff --no-color --staged -- patch/kconfig-exclusions >> ${USER_OUTFILE}
 
 	echo -en '\n###-> Summary of files updated in sonic-linux-kernel <-###\n' >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD --stat --output=${TMPFILE_OUT}
+	git diff --no-color --staged --stat --output=${TMPFILE_OUT}
 	cat ${TMPFILE_OUT} | tee -a ${USER_OUTFILE}
+
+	git add -- patch/; git diff --staged --quiet || git commit -m "Intgerate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Changes";
 	popd
 
 	# Commit the changes in buildimage and log the diff
@@ -116,23 +117,24 @@ endif
 	git add -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)
 	git add -- $(PLATFORM_PATH)/non-upstream-patches/
 	git add -- $(PLATFORM_PATH)/hw-management.mk
-	git commit -m "Intgerate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Changes";
 
 	echo -en '\n###-> Non Upstream series.patch changes <-###\n' >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD -- $(PLATFORM_PATH)/non-upstream-patches/series.patch >> ${USER_OUTFILE}
+	git diff --no-color --staged -- $(PLATFORM_PATH)/non-upstream-patches/series.patch >> ${USER_OUTFILE}
 
 	echo -en '\n###-> Non Upstream patch list file <-###\n' >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hwmgmt_nonup_patches >> ${USER_OUTFILE}
+	git diff --no-color --staged -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hwmgmt_nonup_patches >> ${USER_OUTFILE}
 
 	echo -en '\n###-> hw-mgmt submodule update <-###\n' >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hw-mgmt >> ${USER_OUTFILE}
+	git diff --no-color --staged -- $($(MLNX_HW_MANAGEMENT)_SRC_PATH)/hw-mgmt >> ${USER_OUTFILE}
 
 	echo -en '\n###-> hw-management make file version change <-###\n' >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD -- $(PLATFORM_PATH)/hw-management.mk >> ${USER_OUTFILE}
+	git diff --no-color --staged -- $(PLATFORM_PATH)/hw-management.mk >> ${USER_OUTFILE}
 	
 	echo -en '\n###-> Summary of buildimage changes <-###\n' >> ${USER_OUTFILE}
-	git diff --no-color  HEAD~1 HEAD --stat --output=${TMPFILE_OUT} -- $(PLATFORM_PATH)
+	git diff --no-color --staged --stat --output=${TMPFILE_OUT} -- $(PLATFORM_PATH)
 	cat ${TMPFILE_OUT} | tee -a ${USER_OUTFILE}
+
+	git diff --staged --quiet || git commit -m "Intgerate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Changes";
 	popd
 
 	popd $(LOG_SIMPLE)
