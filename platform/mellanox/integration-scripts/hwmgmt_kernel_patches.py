@@ -140,7 +140,8 @@ class PostProcess(HwMgmtAction):
             elif patch in new_non_up:
                 Data.new_non_up.append(patch)
             else:
-                print("-> ERR: Patch {} not found either in upstream or non-upstream list".format(patch))
+                print("-> FATAL: Patch {} not found either in upstream or non-upstream list".format(patch))
+                sys.exit(1)
 
     def find_mlnx_hw_mgmt_markers(self):
         """ Find the indexes where the current mlnx patches sits in SLK_SERIES file """
