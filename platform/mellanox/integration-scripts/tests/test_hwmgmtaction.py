@@ -74,9 +74,9 @@ class TestHwMgmtPostAction(TestCase):
     def setUp(self):
         self.action = HwMgmtAction.get(mock_hwmgmt_args())
         self.action.read_data()
-        # Populate the new_up, new_down list
+        # Populate the new_up, new_non_up list
         Data.new_up = NEW_UP_LIST.splitlines()
-        Data.new_down = NEW_NONUP_LIST.splitlines()
+        Data.new_non_up = NEW_NONUP_LIST.splitlines()
         Data.old_series = FileHandler.read_raw(MOCK_INPUTS_DIR+"/series")
         all_kcfg = FileHandler.read_kconfig_parser(MOCK_INPUTS_DIR+"/kconfig-inclusions")
         Data.current_kcfg = []
@@ -97,32 +97,32 @@ class TestHwMgmtPostAction(TestCase):
         assert Data.old_series[Data.i_mlnx_start].strip() == "###-> mellanox_hw_mgmt-start"
         assert Data.old_series[Data.i_mlnx_end].strip() == "###-> mellanox_hw_mgmt-end"
     
-    def test_find_conflicts(self):
+    def test_check_kconfig_conflicts(self):
         # Add a line to create conflict
         print(Data.current_kcfg)
         Data.updated_kcfg.append(["CONFIG_EEPROM_OPTOE", "n"])
         self.action.find_mlnx_hw_mgmt_markers()
-        assert self.action.find_conflicts() == True
+        assert self.action.check_kconfig_conflicts() == True
 
         # Add a duplicate option
         Data.updated_kcfg.pop(-1)
         Data.updated_kcfg.append(["CONFIG_EEPROM_OPTOE", "m"])
-        assert self.action.find_conflicts() == False
+        assert self.action.check_kconfig_conflicts() == False
 
         # Check with no conflicts or duplicates
         Data.updated_kcfg.pop(-1)
-        assert self.action.find_conflicts() == False
+        assert self.action.check_kconfig_conflicts() == False
 
     @mock.patch('helper.FileHandler.write_lines', side_effect=write_lines_mock)
     def test_write_final_slk_series(self, mock_write_lines):
         self.action.find_mlnx_hw_mgmt_markers()
-        assert not self.action.find_conflicts()
+        assert not self.action.check_kconfig_conflicts()
         self.action.write_final_slk_series()
         assert check_file_content(MOCK_INPUTS_DIR+"expected_data/series")
 
     def test_write_kconfig_inclusion(self):
         self.action.find_mlnx_hw_mgmt_markers()
-        assert not self.action.find_conflicts()
+        assert not self.action.check_kconfig_conflicts()
         print(Data.updated_kcfg)
         shutil.copy(MOCK_INPUTS_DIR+"/kconfig-inclusions", MOCK_WRITE_FILE)
         FileHandler.write_lines_marker(MOCK_WRITE_FILE, KCFG.get_writable_opts(Data.updated_kcfg), MLNX_KFG_MARKER)
@@ -133,3 +133,11 @@ class TestHwMgmtPostAction(TestCase):
         self.action.find_mlnx_hw_mgmt_markers()
         self.action.handle_exclusions()
         assert check_file_content(MOCK_INPUTS_DIR+"expected_data/kconfig-exclusions")
+    
+    @mock.patch('helper.FileHandler.write_lines', side_effect=write_lines_mock)
+    def test_write_series_diff(self, mock_write_lines):
+        self.action.find_mlnx_hw_mgmt_markers()
+        self.action.write_final_slk_series()
+        self.action.construct_series_with_non_up()
+        self.action.write_series_diff()
+        assert check_file_content(MOCK_INPUTS_DIR+"expected_data/series.patch")

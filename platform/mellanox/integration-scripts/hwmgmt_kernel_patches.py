@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import os
 import sys
@@ -13,11 +13,11 @@ class Data:
     # list of new upstream patches
     new_up = list()
     # list of new non-upstream patches
-    new_down = list()
+    new_non_up = list()
     # current series file raw data
     old_series = list()
     # current non-upstream patch list
-    old_down = list()
+    old_non_up = list()
     # New series file written by hw_mgmt integration script
     new_series = list()
     # List of new opts written by hw_mgmt integration script
@@ -27,11 +27,11 @@ class Data:
     # index of the mlnx_hw_mgmt patches end marker in old_series
     i_mlnx_end = -1
     # Updated sonic-linux-kernel/patch/series file contents
-    final_slk_series = list()
+    up_slk_series = list()
     # SLK series file content updated with non-upstream patches, used to generate diff
-    non_up_slk_series = list()
+    agg_slk_series = list()
     # Diff to be written into the series.patch file
-    non_up_slk_series_diff = list()
+    agg_slk_series_diff = list()
     # current kcfg opts
     current_kcfg = list(tuple())
     # current raw kconfig exclude data
@@ -116,7 +116,7 @@ class PostProcess(HwMgmtAction):
         # Read the data written by hw-mgmt script into the internal Data Structures
         Data.new_series = FileHandler.read_strip_minimal(self.args.series)
         Data.old_series = FileHandler.read_raw(os.path.join(self.args.build_root, SLK_SERIES))
-        Data.old_down = FileHandler.read_strip_minimal(self.args.current_non_up_patches)
+        Data.old_non_up = FileHandler.read_strip_minimal(self.args.current_non_up_patches)
 
         # Read the new kcfg
         new_cfg = FileHandler.read_kconfig_inclusion(self.args.config_inclusion, None)
@@ -132,13 +132,13 @@ class PostProcess(HwMgmtAction):
         Data.kcfg_exclude = FileHandler.read_raw(os.path.join(self.args.build_root, SLK_KCONFIG_EXCLUDE))
 
         new_up = set(FileHandler.read_dir(self.args.patches, "*.patch"))
-        new_down = set(FileHandler.read_dir(self.args.non_up_patches, "*.patch"))
+        new_non_up = set(FileHandler.read_dir(self.args.non_up_patches, "*.patch"))
 
         for patch in Data.new_series:
             if patch in new_up:
                 Data.new_up.append(patch)
-            elif patch in new_down:
-                Data.new_down.append(patch)
+            elif patch in new_non_up:
+                Data.new_non_up.append(patch)
             else:
                 print("-> ERR: Patch {} not found either in upstream or non-upstream list".format(patch))
 
@@ -167,16 +167,16 @@ class PostProcess(HwMgmtAction):
 
     def write_final_slk_series(self):
         tmp_new_up = [d+"\n" for d in Data.new_up]
-        Data.final_slk_series = Data.old_series[0:Data.i_mlnx_start+1] + tmp_new_up + Data.old_series[Data.i_mlnx_end:]
-        print("\n -> POST: Updated sonic-linux-kernel/series file: \n{}".format("".join(Data.final_slk_series)))
-        FileHandler.write_lines(os.path.join(self.args.build_root, SLK_SERIES), Data.final_slk_series, True)
+        Data.up_slk_series = Data.old_series[0:Data.i_mlnx_start+1] + tmp_new_up + Data.old_series[Data.i_mlnx_end:]
+        print("\n -> POST: Updated sonic-linux-kernel/series file: \n{}".format("".join(Data.up_slk_series)))
+        FileHandler.write_lines(os.path.join(self.args.build_root, SLK_SERIES), Data.up_slk_series, True)
 
     def rm_old_non_up_mlnx(self):
         """ Remove the old non-upstream patches 
         """
         print("\n -> POST: Removed the following supposedly non-upstream patches:")
         # Remove all the old patches and any patches that got accepted with this kernel version
-        for patch in Data.old_down + Data.new_up:
+        for patch in Data.old_non_up + Data.new_up:
             file_n = os.path.join(self.args.build_root, os.path.join(NON_UP_PATCH_LOC, patch))
             if os.path.isfile(file_n):
                 print(patch)
@@ -185,43 +185,45 @@ class PostProcess(HwMgmtAction):
         # Make sure the dir is now empty as all these patches are of hw-mgmt
         files = FileHandler.read_dir(os.path.join(self.args.build_root, NON_UP_PATCH_LOC), "*.patch")
         if files:
-            print("\n -> POST: Patches Remaining in {}, likely SDK non-upstream patches \n{}".format(NON_UP_PATCH_LOC, files))
+            # TODO: When there are SDK non-upstream patches, the logic has to be updated
+            print("\n -> FATAL: Patches Remaining in {}: \n{}".format(NON_UP_PATCH_LOC, files))
+            sys.exit(1)
         
     def mv_new_non_up_mlnx(self):
-        for patch in Data.new_down:
+        for patch in Data.new_non_up:
             src_path = os.path.join(self.args.non_up_patches, patch)
             shutil.copy(src_path, os.path.join(self.args.build_root, NON_UP_PATCH_LOC))
     
     def construct_series_with_non_up(self):
-        Data.non_up_slk_series = copy.deepcopy(Data.final_slk_series) 
+        Data.agg_slk_series = copy.deepcopy(Data.up_slk_series) 
         lines = ["# Current non-upstream patch list, should be updated by integrate_kernel_patches.py script"]
         for index, patch in enumerate(Data.new_series):
             patch = patch + "\n"
-            if patch not in Data.non_up_slk_series:
+            if patch not in Data.agg_slk_series:
                 prev_patch = Data.new_series[index-1] + "\n"
-                if prev_patch not in Data.non_up_slk_series:
-                    print("\n -> POST: ERR: patch {} is not found in non_up_slk_series list: {}".format(prev_patch, "".join(Data.non_up_slk_series)))
-                    continue
-                index_prev_patch =  Data.non_up_slk_series.index(prev_patch)
-                if index_prev_patch < len(Data.non_up_slk_series) - 1:
-                    Data.non_up_slk_series = Data.non_up_slk_series[0:index_prev_patch+1] + [patch] +  Data.non_up_slk_series[index_prev_patch + 1:]
+                if prev_patch not in Data.agg_slk_series:
+                    print("\n -> FATAL: ERR: patch {} is not found in agg_slk_series list: {}".format(prev_patch, "".join(Data.agg_slk_series)))
+                    sys.exit(1)
+                index_prev_patch =  Data.agg_slk_series.index(prev_patch)
+                if index_prev_patch < len(Data.agg_slk_series) - 1:
+                    Data.agg_slk_series = Data.agg_slk_series[0:index_prev_patch+1] + [patch] +  Data.agg_slk_series[index_prev_patch + 1:]
                 else:
-                    Data.non_up_slk_series = Data.non_up_slk_series + [patch]
+                    Data.agg_slk_series = Data.agg_slk_series + [patch]
                 lines.append(patch.strip())
 
         # Update the non_up_current_patch_list file
         FileHandler.write_lines(self.args.current_non_up_patches, lines)
-        print("\n -> POST: series file updated with non-upstream patches \n{}".format("".join(Data.non_up_slk_series)))
+        print("\n -> POST: series file updated with non-upstream patches \n{}".format("".join(Data.agg_slk_series)))
 
     def write_series_diff(self):
-        diff = difflib.unified_diff(Data.final_slk_series, Data.non_up_slk_series, fromfile='a/patch/series', tofile="b/patch/series", lineterm="\n")
+        diff = difflib.unified_diff(Data.up_slk_series, Data.agg_slk_series, fromfile='a/patch/series', tofile="b/patch/series", lineterm="\n")
         lines = []
         for line in diff:
             lines.append(line)
         print("\n -> POST: final series.diff \n{}".format("".join(lines)))
         FileHandler.write_lines(os.path.join(self.args.build_root, NON_UP_PATCH_DIFF), lines, True)
     
-    def find_conflicts(self):
+    def check_kconfig_conflicts(self):
         # current config under mellanox marker
         old_mlnx_kcfg =  FileHandler.read_kconfig_inclusion(os.path.join(self.args.build_root, SLK_KCONFIG))
         old_mlnx_kcfg = KCFG.parse_opts_strs(old_mlnx_kcfg)
@@ -253,7 +255,7 @@ class PostProcess(HwMgmtAction):
         for line_raw in Data.kcfg_exclude:
             line = line_raw.strip()
             should_exclude = False
-            if line_raw.strip():
+            if line:
                 match = re.search(KCFG_HDR_RE, line)
                 if match:
                     curr_hdr = match.group(1)
@@ -272,7 +274,7 @@ class PostProcess(HwMgmtAction):
         self.read_data()
         self.find_mlnx_hw_mgmt_markers()
         # Find and report conflicts in new kconfig
-        if self.find_conflicts():
+        if self.check_kconfig_conflicts():
             print("-> FATAL Conflicts in kconfig-inclusion detected, exiting...")
             sys.exit(1)
         else:
