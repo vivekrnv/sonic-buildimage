@@ -55,7 +55,7 @@ class HwMgmtAction(Action):
 
     def check(self):
         if not self.args.config_inclusion:
-            print("-> ERR: onfig_inclusion is missing")
+            print("-> ERR: config_inclusion is missing")
             return False
 
         if not self.args.build_root:

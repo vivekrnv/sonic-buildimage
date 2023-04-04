@@ -141,9 +141,6 @@ class KCFG:
             print("-> DEBUG: Malformed kconfig opt, {}".format(opt))
             return ()
         
-        if not tmp[0].startswith("CONFIG"):
-            print("-> DEBUG: Malformed kconfig opt, {}".format(opt))
-            return ()
         return (tmp[0], tmp[1])
 
     @staticmethod
