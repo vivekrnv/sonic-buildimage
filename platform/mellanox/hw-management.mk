@@ -95,6 +95,7 @@ endif
 	
 	# Commit the changes in linux kernel and and log the diff
 	pushd $(BUILD_WORKDIR)/src/sonic-linux-kernel
+	git add -- patch/
 
 	echo -en "\n###-> series file changes in sonic-linux-kernel <-###\n" >> ${USER_OUTFILE}
 	git diff --no-color --staged -- patch/series >> ${USER_OUTFILE}
@@ -109,7 +110,7 @@ endif
 	git diff --no-color --staged --stat --output=${TMPFILE_OUT}
 	cat ${TMPFILE_OUT} | tee -a ${USER_OUTFILE}
 
-	git add -- patch/; git diff --staged --quiet || git commit -m "Intgerate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Changes";
+	git diff --staged --quiet || git commit -m "Intgerate HW-MGMT ${MLNX_HW_MANAGEMENT_VERSION} Changes";
 	popd
 
 	# Commit the changes in buildimage and log the diff
