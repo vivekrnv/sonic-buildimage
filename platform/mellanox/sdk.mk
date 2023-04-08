@@ -17,6 +17,7 @@
 MLNX_SDK_VERSION = 4.5.4206
 MLNX_SDK_ISSU_VERSION = 101
 
+MLNX_SDK_DRIVERS_GITHUB_URL = https://github.com/Mellanox/Spectrum-SDK-Drivers
 MLNX_ASSETS_GITHUB_URL = https://github.com/Mellanox/Spectrum-SDK-Drivers-SONiC-Bins
 MLNX_SDK_ASSETS_RELEASE_TAG = sdk-$(MLNX_SDK_VERSION)-$(BLDENV)-$(CONFIGURED_ARCH)
 MLNX_SDK_ASSETS_URL = $(MLNX_ASSETS_GITHUB_URL)/releases/download/$(MLNX_SDK_ASSETS_RELEASE_TAG)
@@ -181,4 +182,61 @@ endif
 
 mlnx-sdk-packages: $(addprefix $(DEBS_PATH)/, $(MLNX_SDK_RDEBS) $(PYTHON_SDK_API) $(SX_KERNEL))
 
-SONIC_PHONY_TARGETS += mlnx-sdk-packages
+# override this for other branches
+BRANCH_SONIC = master
+# set this flag to y to create a branch instead of commit
+CREATE_BRANCH = n
+SDK_USER_OUTFILE = $(BUILD_WORKDIR)/integrate-mlnx-sdk_user.out
+TMPFILE_OUT := $(shell mktemp)
+TMPDIR := $(shell mktemp -d)
+SLK_HEAD = $(shell cd src/sonic-linux-kernel; git rev-parse --short HEAD)
+
+integrate-mlnx-sdk:
+	$(FLUSH_LOG)
+	rm -rf $(MLNX_SDK_VERSION).zip sx_kernel-$(MLNX_SDK_VERSION)-$(MLNX_SDK_ISSU_VERSION).tar.gz
+
+ifeq ($(SDK_FROM_SRC),y)
+	wget $(MLNX_SDK_SOURCE_BASE_URL)/sx_kernel-$(MLNX_SDK_VERSION)-$(MLNX_SDK_ISSU_VERSION).tar.gz $(LOG_SIMPLE)
+	tar -xf sx_kernel-$(MLNX_SDK_VERSION)-$(MLNX_SDK_ISSU_VERSION).tar.gz --strip-components=1 -C $(TMPDIR) $(LOG_SIMPLE)
+else
+	# Download from upstream repository
+	wget $(MLNX_SDK_DRIVERS_GITHUB_URL)/archive/refs/heads/$(MLNX_SDK_VERSION).zip $(LOG_SIMPLE)
+	unzip $(MLNX_SDK_VERSION).zip -d $(TMPDIR) $(LOG_SIMPLE)
+	mv $(TMPDIR)/Spectrum-SDK-Drivers-$(MLNX_SDK_VERSION)/* $(TMPDIR) $(LOG_SIMPLE)
+endif
+
+	pushd $(BUILD_WORKDIR)/src/sonic-linux-kernel; git clean -f -- patch/; git stash -- patch/
+ifeq ($(CREATE_BRANCH), y)
+	git checkout -B "$(BRANCH_SONIC)_$(SLK_HEAD)_integrate_$(MLNX_SDK_VERSION)" HEAD
+	echo $(BRANCH_SONIC)_$(SLK_HEAD)_integrate_$(MLNX_SDK_VERSION) branch created in sonic-linux-kernel $(LOG_SIMPLE)
+endif
+	popd
+
+	echo "#### Integrate SDK $(MLNX_SDK_VERSION) Kernel Patches into SONiC" > ${SDK_USER_OUTFILE}
+
+	pushd $(BUILD_WORKDIR)/$(PLATFORM_PATH) $(LOG_SIMPLE)
+	
+    # Run tests
+	pushd integration-scripts/tests; pytest-3 -v; popd
+
+	integration-scripts/sdk_kernel_patches.py \
+                            --sonic_kernel_ver $(KERNEL_VERSION) \
+                            --patches $(TMPDIR) \
+                            --build_root $(BUILD_WORKDIR) $(LOG_SIMPLE)
+
+    # Commit the changes in linux kernel and and log the diff
+	pushd $(BUILD_WORKDIR)/src/sonic-linux-kernel
+	git add -- patch/
+
+	echo -en "\n###-> series file changes in sonic-linux-kernel <-###\n" >> ${SDK_USER_OUTFILE}
+	git diff --no-color --staged -- patch/series >> ${SDK_USER_OUTFILE}
+
+	echo -en "\n###-> summary of files updated in sonic-linux-kernel <-###\n" >> ${SDK_USER_OUTFILE}
+	git diff --no-color --staged --stat >> ${SDK_USER_OUTFILE}
+
+	git diff --staged --quiet || git commit -m "Intgerate MLNX SDK ${MLNX_SDK_VERSION} Kernel Patches";
+	popd
+
+	popd $(LOG_SIMPLE)
+
+SONIC_PHONY_TARGETS += mlnx-sdk-packages integrate-mlnx-sdk
