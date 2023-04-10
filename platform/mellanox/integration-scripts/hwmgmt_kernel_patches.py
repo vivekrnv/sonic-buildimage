@@ -198,19 +198,24 @@ class PostProcess(HwMgmtAction):
     
     def construct_series_with_non_up(self):
         Data.agg_slk_series = copy.deepcopy(Data.up_slk_series) 
-        lines = ["# Current non-upstream patch list, should be updated by integrate_kernel_patches.py script"]
+        lines = ["# Current non-upstream patch list, should be updated by hwmgmt_kernel_patches.py script"]
         for index, patch in enumerate(Data.new_series):
             patch = patch + "\n"
             if patch not in Data.agg_slk_series:
-                prev_patch = Data.new_series[index-1] + "\n"
+                if index == 0:
+                    # if the first patch is a non-upstream patch, then use the marker as the prev index
+                    prev_patch = Data.old_series[Data.i_mlnx_start]
+                else:    
+                    prev_patch = Data.new_series[index-1] + "\n"
                 if prev_patch not in Data.agg_slk_series:
-                    print("\n -> FATAL: ERR: patch {} is not found in agg_slk_series list: {}".format(prev_patch, "".join(Data.agg_slk_series)))
+                    print("\n -> FATAL: ERR: patch {} is not found in agg_slk_series list: \n {}".format(prev_patch, "".join(Data.agg_slk_series)))
                     sys.exit(1)
                 index_prev_patch =  Data.agg_slk_series.index(prev_patch)
                 if index_prev_patch < len(Data.agg_slk_series) - 1:
                     Data.agg_slk_series = Data.agg_slk_series[0:index_prev_patch+1] + [patch] +  Data.agg_slk_series[index_prev_patch + 1:]
                 else:
                     Data.agg_slk_series = Data.agg_slk_series + [patch]
+                print("\n -> INFO: patch {} added to agg_slk_series:".format(patch.strip()))
                 lines.append(patch.strip())
 
         # Update the non_up_current_patch_list file

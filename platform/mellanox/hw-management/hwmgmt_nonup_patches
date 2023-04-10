@@ -1,4 +1,4 @@
-# Current non-upstream patch list, should be updated by integrate_kernel_patches.py script
+# Current non-upstream patch list, should be updated by hwmgmt_kernel_patches.py script
 0099-mlxsw-core_hwmon-Fix-variable-names-for-hwmon-attrib.patch
 0100-mlxsw-core_thermal-Rename-labels-according-to-naming.patch
 0101-mlxsw-core_thermal-Remove-obsolete-API-for-query-res.patch
