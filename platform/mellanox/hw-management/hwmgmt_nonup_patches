@@ -8,7 +8,7 @@
 0105-mlxsw-reg-Extend-MTBR-register-with-new-slot-number-.patch
 0106-mlxsw-reg-Extend-MCIA-register-with-new-slot-number-.patch
 0107-mlxsw-reg-Extend-MCION-register-with-new-slot-number.patch
-0108-mlxsw-reg-Extend-PMMP-register-with-new-slot-number-.patc
+0108-mlxsw-reg-Extend-PMMP-register-with-new-slot-number-.patch
 0109-mlxsw-reg-Extend-MGPIR-register-with-new-slot-fields.patch
 0110-mlxsw-core_env-Pass-slot-index-during-PMAOS-register.patch
 0111-mlxsw-reg-Add-new-field-to-Management-General-Periph.patch
