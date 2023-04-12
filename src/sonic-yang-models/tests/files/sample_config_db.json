@@ -82,9 +82,6 @@
             "PortChannel0003": {
                 "admin_status": "up",
                 "min_links": "1",
-                "members": [
-                    "Ethernet1"
-                ],
                 "tpid": "0x8100",
                 "mtu": "9100",
                 "lacp_key": "auto"
@@ -92,9 +89,6 @@
             "PortChannel0004": {
                 "admin_status": "up",
                 "min_links": "1",
-                "members": [
-                    "Ethernet2"
-                ],
                 "tpid": "0x9200",
                 "mtu": "9100",
                 "lacp_key": "auto"
@@ -102,22 +96,17 @@
             "PortChannel2": {
                 "admin_status": "up",
                 "min_links": "1",
-                "members": [
-                    "Ethernet12"
-                ],
                 "tpid": "0x9200",
                 "mtu": "9100",
                 "lacp_key": "auto"
             },
             "PortChannel42": {
                 "admin_status": "up",
-                "members": [
-                    "Ethernet-BP0",
-                    "Ethernet-BP4"
-                ],
                 "min_links": "2",
                 "mtu": "9100",
-                "tpid": "0x8100"
+                "tpid": "0x8100",
+                "fast_rate": "false",
+                "fallback" : "true"
             }
         },
         "PORTCHANNEL_INTERFACE": {
@@ -535,7 +524,8 @@
                 "admin_status": "up",
                 "autoneg": "on",
                 "adv_speeds": "all",
-                "adv_interface_types": "all"
+                "adv_interface_types": "all",
+                "channel" : "0"
             },
             "Ethernet3": {
                 "alias": "Eth1/4",
@@ -543,7 +533,8 @@
                 "description": "",
                 "speed": "11100",
                 "tpid": "0x88A8",
-                "admin_status": "up"
+                "admin_status": "up",
+                "channel": "1"
             },
             "Ethernet4": {
                 "alias": "Eth2/1",
@@ -551,7 +542,8 @@
                 "description": "",
                 "speed": "11100",
                 "tpid": "0x9100",
-                "admin_status": "up"
+                "admin_status": "up",
+                "channel": "2"
             },
             "Ethernet5": {
                 "alias": "Eth2/2",
@@ -559,7 +551,8 @@
                 "description": "",
                 "speed": "11100",
                 "tpid": "0x9200",
-                "admin_status": "up"
+                "admin_status": "up",
+                "channel": "3"
             },
             "Ethernet6": {
                 "alias": "Eth2/3",
@@ -567,7 +560,8 @@
                 "description": "",
                 "speed": "11100",
                 "tpid": "0x8100",
-                "admin_status": "up"
+                "admin_status": "up",
+                "channel": "4"
             },
             "Ethernet7": {
                 "alias": "Eth2/4",
@@ -575,7 +569,8 @@
                 "description": "",
                 "speed": "11100",
                 "tpid": "0x8100",
-                "admin_status": "up"
+                "admin_status": "up",
+                "channel": "5"
             },
             "Ethernet8": {
                 "alias": "Eth3/1",
@@ -583,7 +578,8 @@
                 "description": "",
                 "speed": "11100",
                 "tpid": "0x8100",
-                "admin_status": "up"
+                "admin_status": "up",
+                "channel": "6"
             },
             "Ethernet9": {
                 "alias": "Eth3/2",
@@ -591,7 +587,8 @@
                 "description": "",
                 "speed": "11100",
                 "tpid": "0x8100",
-                "admin_status": "up"
+                "admin_status": "up",
+                "channel": "7"
             },
             "Ethernet10": {
                 "alias": "Eth3/3",
@@ -599,7 +596,8 @@
                 "description": "",
                 "speed": "11100",
                 "tpid": "0x8100",
-                "admin_status": "up"
+                "admin_status": "up",
+                "channel": "8"
             },
             "Ethernet11": {
                 "alias": "Eth3/4",
@@ -1626,13 +1624,15 @@
                 "dhcpv6_servers": [
                     "2a04:5555:41::11"
                 ],
-                "rfc6939_support": "true"
+                "rfc6939_support": "true",
+                "interface_id": "true"
             },
             "Vlan777": {
                 "dhcpv6_servers": [
                     "2a04:5555:41::11"
                 ],
-                "rfc6939_support": "true"
+                "rfc6939_support": "true",
+                "interface_id": "true"
             }
         },
         "SCHEDULER": {
@@ -2065,6 +2065,10 @@
 
         "SYSTEM_DEFAULTS": {
             "tunnel_qos_remap": {
+                "status": "enabled"
+            },
+            "mux_tunnel_egress_acl":
+            {
                 "status": "enabled"
             }
          },
