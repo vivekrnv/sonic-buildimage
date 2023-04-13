@@ -29,6 +29,17 @@ class SDKAction(Action):
     def __init__(self, args):
         super().__init__(args)
 
+    def check(self):
+        if not (self.args.patches and os.path.exists(self.args.patches)):
+            print("-> ERR: patch directory is missing ")
+            return False
+    
+        if not (self.args.build_root and os.path.exists(self.args.build_root)):
+            print("-> ERR: build_root is missing")
+            return False
+
+        return True
+    
     def read_data(self):
         Data.old_series = FileHandler.read_raw(os.path.join(self.args.build_root, SLK_SERIES))
     
@@ -66,7 +77,7 @@ class SDKAction(Action):
             print("-> FATAL Kernel dir with patches doesn't exist: {}".format(path_to_check))
             sys.exit(1)
 
-    def filter_patches(self):
+    def process_patches(self):
         print(Data.new_patches, Data.old_patches)
         if set(Data.new_patches) == set(Data.old_patches):
             return (False, [], [])
@@ -99,7 +110,7 @@ class SDKAction(Action):
         self.find_sdk_patches()
         self.get_kernel_dir()
         self.get_new_patches()
-        (update_required, patches_add, patches_del) = self.filter_patches()
+        (update_required, patches_add, patches_del) = self.process_patches()
         if update_required:
             self.process_update(patches_add, patches_del)
 
@@ -116,4 +127,5 @@ def create_parser():
 if __name__ == '__main__':
     parser = create_parser()
     action = SDKAction(parser.parse_args())
+    action.check()
     action.perform()
