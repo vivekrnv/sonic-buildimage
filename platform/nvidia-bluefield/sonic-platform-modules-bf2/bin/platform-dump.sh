@@ -47,6 +47,7 @@ dump_cmd "dmidecode -t1 -t2 -t 11" "dmidecode" "3"
 dump_cmd "lsmod" "lsmod" "3"
 dump_cmd "lspci -vvv" "lspci" "5"
 dump_cmd "top -SHb -n 1 | tail -n +8 | sort -nrk 11" "top" "5"
+dump_cmd "tail /sys/kernel/debug/mlxbf-ptm/monitors/status/*" "mlxbf-ptm-dump" "3"
 
 tar czf /tmp/platform-dump.tar.gz -C $DUMP_FOLDER .
 rm -rf $DUMP_FOLDER
