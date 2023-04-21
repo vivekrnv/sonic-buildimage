@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017-2021 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,10 @@
 # limitations under the License.
 #
 
-RECIPE_DIR = recipes
+DEP_FILES := $(SONIC_COMMON_FILES_LIST) $(PLATFORM_PATH)/$(RECIPE_DIR)/fw.mk $(PLATFORM_PATH)/$(RECIPE_DIR)/fw.dep
+DEP_FILES += $(SONIC_COMMON_BASE_FILES_LIST)
 
-export RECIPE_DIR
+$(BF_FW_FILES)_CACHE_MODE := GIT_CONTENT_SHA
+$(BF_FW_FILES)_DEP_FLAGS := $(SONIC_COMMON_FLAGS_LIST) $(FW_BASE_PATH) $(BF3_FW_VERSION)
+$(BF_FW_FILES)_DEP_FILES := $(DEP_FILES)
 
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/bluefield-soc.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/mft.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/fw.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/dpu-sai.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-api.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/installer-image.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/sdk.dep

@@ -21,6 +21,7 @@ override TARGET_BOOTLOADER=grub
 
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/bluefield-soc.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/mft.mk
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/fw.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/dpu-sai.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/sdk.mk
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-api.mk

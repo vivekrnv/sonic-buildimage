@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017-2021 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,23 @@
 # limitations under the License.
 #
 
-RECIPE_DIR = recipes
+FW_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/fw
+BF3_FW_BASE_URL =
 
-export RECIPE_DIR
+BF3_FW_VERSION = 32.36.3146
 
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/bluefield-soc.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/mft.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/fw.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/dpu-sai.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/platform-api.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/installer-image.dep
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/sdk.dep
+BF3_FW_FILE = fw-BlueField-3-rel-$(subst .,_,$(BF3_FW_VERSION)).bin
+$(BF3_FW_FILE)_PATH = $(FW_BASE_PATH)/
+$(BF3_FW_FILE)_URL = $(BF3_FW_BASE_URL)/$(BF3_FW_FILE)
+
+BF_FW_FILES = $(BF3_FW_FILE)
+
+export BF3_FW_FILE
+export BF_FW_FILES
+
+ifeq ($(BF3_FW_BASE_URL),)
+SONIC_COPY_FILES += $(BF_FW_FILES)
+else
+SONIC_ONLINE_FILES += $(BF_FW_FILES)
+endif
+
