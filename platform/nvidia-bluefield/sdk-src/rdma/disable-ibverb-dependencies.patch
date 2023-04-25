@@ -1,17 +1,17 @@
 diff --git a/debian/control b/debian/control
-index afd04f2..67d385d 100644
+index 0ef86f4..3e8dfb1 100644
 --- a/debian/control
 +++ b/debian/control
-@@ -66,7 +66,7 @@ Description: InfiniBand Communication Manager Assistant (ACM)
+@@ -65,7 +65,7 @@ Description: InfiniBand Communication Manager Assistant (ACM)
  Package: ibverbs-providers
  Architecture: linux-any
  Multi-Arch: same
 -Depends: ${misc:Depends}, ${shlibs:Depends}
 +#Depends: ${misc:Depends}, ${shlibs:Depends}
- Provides: libefa1, libipathverbs1, libmlx5-1, libmthca1
+ Provides: libefa1, libipathverbs1, libmana1, libmlx5-1, libmthca1
  Replaces: libipathverbs1,
            libmlx5-1,
-@@ -137,7 +137,7 @@ Section: libs
+@@ -138,7 +138,7 @@ Section: libs
  Pre-Depends: ${misc:Pre-Depends}
  Depends: adduser, ${misc:Depends}, ${shlibs:Depends}
  Recommends: ibverbs-providers

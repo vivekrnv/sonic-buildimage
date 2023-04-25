@@ -111,23 +111,32 @@ IB_UMAD = libibumad3_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
 IB_UMAD_DEV = libibumad-dev_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
 IB_UMAD_DBGSYM = libibumad3-dbg_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
 
+RDMACM = librdmacm1_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
+RDMACM_DEV = librdmacm-dev_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
+$(RDMACM_DEV)_DEPENDS = $(RDMACM) $(IB_VERBS_DEV)
+RDMACM_DBGSYM = librdmacm1-dbg_${RDMA_CORE_VER}_${CONFIGURED_ARCH}.deb
+
 $(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS_PROV)))
 $(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS)))
 $(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS_DEV)))
 $(eval $(call add_derived_package,$(RDMA_CORE),$(IB_UMAD)))
 $(eval $(call add_derived_package,$(RDMA_CORE),$(IB_UMAD_DEV)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(RDMACM)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(RDMACM_DEV)))
 
 ifeq ($(SDK_FROM_SRC),y)
 $(eval $(call add_derived_package,$(RDMA_CORE),$(RDMA_CORE_DBGSYM)))
 $(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS_PROV_DBGSYM)))
 $(eval $(call add_derived_package,$(RDMA_CORE),$(IB_VERBS_DBGSYM)))
 $(eval $(call add_derived_package,$(RDMA_CORE),$(IB_UMAD_DBGSYM)))
+$(eval $(call add_derived_package,$(RDMA_CORE),$(RDMACM_DBGSYM)))
 endif
 
 export RDMA_CORE RDMA_CORE_DBGSYM
 export IB_VERBS IB_VERBS_DEV IB_VERBS_DBGSYM
 export IB_VERBS_PROV IB_VERBS_PROV_DBGSYM
 export IB_UMAD IB_UMAD_DEV IB_UMAD_DBGSYM
+export RDMACM RDMACM_DEV RDMACM_DBGSYM
 
 RDMA_CORE_DERIVED_DEBS = $(RDMA_CORE_DBGSYM) \
 		$(IB_VERBS) \
@@ -137,7 +146,10 @@ RDMA_CORE_DERIVED_DEBS = $(RDMA_CORE_DBGSYM) \
 		$(IB_VERBS_PROV_DBGSYM) \
 		$(IB_UMAD) \
 		$(IB_UMAD_DEV) \
-		$(IB_UMAD_DBGSYM)
+		$(IB_UMAD_DBGSYM) \
+		$(RDMACM) \
+		$(RDMACM_DEV) \
+		$(RDMACM_DBGSYM)
 
 export RDMA_CORE_DERIVED_DEBS
 
@@ -216,7 +228,7 @@ SDK_SRC_TARGETS += $(RXPCOMPILER)
 UCX_VER = $(call get_sdk_package_version_full,"ucx")
 
 UCX = ucx_$(UCX_VER)_arm64.deb
-$(UCX)_DEPENDS = $(IB_VERBS_PROV) $(IB_VERBS)
+$(UCX)_DEPENDS = $(IB_VERBS_PROV) $(IB_VERBS) $(IB_VERBS_DEV) $(RDMACM) $(RDMACM_DEV)
 $(UCX)_RDEPENDS = $(IB_VERBS_PROV) $(IB_VERBS)
 $(UCX)_SRC_PATH = $(PLATFORM_PATH)/sdk-src/ucx
 
