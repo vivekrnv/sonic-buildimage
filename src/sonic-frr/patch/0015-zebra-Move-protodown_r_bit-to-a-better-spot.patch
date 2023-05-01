@@ -1,0 +1,73 @@
+From 4f10f4df9635ed9afb0456f71213970c7e5fb5b8 Mon Sep 17 00:00:00 2001
+From: Donald Sharp <sharpd@nvidia.com>
+Date: Thu, 27 Apr 2023 07:37:58 -0400
+Subject: [PATCH] zebra: Move protodown_r_bit to a better spot
+
+Since we are moving some code handling out of the dataplane
+and into zebra proper, lets move the protodown r bit as well.
+
+Signed-off-by: Donald Sharp <sharpd@nvidia.com>
+---
+ zebra/zebra_router.c |  2 ++
+ zebra/zebra_router.h | 28 ++++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
+
+diff --git a/zebra/zebra_router.c b/zebra/zebra_router.c
+index 92a3b9424b3..ce0d9fc81a4 100644
+--- a/zebra/zebra_router.c
++++ b/zebra/zebra_router.c
+@@ -273,6 +273,8 @@ void zebra_router_init(bool asic_offload, bool notify_on_ack)
+ {
+ 	zrouter.sequence_num = 0;
+ 
++	zrouter.protodown_r_bit = FRR_PROTODOWN_REASON_DEFAULT_BIT;
++
+ 	zrouter.packets_to_process = ZEBRA_ZAPI_PACKETS_TO_PROCESS;
+ 
+ 	zebra_vxlan_init();
+diff --git a/zebra/zebra_router.h b/zebra/zebra_router.h
+index c0eab9cd6eb..b71fe757b89 100644
+--- a/zebra/zebra_router.h
++++ b/zebra/zebra_router.h
+@@ -209,6 +209,8 @@ struct zebra_router {
+ 	 */
+ 	bool asic_offloaded;
+ 	bool notify_on_ack;
++
++	uint8_t protodown_r_bit;
+ };
+ 
+ #define GRACEFUL_RESTART_TIME 60
+@@ -257,6 +259,32 @@ extern enum multicast_mode multicast_mode_ipv4_get(void);
+ 
+ extern bool zebra_router_notify_on_ack(void);
+ 
++#define FRR_PROTODOWN_REASON_DEFAULT_BIT 7
++/* Protodown bit setter/getter
++ *
++ * Allow users to change the bit if it conflicts with another
++ * on their system.
++ */
++static inline void if_netlink_set_frr_protodown_r_bit(uint8_t bit)
++{
++	zrouter.protodown_r_bit = bit;
++}
++
++static inline void if_netlink_unset_frr_protodown_r_bit(void)
++{
++	zrouter.protodown_r_bit = FRR_PROTODOWN_REASON_DEFAULT_BIT;
++}
++
++static inline bool if_netlink_frr_protodown_r_bit_is_set(void)
++{
++	return (zrouter.protodown_r_bit != FRR_PROTODOWN_REASON_DEFAULT_BIT);
++}
++
++static inline uint8_t if_netlink_get_frr_protodown_r_bit(void)
++{
++	return zrouter.protodown_r_bit;
++}
++
+ /* zebra_northbound.c */
+ extern const struct frr_yang_module_info frr_zebra_info;
+ 
