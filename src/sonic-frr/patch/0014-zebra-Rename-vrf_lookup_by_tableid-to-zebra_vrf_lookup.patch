@@ -1,0 +1,151 @@
+From b0c68c92bb256a4d47644bcd734f9dc9e5f53567 Mon Sep 17 00:00:00 2001
+From: Donald Sharp <sharpd@nvidia.com>
+Date: Wed, 26 Apr 2023 23:25:27 -0400
+Subject: [PATCH] zebra: Rename vrf_lookup_by_tableid to zebra_vrf_lookup..
+
+Rename the vrf_lookup_by_id function to zebra_vrf_lookup_by_id
+and move to zebra_vrf.c where it nominally belongs, as that
+we need zebra specific data to find this vrf_id and as such
+it does not belong in vrf.c
+
+Signed-off-by: Donald Sharp <sharpd@nvidia.com>
+---
+ zebra/if_netlink.c |  3 ++-
+ zebra/rt_netlink.c | 31 ++-----------------------------
+ zebra/rt_netlink.h |  1 -
+ zebra/zebra_vrf.c  | 27 +++++++++++++++++++++++++++
+ zebra/zebra_vrf.h  |  1 +
+ 5 files changed, 32 insertions(+), 31 deletions(-)
+
+diff --git a/zebra/if_netlink.c b/zebra/if_netlink.c
+index 5a2f6d33b18..b3d74a2e462 100644
+--- a/zebra/if_netlink.c
++++ b/zebra/if_netlink.c
+@@ -339,7 +339,8 @@ static void netlink_vrf_change(struct nlmsghdr *h, struct rtattr *tb,
+ 		if (!vrf_lookup_by_id((vrf_id_t)ifi->ifi_index)) {
+ 			vrf_id_t exist_id;
+ 
+-			exist_id = vrf_lookup_by_table(nl_table_id, ns_id);
++			exist_id =
++				zebra_vrf_lookup_by_table(nl_table_id, ns_id);
+ 			if (exist_id != VRF_DEFAULT) {
+ 				vrf = vrf_lookup_by_id(exist_id);
+ 
+diff --git a/zebra/rt_netlink.c b/zebra/rt_netlink.c
+index 24c01b7f518..e4c1393bd19 100644
+--- a/zebra/rt_netlink.c
++++ b/zebra/rt_netlink.c
+@@ -361,33 +361,6 @@ static inline int proto2zebra(int proto, int family, bool is_nexthop)
+ 	return proto;
+ }
+ 
+-/*
+-Pending: create an efficient table_id (in a tree/hash) based lookup)
+- */
+-vrf_id_t vrf_lookup_by_table(uint32_t table_id, ns_id_t ns_id)
+-{
+-	struct vrf *vrf;
+-	struct zebra_vrf *zvrf;
+-
+-	RB_FOREACH (vrf, vrf_id_head, &vrfs_by_id) {
+-		zvrf = vrf->info;
+-		if (zvrf == NULL)
+-			continue;
+-		/* case vrf with netns : match the netnsid */
+-		if (vrf_is_backend_netns()) {
+-			if (ns_id == zvrf_id(zvrf))
+-				return zvrf_id(zvrf);
+-		} else {
+-			/* VRF is VRF_BACKEND_VRF_LITE */
+-			if (zvrf->table_id != table_id)
+-				continue;
+-			return zvrf_id(zvrf);
+-		}
+-	}
+-
+-	return VRF_DEFAULT;
+-}
+-
+ /**
+  * @parse_encap_mpls() - Parses encapsulated mpls attributes
+  * @tb:         Pointer to rtattr to look for nested items in.
+@@ -761,7 +734,7 @@ static int netlink_route_change_read_unicast(struct nlmsghdr *h, ns_id_t ns_id,
+ 		table = rtm->rtm_table;
+ 
+ 	/* Map to VRF */
+-	vrf_id = vrf_lookup_by_table(table, ns_id);
++	vrf_id = zebra_vrf_lookup_by_table(table, ns_id);
+ 	if (vrf_id == VRF_DEFAULT) {
+ 		if (!is_zebra_valid_kernel_table(table)
+ 		    && !is_zebra_main_routing_table(table))
+@@ -1032,7 +1005,7 @@ static int netlink_route_change_read_multicast(struct nlmsghdr *h,
+ 	else
+ 		table = rtm->rtm_table;
+ 
+-	vrf = vrf_lookup_by_table(table, ns_id);
++	vrf = zebra_vrf_lookup_by_table(table, ns_id);
+ 
+ 	if (tb[RTA_IIF])
+ 		iif = *(int *)RTA_DATA(tb[RTA_IIF]);
+diff --git a/zebra/rt_netlink.h b/zebra/rt_netlink.h
+index 93c06e555b0..51c13574c70 100644
+--- a/zebra/rt_netlink.h
++++ b/zebra/rt_netlink.h
+@@ -103,7 +103,6 @@ extern int netlink_macfdb_read_specific_mac(struct zebra_ns *zns,
+ 					    uint16_t vid);
+ extern int netlink_neigh_read_specific_ip(const struct ipaddr *ip,
+ 					  struct interface *vlan_if);
+-extern vrf_id_t vrf_lookup_by_table(uint32_t table_id, ns_id_t ns_id);
+ 
+ struct nl_batch;
+ extern enum netlink_msg_status
+diff --git a/zebra/zebra_vrf.c b/zebra/zebra_vrf.c
+index f88a65d9520..5fee5a2db91 100644
+--- a/zebra/zebra_vrf.c
++++ b/zebra/zebra_vrf.c
+@@ -393,6 +393,33 @@ struct zebra_vrf *zebra_vrf_alloc(struct vrf *vrf)
+ 	return zvrf;
+ }
+ 
++/*
++Pending: create an efficient table_id (in a tree/hash) based lookup)
++ */
++vrf_id_t zebra_vrf_lookup_by_table(uint32_t table_id, ns_id_t ns_id)
++{
++	struct vrf *vrf;
++	struct zebra_vrf *zvrf;
++
++	RB_FOREACH (vrf, vrf_id_head, &vrfs_by_id) {
++		zvrf = vrf->info;
++		if (zvrf == NULL)
++			continue;
++		/* case vrf with netns : match the netnsid */
++		if (vrf_is_backend_netns()) {
++			if (ns_id == zvrf_id(zvrf))
++				return zvrf_id(zvrf);
++		} else {
++			/* VRF is VRF_BACKEND_VRF_LITE */
++			if (zvrf->table_id != table_id)
++				continue;
++			return zvrf_id(zvrf);
++		}
++	}
++
++	return VRF_DEFAULT;
++}
++
+ /* Lookup VRF by identifier.  */
+ struct zebra_vrf *zebra_vrf_lookup_by_id(vrf_id_t vrf_id)
+ {
+diff --git a/zebra/zebra_vrf.h b/zebra/zebra_vrf.h
+index a24a008b761..031b80ebb0f 100644
+--- a/zebra/zebra_vrf.h
++++ b/zebra/zebra_vrf.h
+@@ -257,6 +257,7 @@ extern struct route_table *zebra_vrf_get_table_with_table_id(afi_t afi,
+ extern void zebra_vrf_update_all(struct zserv *client);
+ extern struct zebra_vrf *zebra_vrf_lookup_by_id(vrf_id_t vrf_id);
+ extern struct zebra_vrf *zebra_vrf_lookup_by_name(const char *);
++extern vrf_id_t zebra_vrf_lookup_by_table(uint32_t table_id, ns_id_t ns_id);
+ extern struct zebra_vrf *zebra_vrf_alloc(struct vrf *vrf);
+ extern struct route_table *zebra_vrf_table(afi_t, safi_t, vrf_id_t);
+ 
