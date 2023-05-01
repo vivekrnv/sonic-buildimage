@@ -12,3 +12,10 @@ cross-compile-changes.patch
 0010-zebra-Note-when-the-netlink-DUMP-command-is-interrup.patch
 0011-bgpd-enhanced-capability-is-always-turned-on-for-int.patch
 0012-Ensure-ospf_apiclient_lsa_originate-cannot-accidently-write-into-stack.patch
+0013-zebra-fix-use-after-deletion-event-in-freebsd.patch
+0014-zebra-Rename-vrf_lookup_by_tableid-to-zebra_vrf_lookup.patch
+0015-zebra-Move-protodown_r_bit-to-a-better-spot.patch
+0016-zebra-Remove-unused-add-variable.patch
+0017-zebra-Remove-duplicate-function-for-netlink-interface.patch
+0018-zebra-Add-code-to-get-set-interface-to-pass-up-from-dplane.patch
+0019-zebra-Use-zebra-dplane-for-RTM-link-and-addr.patch
