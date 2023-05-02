@@ -292,6 +292,7 @@ DOCKER_RUN := docker run --rm=true --privileged --init \
     -v $(DOCKER_BUILDER_MOUNT) \
     -v "$(DOCKER_LOCKDIR):$(DOCKER_LOCKDIR)" \
     -w $(DOCKER_BUILDER_WORKDIR) \
+    -u $(USER) \
     -e "http_proxy=$(http_proxy)" \
     -e "https_proxy=$(https_proxy)" \
     -e "no_proxy=$(no_proxy)" \
