@@ -54,6 +54,10 @@ def mock_hwmgmt_args():
                                 "--config_inclusion", MOCK_INPUTS_DIR+"/new_kconfig",
                                 "--series", MOCK_INPUTS_DIR+"/new_series",
                                 "--current_non_up_patches", MOCK_INPUTS_DIR+"/hwmgmt_nonup_patches",
+                                "--kernel_version", "5.10.140",
+                                "--hw_mgmt_ver", "7.0030.0937",
+                                "--sb_msg", "/tmp/sb_msg.log",
+                                "--slk_msg", "/tmp/slk_msg.log",
                                 "--build_root", "/sonic", 
                                 "--is_test"]):
         parser = create_parser()
@@ -142,3 +146,13 @@ class TestHwMgmtPostAction(TestCase):
         self.action.construct_series_with_non_up()
         self.action.write_series_diff()
         assert check_file_content(MOCK_INPUTS_DIR+"expected_data/series.patch")
+
+    def test_load_patch_table(self):
+        #path = os.path.join(MOCK_INPUTS_DIR, "patch_status_table.txt")
+        table = load_patch_table(MOCK_INPUTS_DIR, "5.10.140")
+        print(table)
+
+    def test_commit_msg(self):
+        table = load_patch_table(MOCK_INPUTS_DIR, "5.10.140")
+        sb, slk = self.action.create_commit_msg(table)
+        print(sb, slk)
