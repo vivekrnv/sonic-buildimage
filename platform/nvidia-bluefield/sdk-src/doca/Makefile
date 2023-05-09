@@ -37,6 +37,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
 	patch -p1 < ../0001-Allow-compilation-with-warnings.patch
 	patch -p1 < ../0001-Remove-meson-from-dependencies.patch
+	patch -p1 < ../0001-Disable-FlexIO-support.patch
 	source /etc/profile.d/libgrpc.sh
 	source /etc/profile.d/mlnx-dpdk-aarch64-linux-gnu.sh
 
