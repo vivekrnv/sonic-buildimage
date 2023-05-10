@@ -6,7 +6,6 @@ import shutil
 import argparse
 import copy
 import difflib
-import jinja2
 
 from helper import *
 
@@ -15,23 +14,8 @@ COMMIT_TITLE = "Intgerate HW-MGMT {} Changes"
 PATCH_TABLE_LOC = "platform/mellanox/hw-management/hw-mgmt/recipes-kernel/linux/"
 PATCH_TABLE_NAME = "Patch_Status_Table.txt"
 PATCH_TABLE_DELIMITER = "----------------------"
-PATCH_OS_SUBFOLDERS = {"default" : "./linux-{}",
-                        "sonic" : "./linux-{}/sonic",
-                        "opt" : "./linux-{}/sonic",
-                        "cumulus" : "./linux-{}/cumulus"}
 PATCH_NAME = "patch name"
-SUBVERSION = "subversion"
-PATCH_DST = "dst_type"
-PATCH_ACCEPTED = "accepted"
-PATCH_CANDIDATE = "candidate"
 COMMIT_ID = "Upstream commit id"
-COMMIT_TEMPLATE = """
-{% if changes %} ## Patch List:
-{% for key, value in changes.items() %}
-* {{key}} : {{value}}
-{%- endfor %}
-{% endif %} 
-"""
 
 def trim_array_str(str_list):
     ret = [elem.strip() for elem in str_list]
@@ -40,7 +24,7 @@ def trim_array_str(str_list):
 def get_line_elements(line):
     columns_raw = line.split("|")
     if len(columns_raw) < 3:
-        return False\
+        return False
     # remove empty firsta and last elem
     columns_raw = columns_raw[1:-1]
     columns = trim_array_str(columns_raw)
@@ -111,9 +95,12 @@ def load_patch_table(path, k_version):
     return table
 
 def build_commit_description(changes):
-    base_loader = jinja2.BaseLoader()
-    template = jinja2.Environment(loader=base_loader).from_string(COMMIT_TEMPLATE)
-    content = template.render(changes=changes)
+    if not changes:
+        return ""
+    content = "\n"
+    content = content + " ## Patch List\n"
+    for key, value in changes.items():
+        content = content + f"* {key} : {value}\n"
     return content
 
 class Data:
