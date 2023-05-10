@@ -25,6 +25,13 @@ PATCH_DST = "dst_type"
 PATCH_ACCEPTED = "accepted"
 PATCH_CANDIDATE = "candidate"
 COMMIT_ID = "Upstream commit id"
+COMMIT_TEMPLATE = """
+{% if changes %} ## Patch List:
+{% for key, value in changes.items() %}
+* {{key}} : {{value}}
+{%- endfor %}
+{% endif %} 
+"""
 
 def trim_array_str(str_list):
     ret = [elem.strip() for elem in str_list]
@@ -104,9 +111,8 @@ def load_patch_table(path, k_version):
     return table
 
 def build_commit_description(changes):
-    path = os.path.dirname(__file__)
-    environment = jinja2.Environment(loader=jinja2.FileSystemLoader(path))
-    template = environment.get_template("commit-message.j2")
+    base_loader = jinja2.BaseLoader()
+    template = jinja2.Environment(loader=base_loader).from_string(COMMIT_TEMPLATE)
     content = template.render(changes=changes)
     return content
 

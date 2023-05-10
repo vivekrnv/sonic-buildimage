@@ -34,6 +34,30 @@ NEW_UP_LIST = """\
 0107-mlxsw-reg-Extend-MCION-register-with-new-slot-number.patch
 """
 
+TEST_SLK_COMMIT = """\
+Intgerate HW-MGMT 7.0030.0937 Changes
+
+ ## Patch List:  
+
+* 0001-i2c-mlxcpld-Update-module-license.patch : https://github.com/gregkh/linux/commit/f069291bd5fc
+* 0002-i2c-mlxcpld-Decrease-polling-time-for-performance-im.patch : https://github.com/gregkh/linux/commit/cb9744178f33
+* 0003-i2c-mlxcpld-Add-support-for-I2C-bus-frequency-settin.patch : https://github.com/gregkh/linux/commit/66b0c2846ba8
+* 0004-i2c-mux-mlxcpld-Update-module-license.patch : https://github.com/gregkh/linux/commit/337bc68c294d
+* 0005-i2c-mux-mlxcpld-Move-header-file-out-of-x86-realm.patch : https://github.com/gregkh/linux/commit/98d29c410475
+* 0006-i2c-mux-mlxcpld-Convert-driver-to-platform-driver.patch : https://github.com/gregkh/linux/commit/84af1b168c50
+* 0007-i2c-mux-mlxcpld-Prepare-mux-selection-infrastructure.patch : https://github.com/gregkh/linux/commit/81566938083a
+* 0008-i2c-mux-mlxcpld-Get-rid-of-adapter-numbers-enforceme.patch : https://github.com/gregkh/linux/commit/cae5216387d1
+* 0009-i2c-mux-mlxcpld-Extend-driver-to-support-word-addres.patch : https://github.com/gregkh/linux/commit/c52a1c5f5db5
+* 0010-i2c-mux-mlxcpld-Extend-supported-mux-number.patch : https://github.com/gregkh/linux/commit/699c0506543e
+* 0011-i2c-mux-mlxcpld-Add-callback-to-notify-mux-creation-.patch : https://github.com/gregkh/linux/commit/a39bd92e92b9
+"""
+
+
+TEST_SB_COMMIT = """\
+Intgerate HW-MGMT 7.0030.0937 Changes
+
+"""
+
 REL_INPUTS_DIR = "platform/mellanox/integration-scripts/tests/data/"
 MOCK_INPUTS_DIR = "/sonic/" + REL_INPUTS_DIR
 MOCK_WRITE_FILE = MOCK_INPUTS_DIR + "test_writer_file.out"
@@ -147,12 +171,9 @@ class TestHwMgmtPostAction(TestCase):
         self.action.write_series_diff()
         assert check_file_content(MOCK_INPUTS_DIR+"expected_data/series.patch")
 
-    def test_load_patch_table(self):
-        #path = os.path.join(MOCK_INPUTS_DIR, "patch_status_table.txt")
-        table = load_patch_table(MOCK_INPUTS_DIR, "5.10.140")
-        print(table)
-
     def test_commit_msg(self):
         table = load_patch_table(MOCK_INPUTS_DIR, "5.10.140")
         sb, slk = self.action.create_commit_msg(table)
-        print(sb, slk)
+        assert slk.split() == TEST_SLK_COMMIT.split()
+        assert sb.split() == TEST_SB_COMMIT.split()
+
