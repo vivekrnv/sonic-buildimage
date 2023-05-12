@@ -1,0 +1,131 @@
+From 65da6c9ef51c945a0cc90688a6eab22b3ced8cad Mon Sep 17 00:00:00 2001
+From: Donald Sharp <sharpd@nvidia.com>
+Date: Fri, 2 Oct 2020 14:49:09 -0400
+Subject: [PATCH] zebra: Prevent installation of connected multiple times
+
+With recent changes to interface up mechanics in if_netlink.c
+FRR was receiving as many as 4 up events for an interface
+on ifdown/ifup events.  This was causing timing issues
+in FRR based upon some fun timings.  Remove this from
+happening.
+
+Ticket: CM-31623
+Signed-off-by: Donald Sharp <sharpd@nvidia.com>
+---
+ zebra/interface.c | 15 +++++++++------
+ zebra/interface.h |  2 +-
+ zebra/zebra_ptm.c |  6 +++---
+ 3 files changed, 13 insertions(+), 10 deletions(-)
+
+diff --git a/zebra/interface.c b/zebra/interface.c
+index 667e3ac0dbf..96e95bf677a 100644
+--- a/zebra/interface.c
++++ b/zebra/interface.c
+@@ -492,7 +492,7 @@ void if_flags_update(struct interface *ifp, uint64_t newflags)
+ 		/* inoperative -> operative? */
+ 		ifp->flags = newflags;
+ 		if (if_is_operative(ifp))
+-			if_up(ifp);
++			if_up(ifp, true);
+ 	}
+ }
+ 
+@@ -1021,7 +1021,7 @@ bool if_nhg_dependents_is_empty(const struct interface *ifp)
+ }
+ 
+ /* Interface is up. */
+-void if_up(struct interface *ifp)
++void if_up(struct interface *ifp, bool install_connected)
+ {
+ 	struct zebra_if *zif;
+ 	struct interface *link_if;
+@@ -1053,7 +1053,8 @@ void if_up(struct interface *ifp)
+ #endif
+ 
+ 	/* Install connected routes to the kernel. */
+-	if_install_connected(ifp);
++	if (install_connected)
++		if_install_connected(ifp);
+ 
+ 	/* Handle interface up for specific types for EVPN. Non-VxLAN interfaces
+ 	 * are checked to see if (remote) neighbor entries need to be installed
+@@ -1857,6 +1858,8 @@ static void zebra_if_dplane_ifp_handling(struct zebra_dplane_ctx *ctx)
+ 						       rc_bitfield);
+ 
+ 			if (if_is_no_ptm_operative(ifp)) {
++				bool is_up = if_is_operative(ifp);
++
+ 				ifp->flags = flags;
+ 				if (!if_is_no_ptm_operative(ifp) ||
+ 				    CHECK_FLAG(zif->flags,
+@@ -1878,7 +1881,7 @@ static void zebra_if_dplane_ifp_handling(struct zebra_dplane_ctx *ctx)
+ 						zlog_debug(
+ 							"Intf %s(%u) PTM up, notifying clients",
+ 							name, ifp->ifindex);
+-					if_up(ifp);
++					if_up(ifp, !is_up);
+ 
+ 					/*
+ 					 * Update EVPN VNI when SVI MAC change
+@@ -1915,7 +1918,7 @@ static void zebra_if_dplane_ifp_handling(struct zebra_dplane_ctx *ctx)
+ 						zlog_debug(
+ 							"Intf %s(%u) has come UP",
+ 							name, ifp->ifindex);
+-					if_up(ifp);
++					if_up(ifp, true);
+ 					if (IS_ZEBRA_IF_BRIDGE(ifp))
+ 						chgflags =
+ 							ZEBRA_BRIDGE_MASTER_UP;
+@@ -3448,7 +3451,7 @@ int if_linkdetect(struct interface *ifp, bool detect)
+ 
+ 		/* Interface may come up after disabling link detection */
+ 		if (if_is_operative(ifp) && !if_was_operative)
+-			if_up(ifp);
++			if_up(ifp, true);
+ 	}
+ 	/* FIXME: Will defer status change forwarding if interface
+ 	   does not come down! */
+diff --git a/zebra/interface.h b/zebra/interface.h
+index c4264577c9f..92d756b772d 100644
+--- a/zebra/interface.h
++++ b/zebra/interface.h
+@@ -485,7 +485,7 @@ extern void if_nbr_ipv6ll_to_ipv4ll_neigh_update(struct interface *ifp,
+ extern void if_nbr_ipv6ll_to_ipv4ll_neigh_del_all(struct interface *ifp);
+ extern void if_delete_update(struct interface **ifp);
+ extern void if_add_update(struct interface *ifp);
+-extern void if_up(struct interface *);
++extern void if_up(struct interface *ifp, bool install_connected);
+ extern void if_down(struct interface *);
+ extern void if_refresh(struct interface *);
+ extern void if_flags_update(struct interface *, uint64_t);
+diff --git a/zebra/zebra_ptm.c b/zebra/zebra_ptm.c
+index 32edb78c7d7..b79e31ea5d1 100644
+--- a/zebra/zebra_ptm.c
++++ b/zebra/zebra_ptm.c
+@@ -354,7 +354,7 @@ DEFUN (no_zebra_ptm_enable_if,
+ 			if (IS_ZEBRA_DEBUG_EVENT)
+ 				zlog_debug("%s: Bringing up interface %s",
+ 					   __func__, ifp->name);
+-			if_up(ifp);
++			if_up(ifp, true);
+ 		}
+ 	}
+ 
+@@ -557,7 +557,7 @@ static int zebra_ptm_handle_cbl_msg(void *arg, void *in_ctxt,
+ 		ifp->ptm_status = ZEBRA_PTM_STATUS_UP;
+ 		if (ifp->ptm_enable && if_is_no_ptm_operative(ifp)
+ 		    && send_linkup)
+-			if_up(ifp);
++			if_up(ifp, true);
+ 	} else if (!strcmp(cbl_str, ZEBRA_PTM_FAIL_STR)
+ 		   && (ifp->ptm_status != ZEBRA_PTM_STATUS_DOWN)) {
+ 		ifp->ptm_status = ZEBRA_PTM_STATUS_DOWN;
+@@ -1169,7 +1169,7 @@ void zebra_ptm_reset_status(int ptm_disable)
+ 						zlog_debug(
+ 							"%s: Bringing up interface %s",
+ 							__func__, ifp->name);
+-					if_up(ifp);
++					if_up(ifp, true);
+ 				}
+ 			}
+ 		}
