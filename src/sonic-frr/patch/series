@@ -19,3 +19,4 @@ cross-compile-changes.patch
 0017-zebra-Remove-duplicate-function-for-netlink-interface.patch
 0018-zebra-Add-code-to-get-set-interface-to-pass-up-from-dplane.patch
 0019-zebra-Use-zebra-dplane-for-RTM-link-and-addr.patch
+0020-zebra-Prevent-installation-of-connected-multiple-times.patch
