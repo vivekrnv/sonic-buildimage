@@ -108,6 +108,8 @@ class Data:
     new_up = list()
     # list of new non-upstream patches
     new_non_up = list()
+    # old upstream patches
+    old_up_patches = list()
     # current series file raw data
     old_series = list()
     # current non-upstream patch list
@@ -369,6 +371,13 @@ class PostProcess(HwMgmtAction):
         FileHandler.write_lines(os.path.join(self.args.build_root, SLK_KCONFIG_EXCLUDE), new_lines, True)
         print("-> INFO: updated kconfig-exclusion: \n{}".format("".join(FileHandler.read_raw(os.path.join(self.args.build_root, SLK_KCONFIG_EXCLUDE)))))
 
+    def list_patches(self):
+        old_up_patches = []
+        for i in range(Data.i_mlnx_start, Data.i_mlnx_end):
+            old_up_patches.append(Data.old_series[i].strip())
+        old_non_up_patches = [ptch.strip() for ptch in Data.old_non_up]
+        return old_up_patches, old_non_up_patches
+
     def parse_id(self, id_):
         if id_:
             id_ = "https://github.com/gregkh/linux/commit/" + id_
@@ -377,14 +386,22 @@ class PostProcess(HwMgmtAction):
     def create_commit_msg(self, table):
         title = COMMIT_TITLE.format(self.args.hw_mgmt_ver) 
         changes_slk, changes_sb = {}, {}
+        old_up_patches, old_non_up_patches = self.list_patches()
         for patch in table:
             id_ = self.parse_id(patch.get(COMMIT_ID, ""))
-            if patch.get(PATCH_NAME) in Data.new_up:
-                changes_slk[patch.get(PATCH_NAME)] = id_
-            elif patch.get(PATCH_NAME) in Data.new_non_up:
-                changes_sb[patch.get(PATCH_NAME)] = id_
+            patch_ = patch.get(PATCH_NAME)
+            if patch_ in Data.new_up and patch_ not in old_up_patches:
+                changes_slk[patch_] = id_
+                print(f"-> INFO: Patch: {patch_}, Commit: {id_}, added to linux-kernel description")
+            elif patch_ in Data.new_non_up and patch_ not in old_non_up_patches:
+                changes_sb[patch_] = id_
+                print(f"-> INFO: Patch: {patch_}, Commit: {id_}, added to buildimage description")
+            else:
+                print(f"-> INFO: Patch: {patch_}, Commit: {id_}, is not added")
         slk_commit_msg = title + "\n" + build_commit_description(changes_slk)
         sb_commit_msg = title + "\n" + build_commit_description(changes_sb)
+        print(f"-> INFO: SLK Commit Message: \n {slk_commit_msg}")
+        print(f"-> INFO: SB Commit Message: \n {sb_commit_msg}")
         return sb_commit_msg, slk_commit_msg
 
     def perform(self):
