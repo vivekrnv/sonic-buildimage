@@ -16,11 +16,11 @@
 #
 
 # Bluefied Software Distribution Version
-BSD_VER = 4.0.0
-BSD_REV = 12593
+BSD_VER = 4.0.2
+BSD_REV = 12679
 BFB_IMG_TYPE = prod
 
-BSD_BASE_URL = https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}-beta/
+BSD_BASE_URL = https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/
 BSD_BASE_SOURCE_URL = $(BSD_BASE_URL)/extras/SOURCES/
 
 export BSD_VER BSD_REV BSD_BASE_SOURCE_URL BFB_IMG_TYPE
