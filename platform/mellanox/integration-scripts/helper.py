@@ -171,3 +171,22 @@ class Action():
 
     def write_user_out(self):
         pass
+
+
+def build_commit_description(changes):
+    if not changes:
+        return ""
+    content = "\n"
+    content = content + " ## Patch List\n"
+    for key, value in changes.items():
+        content = content + f"* {key} : {value}\n"
+    return content
+
+def parse_id(id_):
+    if id_ and id_ != "N/A":
+        id_ = "https://github.com/gregkh/linux/commit/" + id_
+    
+    if id_ == "N/A":
+        id_ = ""
+
+    return id_

@@ -173,6 +173,8 @@ endif
 	integration-scripts/sdk_kernel_patches.py \
                             --sonic_kernel_ver $(KERNEL_VERSION) \
                             --patches $(SDK_TMPDIR) \
+                            --slk_msg $(SLK_COM_MSG) \
+                            --sdk_ver $(MLNX_SDK_VERSION) \
                             --build_root $(BUILD_WORKDIR) $(LOG_SIMPLE)
 
     # Commit the changes in linux kernel and and log the diff
@@ -185,7 +187,7 @@ endif
 	echo -en "\n###-> summary of files updated in sonic-linux-kernel <-###\n" >> ${SDK_USER_OUTFILE}
 	git diff --no-color --staged --stat >> ${SDK_USER_OUTFILE}
 
-	git diff --staged --quiet || git commit -m "Intgerate MLNX SDK ${MLNX_SDK_VERSION} Kernel Patches";
+	git diff --staged --quiet || git commit -m "$$(cat $(SLK_COM_MSG))"
 	popd
 
 	popd $(LOG_SIMPLE)

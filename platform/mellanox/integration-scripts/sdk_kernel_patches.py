@@ -5,9 +5,12 @@ import sys
 import shutil
 import argparse
 import copy
-import difflib
 
 from helper import *
+
+COMMIT_TITLE = "Integrate SDK {} Kernel Patches"
+
+DELIMITTER = "========================"
 
 class Data:
     # old sonic-linux-kernel series file 
@@ -24,6 +27,7 @@ class Data:
     i_sdk_end = -1
     # kernel directory to consider the patches
     k_dir = ""
+
 
 class SDKAction(Action):
     def __init__(self, args):
@@ -44,12 +48,6 @@ class SDKAction(Action):
         Data.old_series = FileHandler.read_raw(os.path.join(self.args.build_root, SLK_SERIES))
     
     def find_sdk_patches(self):
-        (Data.i_sdk_start, Data.i_sdk_end) = FileHandler.find_marker_indices(Data.old_series, SDK_MARKER)
-        if Data.i_sdk_start < 0 or Data.i_sdk_end > len(Data.old_series):
-            print("-> FATAL mellanox_sdk marker not found. Couldn't continue.. exiting")
-            sys.exit(1)
-
-        print("-> INFO mellanox_sdk markers found. start: {}, end: {}".format(Data.i_sdk_start, Data.i_sdk_end))
         for index in range(Data.i_sdk_start+1, Data.i_sdk_end):
             patch = Data.old_series[index].strip()
             if patch:
@@ -60,59 +58,126 @@ class SDKAction(Action):
         # Get the kernel dir name to get the patches
         try:
             (kernel, major, minor) = self.args.sonic_kernel_ver.split(".")
+            minor_int = int(minor)
         except Exception as e:
-            print("-> FATAL Kernel formatting error: " + str(e))
+            print("-> FATAL Kernel version formatting error: " + str(e))
             sys.exit(1)
+
+        major_kernel_path = os.path.join(KERNEL_BACKPORTS, "{}.{}".format(kernel, major))
+
+        # if the k_dir with actual minor doesn't exit, use the closest minor version
+        for minor_i in range(minor_int, 0, -1):
+            path = os.path.join(major_kernel_path, "{}.{}.{}".format(kernel, major, minor_i))
+            if os.path.exists(os.path.join(self.args.patches, path)):
+                minor = str(minor_i)
+                Data.k_dir = path
+                print(f"-> INFO Kernel minor version dir {Data.k_dir} found ")
+                break
         
-        Data.k_dir = os.path.join(KERNEL_BACKPORTS, "{}.{}.{}".format(kernel, major, minor))
-        if os.path.exists(os.path.join(self.args.patches, Data.k_dir)):
-            return 
-        
-        # if the k_dir with actual minor doesn't exit, use the patches generated against kernel.major
-        Data.k_dir = os.path.join(KERNEL_BACKPORTS, "{}.{}.{}".format(kernel, major, "0"))
+        if not Data.k_dir:
+            print("-> Couldn't find the relevant kernel directory")
+            sys.exit(1)
+
         path_to_check = os.path.join(self.args.patches, Data.k_dir)
-        if os.path.exists(path_to_check):
-            return 
-        else:
+        if not os.path.exists(path_to_check):
             print("-> FATAL Kernel dir with patches doesn't exist: {}".format(path_to_check))
             sys.exit(1)
 
-    def process_patches(self):
-        print(Data.new_patches, Data.old_patches)
-        if set(Data.new_patches) == set(Data.old_patches):
-            return (False, [], [])
+    def update_series(self):
+         # Remove patches if they are already present in existing series file
+        patch_ids_remove = set()
+        for id in range(0, len(Data.old_series)): 
+            for patch in Data.new_patches:
+                if patch in Data.old_series[id]:
+                    patch_ids_remove.add(id)
+
+        # Modify the series files
+        temp_series = copy.deepcopy(Data.old_series)
+        Data.old_series.clear()
+        for id in range(0, len(temp_series)):
+            if id not in patch_ids_remove:
+                Data.old_series.append(temp_series[id])
+            else:
+                print("-> INFO Patch {} will be removed from the existing series".format(temp_series[id]))
+        print("-> INFO Updated Series file after removing SDK patches: \n{}".format("".join(Data.old_series)))
+
+    def add_new_patch_series(self):
         new_patches = [patch + "\n" for patch in Data.new_patches]
         Data.new_series = Data.old_series[0:Data.i_sdk_start+1] + new_patches + Data.old_series[Data.i_sdk_end:]
-        return (True, Data.new_patches, Data.old_patches)
     
-    def process_update(self, patches_add, patches_del):
+    def process_update(self):
         src_path = os.path.join(self.args.patches, Data.k_dir)
         dst_path = os.path.join(self.args.build_root, SLK_PATCH_LOC)
 
-        for patch in patches_del:
-            print("-> Deleting patch: " + patch)
-            os.remove(os.path.join(dst_path, patch))
-
-        for patch in patches_add:
-            print("-> Adding patch: " + patch)
+        for patch in Data.new_patches:
+            print(f"-> Moving patch: {patch}")
             shutil.copy(os.path.join(src_path, patch), dst_path)
 
         FileHandler.write_lines(os.path.join(self.args.build_root, SLK_SERIES), Data.new_series, True)
-        print("-> INFO Updated sonic-linux-kernel series file \n{}".format("".join(Data.new_series)))
+        print("-> INFO Written sonic-linux-kernel series file \n{}".format("".join(Data.new_series)))
 
     def get_new_patches(self):
         patches_path = os.path.join(self.args.patches, Data.k_dir)
         Data.new_patches = FileHandler.read_dir(patches_path, "*.patch")
         Data.new_patches.sort()
 
+    def refresh_markers(self):
+        print("-> INFO Refreshing Markers ")
+        (Data.i_sdk_start, Data.i_sdk_end) = FileHandler.find_marker_indices(Data.old_series, SDK_MARKER)
+        if Data.i_sdk_start < 0 or Data.i_sdk_end > len(Data.old_series):
+            print("-> FATAL mellanox_sdk marker not found. Couldn't continue.. exiting")
+            sys.exit(1)
+        print("-> INFO mellanox_sdk markers found. start: {}, end: {}".format(Data.i_sdk_start, Data.i_sdk_end))
+
+    def fetch_patch_table(self, root_dir):
+        lines = FileHandler.read_strip(os.path.join(root_dir, "README"))
+        delim_id = 0
+        for id in range(0, len(lines)):
+            if DELIMITTER in lines[id]:
+                delim_id = id
+                break
+        
+        table = dict()
+        for id in range(delim_id+1, len(lines)):
+            tokens = lines[id].split()
+            if len(tokens) != 3:
+                print("-> INFO Error Formatted line, {}".format(" ".join(lines[id])))
+                continue 
+            patch, commit = tokens[0], tokens[1]
+            if ".patch" not in patch:
+                print(f"-> INFO Unexpected Patch name {patch}")
+                continue
+            table[patch.strip()] = commit.strip() 
+        
+        print(f"-> INFO Final Patch Table: {table}")
+        return table
+
+    def create_commit_msg(self, patch_table):
+        changes = {}
+        for patch in Data.new_patches:
+            if patch not in Data.old_patches:
+                changes[patch] = parse_id(patch_table.get(patch.strip(), ""))
+        slk_commit_msg = COMMIT_TITLE.format(self.args.sdk_ver) + "\n" + build_commit_description(changes)
+        print(f"-> INFO Commit Message: {slk_commit_msg}")
+        return slk_commit_msg
+
     def perform(self):
         self.read_data()
+        self.refresh_markers()
         self.find_sdk_patches()
         self.get_kernel_dir()
         self.get_new_patches()
-        (update_required, patches_add, patches_del) = self.process_patches()
-        if update_required:
-            self.process_update(patches_add, patches_del)
+        self.update_series()
+        self.refresh_markers()
+        self.add_new_patch_series()
+        self.process_update()
+        patch_table = self.fetch_patch_table(os.path.join(self.args.patches, Data.k_dir))
+        slk_msg = self.create_commit_msg(patch_table)
+        if self.args.slk_msg:
+            with open(self.args.slk_msg, 'w') as f:
+                f.write(slk_msg) 
+
+
 
 def create_parser():
     # Create argument parser
@@ -121,6 +186,8 @@ def create_parser():
     # Optional arguments
     parser.add_argument("--sonic_kernel_ver", type=str)
     parser.add_argument("--patches", type=str)
+    parser.add_argument("--slk_msg", type=str)
+    parser.add_argument("--sdk_ver", type=str)
     parser.add_argument("--build_root", type=str)
     return parser
 
