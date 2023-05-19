@@ -168,14 +168,14 @@ $(RSHIM_DEB)_DEPENDS += $(LINUX_HEADERS) $(LINUX_HEADERS_COMMON)
 SONIC_MAKE_DEBS += $(RSHIM_DEB)
 export RSHIM_DRIVER_VERSION RSHIM_DEB
 
-BOOTIMAGES_BASE_URL = $(BSD_BASE_URL)/bootimages/$(BFB_IMG_TYPE)
 ifeq ($(BFB_IMG_TYPE), prod)
+BOOTIMAGES_BASE_URL = $(BSD_BASE_URL)/bootimages/prod
 BOOTIMAGES = mlxbf-bootimages-signed_$(BSD_VER)-$(BSD_REV)_arm64.deb
-else ifeq ($(BFB_IMG_TYPE), dev)
-BOOTIMAGES = mlxbf-bootimages-devsigned_$(BSD_VER)-$(BSD_REV)_arm64.deb
 else
-BOOTIMAGES = mlxbf-bootimages_$(BSD_VER)-$(BSD_REV)_arm64.deb
+BOOTIMAGES_BASE_URL = $(BSD_BASE_URL)/bootimages/dev
+BOOTIMAGES = mlxbf-bootimages-devsigned_$(BSD_VER)-$(BSD_REV)_arm64.deb
 endif
+
 $(BOOTIMAGES)_URL = $(BOOTIMAGES_BASE_URL)/$(BOOTIMAGES)
 
 SONIC_ONLINE_DEBS += $(BOOTIMAGES)
