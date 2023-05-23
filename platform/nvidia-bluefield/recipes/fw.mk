@@ -18,7 +18,7 @@
 FW_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/fw
 BF3_FW_BASE_URL =
 
-BF3_FW_VERSION = 32.37.0242
+BF3_FW_VERSION = 32.37.1300
 
 BF3_FW_FILE = fw-BlueField-3-rel-$(subst .,_,$(BF3_FW_VERSION)).mfa
 $(BF3_FW_FILE)_PATH = $(FW_BASE_PATH)/
