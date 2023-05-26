@@ -184,7 +184,7 @@ def build_commit_description(changes):
 
 def parse_id(id_):
     if id_ and id_ != "N/A":
-        id_ = "https://github.com/gregkh/linux/commit/" + id_
+        id_ = "https://github.com/torvalds/linux/commit/" + id_
     
     if id_ == "N/A":
         id_ = ""

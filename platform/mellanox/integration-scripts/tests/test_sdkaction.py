@@ -111,8 +111,8 @@ TEST_SLK_COMMIT = """\
 Integrate SDK 4.5.1000 Kernel Patches
 
  ## Patch List
-* 0001-psample-Encapsulate-packet-metadata-in-a-struct.patch : https://github.com/gregkh/linux/commit/a03e99d39f1943ec88f6fd3b0b9f34c20663d401
-* 0002-psample-Add-additional-metadata-attributes.patch : https://github.com/gregkh/linux/commit/07e1a5809b595df6e125504dff6245cb2c8ed3de
+* 0001-psample-Encapsulate-packet-metadata-in-a-struct.patch : https://github.com/torvalds/linux/commit/a03e99d39f1943ec88f6fd3b0b9f34c20663d401
+* 0002-psample-Add-additional-metadata-attributes.patch : https://github.com/torvalds/linux/commit/07e1a5809b595df6e125504dff6245cb2c8ed3de
 * 0003-psample-define-the-macro-PSAMPLE_MD_EXTENDED_ATTR.patch : 
 """
 
