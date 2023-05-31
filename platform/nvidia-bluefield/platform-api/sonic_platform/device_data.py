@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -76,5 +76,5 @@ class DeviceDataManager:
         return SfpData(**sfp_data)
 
     def get_bf_version(self):
-        bf2_platforms = ['arm64-nvda_bf-mbf2h536c']
+        bf2_platforms = ['Nvidia-MBF2H536C']
         return BFVersion.BF2 if self.get_platform_name() in bf2_platforms else BFVersion.BF3

@@ -21,7 +21,7 @@ from typing import List, ClassVar
 platform_sample = """
 {
     "chassis": {
-        "name": "arm64-nvda_bf-mbf2h536c",
+        "name": "Nvidia-MBF2H536C",
         "components": [],
         "fans": [],
         "fan_drawers": [],
