@@ -45,8 +45,8 @@ log()
 	if [ -n "$rshimlog" ]; then
 		$rshimlog "INFO: $*"
 	fi
-	if [ -N /dev/ttyAMA0 ]; then
-		echo "INFO: $*"
+	if [ -e /dev/ttyAMA0 ]; then
+		echo "INFO: $*" > /dev/ttyAMA0
 	fi
 }
 
