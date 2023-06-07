@@ -3,10 +3,10 @@
 	url = https://github.com/sonic-net/sonic-swss-common
 [submodule "sonic-linux-kernel"]
 	path = src/sonic-linux-kernel
-	url = https://github.com/nvidia-sonic/sonic-linux-kernel.git
+	url = ../sonic-linux-kernel.git
 [submodule "sonic-sairedis"]
 	path = src/sonic-sairedis
-	url = https://github.com/nvidia-sonic/sonic-sairedis.git
+	url = ../sonic-sairedis.git
 [submodule "sonic-swss"]
 	path = src/sonic-swss
 	url = https://github.com/sonic-net/sonic-swss
@@ -30,7 +30,7 @@
 	url = https://github.com/p4lang/ptf.git
 [submodule "src/sonic-utilities"]
 	path = src/sonic-utilities
-	url = https://github.com/nvidia-sonic/sonic-utilities
+	url = ../sonic-utilities.git
 [submodule "platform/broadcom/sonic-platform-modules-arista"]
 	path = platform/broadcom/sonic-platform-modules-arista
 	url = https://github.com/aristanetworks/sonic
@@ -102,13 +102,13 @@
 	url = https://github.com/Mellanox/bfscripts
 [submodule "platform/nvidia-bluefield/sdk-src/sonic-bluefield-packages"]
 	path = platform/nvidia-bluefield/sdk-src/sonic-bluefield-packages
-	url = https://github.com/nvidia-sonic/sonic-bluefield-packages.git
+	url = ../sonic-bluefield-packages.git
 [submodule "src/sonic-p4rt/sonic-pins"]
 	path = src/sonic-p4rt/sonic-pins
 	url = https://github.com/sonic-net/sonic-pins.git
 [submodule "platform/nvidia-bluefield/dpu-sai/sai-dpu"]
 	path = platform/nvidia-bluefield/dpu-sai/sai-dpu
-	url = https://github.com/nvidia-sonic/sai-dpu.git
+	url = ../sai-dpu.git
 [submodule "src/ptf-py3"]
 	path = src/ptf-py3
 	url = https://github.com/p4lang/ptf.git
@@ -117,10 +117,10 @@
 	url = https://github.com/sonic-net/sonic-dhcp-relay.git
 [submodule "src/sonic-host-services"]
 	path = src/sonic-host-services
-	url = https://github.com/nvidia-sonic/sonic-host-services
+	url = ../sonic-host-services.git
 [submodule "src/sonic-gnmi"]
 	path = src/sonic-gnmi
-	url = https://github.com/nvidia-sonic/sonic-gnmi.git
+	url = ../sonic-gnmi.git
 [submodule "src/sonic-genl-packet"]
 	path = src/sonic-genl-packet
 	url = https://github.com/sonic-net/sonic-genl-packet
