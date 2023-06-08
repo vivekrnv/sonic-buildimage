@@ -1,8 +1,9 @@
-From 12627632ce98ebb0e64495458d84b296df84af28 Mon Sep 17 00:00:00 2001
+From 6e7761fd1e445b4dedecb3b90053fe5687ef285d Mon Sep 17 00:00:00 2001
 From: Vivek Reddy <vkarri@nvidia.com>
 Date: Fri, 19 May 2023 23:12:45 +0000
-Subject: [PATCH] zebra: Ignore route from default table and Prevent possible
- crashed from use after free
+Subject: [PATCH] From 12627632ce98ebb0e64495458d84b296df84af28 Mon Sep 17
+ 00:00:00 2001 Subject: [PATCH] zebra: Ignore route from default table and
+ Prevent possible  crashed from use after free
 
 a) Sonic has a host configuration process that places default routes into
 the RT_TABLE_DEFAULT to allow for working without vrf's.  Additionally
@@ -30,14 +31,14 @@ of freed data to data we know that has not been freed yet.
 Signed-off-by: Donald Sharp <sharpd@nvidia.com>
 Signed-off-by: Vivek Reddy <vkarri@nvidia.com>
 ---
- zebra/zebra_fpm_netlink.c | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+ zebra/zebra_fpm_netlink.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
 diff --git a/zebra/zebra_fpm_netlink.c b/zebra/zebra_fpm_netlink.c
-index 34be9fb39..233554146 100644
+index 34be9fb39..1339974e1 100644
 --- a/zebra/zebra_fpm_netlink.c
 +++ b/zebra/zebra_fpm_netlink.c
-@@ -279,20 +279,15 @@ static int netlink_route_info_fill(struct netlink_route_info *ri, int cmd,
+@@ -279,17 +279,13 @@ static int netlink_route_info_fill(struct netlink_route_info *ri, int cmd,
  				   rib_dest_t *dest, struct route_entry *re)
  {
  	struct nexthop *nexthop;
@@ -55,11 +56,8 @@ index 34be9fb39..233554146 100644
 +	ri->nlmsg_pid = pid;
  
  	ri->nlmsg_type = cmd;
--	ri->rtm_table = zvrf_id(rib_dest_vrf(dest));
- 	ri->rtm_protocol = RTPROT_UNSPEC;
- 
- 	/*
-@@ -307,6 +302,12 @@ static int netlink_route_info_fill(struct netlink_route_info *ri, int cmd,
+ 	ri->rtm_table = zvrf_id(rib_dest_vrf(dest));
+@@ -307,6 +303,11 @@ static int netlink_route_info_fill(struct netlink_route_info *ri, int cmd,
  		return 0;
  	}
  
@@ -68,7 +66,6 @@ index 34be9fb39..233554146 100644
 +		return 0;
 +	}
 +
-+	ri->rtm_table = zvrf_id(rib_dest_vrf(dest));
  	ri->rtm_protocol = netlink_proto_from_route_type(re->type);
  	ri->rtm_type = RTN_UNICAST;
  	ri->metric = &re->metric;
