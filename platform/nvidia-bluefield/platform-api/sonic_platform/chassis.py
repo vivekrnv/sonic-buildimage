@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +26,7 @@ try:
     from . import utils
     from .device_data import DeviceDataManager
     from .sfp import Sfp
+    from .sfp_event import SfpEvent
     from .eeprom import Eeprom
     from .watchdog import Watchdog
 except ImportError as e:
@@ -61,6 +62,7 @@ class Chassis(ChassisBase):
         for index in range(sfp_count):
             sfp_module = Sfp(index, self.device_data.get_sfp_data(index))
             self._sfp_list.append(sfp_module)
+        self._sfp_event = SfpEvent(self._sfp_list)
 
     def get_sfp(self, index):
         return super(Chassis, self).get_sfp(index - 1)
@@ -97,8 +99,8 @@ class Chassis(ChassisBase):
                       indicates that fan 0 has been removed, fan 2
                       has been inserted and sfp 11 has been removed.
         """
-        sleep(timeout)
-        return True, {'sfp':{}}
+
+        return self._sfp_event.get_sfp_event(timeout)
 
     def get_eeprom(self):
         """
