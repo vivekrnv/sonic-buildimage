@@ -257,11 +257,7 @@ printf_msg()
 }
 
 depmod -a $KERNEL_VERSION > /dev/null 2>&1
-insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio.ko
-insmod /usr/lib/modules/5.10.0-8-2-arm64/kernel/drivers/virtio/virtio_ring.ko
-insmod /efivarfs.ko
 insmod /mlx-bootctl.ko
-insmod /mlxbf-tmfifo.ko
 insmod /sdhci-of-dwcmshc.ko
 insmod /sbsa_gwdt.ko
 /usr/sbin/watchdog
