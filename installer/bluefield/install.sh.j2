@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+#!/bin/bash
 
 # This script will run after being booted into a installer kernel 
 # This will setup the disk, grub etc for the actual SONiC to boot from
@@ -36,6 +37,9 @@ CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 rshimlog=`which bfrshlog 2> /dev/null`
 distro="SONiC"
+
+device_nvmv=/dev/nvme0n1
+device_emmc=/dev/mmcblk0
 
 capsule=/lib/firmware/mellanox/boot/capsule/boot_update2.cap
 
@@ -98,8 +102,38 @@ ex() {
     fi
 }
 
-log "$distro installation started"
-device=${device:-/dev/mmcblk0}
+if (lspci -n -d 15b3: | grep -wq 'a2dc'); then
+	module=BF3
+	if [[ $DHCP_CLASS_ID != "" ]]; then
+		DHCP_CLASS_ID="BF3Client"
+	fi
+else
+	module=BF2
+	if [[ $DHCP_CLASS_ID != "" ]]; then
+		DHCP_CLASS_ID="BF2Client"
+	fi
+fi
+
+log "$distro installation started on $module module"
+
+default_device_label="SONiC-OS"
+
+device_label=${device_label:-$default_device_label}
+
+if [[ $module == "BF3" ]]; then
+	default_device=$device_nvmv
+	if [[ $(blkid -L $device_label) =~ ${device_emmc} ]] && [[ -b ${device_emmc}p1 ]]; then
+		# Delete EFi boot partition on eMMC device. This is required to migrate to NVME device and boot from NVME correctly
+		sfdisk --force ${device_emmc} --delete 1
+	fi
+else
+	default_device=$device_emmc
+fi
+
+device=${device:-$default_device}
+
+log "Using $device device and $device_label device label"
+
 # We cannot use wait-for-root as it expects the device to contain a
 # known filesystem, which might not be the case here.
 while [ ! -b $device ]; do
@@ -132,20 +166,22 @@ first-lba: $reserved
 last-lba: $disk_end
 
 ${device}p1 : start=$boot_start, size=$boot_size, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, uuid=CEAEF8AC-B559-4D83-ACB1-A4F45B26E7F0, name="EFI System", bootable
-${device}p2 : start=$root_start ,size=$root_size, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=F093FF4B-CC26-408F-81F5-FF2DD6AE139F, name="SONiC-OS"
+${device}p2 : start=$root_start ,size=$root_size, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=F093FF4B-CC26-408F-81F5-FF2DD6AE139F, name=$device_label
 EOF
 sync
 
 # Refresh partition table
 ex blockdev --rereadpt ${device}
+
 if function_exists bfb_pre_install; then
 	log "Running bfb_pre_install from bf.cfg"
 	bfb_pre_install
 fi
+
 # Generate some entropy
 ex mke2fs -F ${device}p2
 ex mkdosfs ${device}p1 -n "system-boot"
-ex mkfs.ext4 -F ${device}p2 -L "SONiC-OS"
+ex mkfs.ext4 -F ${device}p2 -L $device_label
 ex fsck.vfat -a ${device}p1
 mkdir -p /mnt
 ex mount -t ext4 ${device}p2 /mnt
@@ -181,12 +217,6 @@ sync
 
 log "Installing GRUB"
 
-ex grub-install \
-    --bootloader-id="SONiC-OS" \
-    --efi-directory=/mnt/boot/efi/ \
-    --boot-directory=/mnt/ \
-    ${device}p1
-
 # Create a minimal grub.cfg that allows for:
 #   - configure the serial console
 #   - allows for grub-reboot to work
@@ -196,7 +226,7 @@ grub_cfg=$(mktemp)
 
 # Modify GRUB_CMDLINE_LINUX from bf.cfg file if required
 
-if (lspci -n -d 15b3: | grep -wq 'a2dc'); then
+if [[ $module == "BF3" ]]; then
     DEFAULT_GRUB_CMDLINE_LINUX=$BF3_GRUB_CFG
 else
     DEFAULT_GRUB_CMDLINE_LINUX=$BF2_GRUB_CFG
@@ -231,19 +261,6 @@ sync
 log "GRUB CFG Updated"
 
 # Update HW-dependant files
-if (/usr/bin/lspci -n -d 15b3: | grep -wq 'a2d2'); then
-    # BlueField-1
-    if [ ! -n "$DHCP_CLASS_ID" ]; then
-        DHCP_CLASS_ID="BF1Client"
-    fi
-elif (/usr/bin/lspci -n -d 15b3: | grep -wq 'a2d6'); then
-    # BlueField-2
-    if [ ! -n "$DHCP_CLASS_ID" ]; then
-        DHCP_CLASS_ID="BF2Client"
-    fi
-fi
-
-ex echo $DHCP_CLASS_ID
 
 umount /mnt/boot/efi
 umount /mnt
@@ -269,10 +286,25 @@ fi
 
 log "Updating EFIBootMgr"
 
-if efibootmgr | grep SONiC-OS; then
-    ex efibootmgr -b "$(efibootmgr | grep SONiC-OS | cut -c 5-8)" -B
+bfbootmgr --cleanall > /dev/null 2>&1
+
+# Update boot partition
+mount -t efivarfs none /sys/firmware/efi/efivars
+/bin/rm -f /sys/firmware/efi/efivars/Boot* > /dev/null 2>&1
+/bin/rm -f /sys/firmware/efi/efivars/dump-* > /dev/null 2>&1
+
+if [ -x /usr/sbin/grub-install ]; then
+	mount ${device}p2 /mnt/
+	mount ${device}p1 /mnt/boot/efi/
+	grub-install ${device}p1 --bootloader-id=$device_label --locale-directory=/mnt/usr/share/locale --efi-directory=/mnt/boot/efi/ --boot-directory=/mnt/
+	umount /mnt/boot/efi
+	umount /mnt
+else
+	if efibootmgr | grep $device_label; then
+		ex efibootmgr --delete-bootnum  -b "$(efibootmgr | grep $device_label | cut -c 5-8)"
+	fi
+	ex efibootmgr -c -d "$device" -p 1 -L $device_label -l "\EFI\\$device_label\grubaa64.efi"
 fi
-ex efibootmgr -c -d "$device" -p 1 -L SONiC-OS -l "\EFI\SONiC-OS\grubaa64.efi"
 
 BFCFG=`which bfcfg 2> /dev/null`
 if [ -n "$BFCFG" ]; then
