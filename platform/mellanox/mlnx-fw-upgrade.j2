@@ -191,11 +191,7 @@ function GetMstDevice() {
 function RunCmd() {
     local ERROR_CODE="${EXIT_SUCCESS}"
 
-    if [[ "${VERBOSE_LEVEL}" -eq "${VERBOSE_MAX}" ]]; then
-        eval "$@"
-    else
-        eval "$@" &>/dev/null
-    fi
+    eval "$@"
 
     ERROR_CODE="$?"
     if [[ "${ERROR_CODE}" != "${EXIT_SUCCESS}" ]]; then
