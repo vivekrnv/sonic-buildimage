@@ -47,6 +47,18 @@ if [ $(id -u) -ne 0 ]
     exit 1
 fi
 
+if (lspci -n -d 15b3: | grep -wq 'a2dc'); then
+	module=BF3
+else
+	module=BF2
+fi
+
+active_partition=$(findmnt -n -o SOURCE /host)
+if [[ $active_partition == "" ]]; then
+    echo "Failed to get active partition!"
+    exit 1
+fi
+
 if [ -r /etc/machine.conf ]; then
     . /etc/machine.conf
 elif [ -r /host/machine.conf ]; then
@@ -112,17 +124,17 @@ demo_grub_entry="$demo_volume_revision_label"
 old_sonic_menuentry=$(cat /host/grub/grub.cfg | sed "/$running_sonic_revision/,/}/!d")
 
 # Find the grub_cfg_root
-device=/dev/mmcblk0
-uuid=$(blkid ${device}p2 | sed -ne 's/.* UUID=\"\([^"]*\)\".*/\1/p')
+partition=$active_partition
+uuid=$(blkid ${partition} | sed -ne 's/.* UUID=\"\([^"]*\)\".*/\1/p')
 if [ -z "$uuid" ]; then
-	grub_cfg_root=${device}p2
+	grub_cfg_root=${partition}
 else
 	grub_cfg_root=UUID=$uuid
 fi
 
 grub_cfg=$(mktemp)
 
-if (lspci -n -d 15b3: | grep -wq 'a2dc'); then
+if [[ $module == "BF3" ]]; then
     DEFAULT_GRUB_CMDLINE_LINUX=$BF3_GRUB_CFG
 else
     DEFAULT_GRUB_CMDLINE_LINUX=$BF2_GRUB_CFG
