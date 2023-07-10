@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
@@ -15,24 +16,17 @@
 # limitations under the License.
 #
 
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/gh-helpers.mk
+tag=$1
+package=$2
+gh_token=$3
 
-BF3_FW_BASE_URL =
+repo=nvidia-sonic/sonic-bluefield-packages
+assetsfile='/tmp/dpu-sdk-fw-assets-'$tag
+lockfile='/tmp/dpu-sdk-fw-assets-lock-'$tag
 
-BF3_FW_VERSION = 32.98.9936
+if [ ! -f $assetsfile ]; then
+  cmd="/usr/bin/curl -s -L -f -H 'Authorization: token $gh_token' 'https://api.github.com/repos/$repo/releases/tags/dpu-$tag' | jq -r '.assets[] | (.name) + \" \" + (.id | tostring)'"
+  eval "flock -w 5 $lockfile $cmd > $assetsfile"
+fi
 
-BF3_FW_FILE = fw-BlueField-3-rel-$(subst .,_,$(BF3_FW_VERSION)).mfa
-
-ifeq ($(BF3_FW_BASE_URL),)
-$(eval $(foreach fw,$(BF3_FW_FILE),$(call make_url_fw,$(fw))))
-else
-$(BF3_FW_FILE)_URL = $(BF3_FW_BASE_URL)/$(BF3_FW_FILE)
-endif
-
-BF_FW_FILES = $(BF3_FW_FILE)
-
-export BF3_FW_FILE
-export BF_FW_FILES
-
-SONIC_ONLINE_FILES += $(BF_FW_FILES)
-
+echo $(grep $package $assetsfile | awk '{print $2}')

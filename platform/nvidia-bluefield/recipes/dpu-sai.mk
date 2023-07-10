@@ -15,9 +15,14 @@
 # limitations under the License.
 #
 
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/gh-helpers.mk
+
 DPU_SAI_VERSION = SAIBuild0.0.23.0
 
-export DPU_SAI_VERSION
+# Place here URL where SAI sources exist
+DPU_SAI_SOURCE_BASE_URL=
+
+export DPU_SAI_VERSION DPU_SAI_SOURCE_BASE_URL
 
 DPU_SAI = mlnx-sai_1.mlnx.$(DPU_SAI_VERSION)_arm64.deb
 $(DPU_SAI)_SRC_PATH = $(PLATFORM_PATH)/dpu-sai
@@ -26,7 +31,14 @@ $(DPU_SAI)_RDEPENDS = $(SDN_APPL)
 $(eval $(call add_conflict_package,$(DPU_SAI),$(LIBSAIVS_DEV)))
 DPU_SAI_DBGSYM = mlnx-sai-dbgsym_1.mlnx.$(DPU_SAI_VERSION)_arm64.deb
 $(eval $(call add_derived_package,$(DPU_SAI),$(DPU_SAI_DBGSYM)))
+
+ifneq ($(DPU_SAI_SOURCE_BASE_URL), )
 SONIC_MAKE_DEBS += $(DPU_SAI)
+else
+$(eval $(foreach deb,$(DPU_SAI) $(DPU_SAI_DBGSYM),$(call make_url_sai,$(deb))))
+SONIC_ONLINE_DEBS += $(DPU_SAI)
+endif
+
 
 export DPU_SAI
 export DPU_SAI_DBGSYM

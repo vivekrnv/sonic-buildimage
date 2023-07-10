@@ -15,11 +15,15 @@
 # limitations under the License.
 #
 
+include $(PLATFORM_PATH)/$(RECIPE_DIR)/gh-helpers.mk
+
 SDK_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin
 
 # Place here URL where SDK sources exist
 SDK_SOURCE_BASE_URL =
 SDK_VERSION = 23.7-RC6
+
+SDK_COLLECTX_URL = https://linux.mellanox.com/public/repo/doca/1.5.2/debian11/aarch64/
 
 ifneq ($(SDK_SOURCE_BASE_URL), )
 SDK_FROM_SRC = y
@@ -27,7 +31,8 @@ SDK_SOURCE_URL = $(SDK_SOURCE_BASE_URL)/$(subst -,/,$(SDK_VERSION))
 SDK_VERSIONS_FILE = "$(SDK_SOURCE_URL)/VERSIONS_FOR_SONIC_BUILD"
 else
 SDK_FROM_SRC = n
-SDK_VERSIONS_FILE = "$(SDK_BASE_PATH)/VERSIONS"
+SDK_VERSIONS_FILE = $(PLATFORM_PATH)/sdk-src/VERSIONS
+$(eval $(call get_sdk_version_file_gh, $(SDK_VERSIONS_FILE)))
 endif
 
 export SDK_VERSION SDK_SOURCE_URL
@@ -42,7 +47,7 @@ endef
 
 SDK_DEBS =
 SDK_SRC_TARGETS =
-SDK_COPY_TARGETS =
+SDK_ONLINE_TARGETS =
 
 # OFED and derived packages
 
@@ -196,14 +201,16 @@ SDK_SRC_TARGETS += $(DPDK)
 # Collectx
 
 COLLECTX_CLXAPI = collectx-1.11.0-6421322.aarch64_debian-11.2-clxapi.deb
+$(COLLECTX_CLXAPI)_URL = $(SDK_COLLECTX_URL)/collectx_1.11.1-6607484-debian11.2-aarch64-clxapi.deb
 $(COLLECTX_CLXAPI)_RDEPENDS = $(IB_UMAD)
 
 COLLECTX_CLXAPI_DEV = collectx-1.11.0-6421322.aarch64_debian-11.2-clxapidev.deb
+$(COLLECTX_CLXAPI_DEV)_URL = $(SDK_COLLECTX_URL)/collectx_1.11.1-6607484-debian11.2-aarch64-clxapidev.deb
 $(COLLECTX_CLXAPI_DEV)_DEPENDS = $(COLLECTX_CLXAPI)
 $(COLLECTX_CLXAPI_DEV)_RDEPENDS = $(IB_UMAD)
 
 SDK_DEBS += $(COLLECTX_CLXAPI) $(COLLECTX_CLXAPI_DEV)
-SDK_COPY_TARGETS += $(COLLECTX_CLXAPI) $(COLLECTX_CLXAPI_DEV)
+SDK_ONLINE_TARGETS += $(COLLECTX_CLXAPI) $(COLLECTX_CLXAPI_DEV)
 
 # RXP compiler and derived packages
 
@@ -294,21 +301,14 @@ export SDN_APPL_DERIVED_DEBS
 SDK_DEBS += $(SDN_APPL) $(SDN_APPL_DERIVED_DEBS)
 SDK_SRC_TARGETS += $(SDN_APPL)
 
-define make_path
-	$(1)_PATH = $(SDK_BASE_PATH)
-
-endef
-
-$(eval $(foreach deb, $(SDK_DEBS),$(call make_path,$(deb))))
-
-SONIC_COPY_DEBS += $(SDK_COPY_TARGETS)
-
 ifeq ($(SDK_FROM_SRC), y)
 SONIC_MAKE_DEBS += $(SDK_SRC_TARGETS)
+SONIC_ONLINE_DEBS += $(SDK_ONLINE_TARGETS)
 else
-SONIC_COPY_DEBS += $(SDK_SRC_TARGETS)
+$(eval $(foreach deb,$(SDK_SRC_TARGETS) $(SDK_ONLINE_TARGETS) $(SDK_DEBS),$(call make_url_sdk,$(deb))))
+SONIC_ONLINE_DEBS += $(SDK_SRC_TARGETS) $(SDK_ONLINE_TARGETS)
 endif
 
-sdk-packages: $(addprefix $(DEBS_PATH)/, $(SDK_COPY_TARGETS) $(SDK_SRC_TARGETS))
+sdk-packages: $(addprefix $(DEBS_PATH)/, $(SDK_ONLINE_TARGETS) $(SDK_SRC_TARGETS))
 
 SONIC_PHONY_TARGETS += sdk-packages

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,9 @@ DERIVED_TARGETS = $(DPU_SAI_DBGSYM)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
-	pushd sai-dpu
+	rm -rf mlnx_sai_src
+	wget -c $(DPU_SAI_SOURCE_BASE_URL)/$(DPU_SAI_VERSION).tar.gz -O - | tar -xz --one-top-level=mlnx_sai_src
+	pushd mlnx_sai_src
 	pushd mlnx_sai
 
 	# Build the package 

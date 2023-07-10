@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
@@ -15,24 +16,13 @@
 # limitations under the License.
 #
 
-include $(PLATFORM_PATH)/$(RECIPE_DIR)/gh-helpers.mk
+sdk_ver=$1
+path=$2
+gh_token=$3
 
-BF3_FW_BASE_URL =
+repo=nvidia-sonic/sonic-bluefield-packages
 
-BF3_FW_VERSION = 32.98.9936
+asset_id=$($(dirname "$0")/get_package_gh_asset_id.sh $sdk_ver VERSIONS_FOR_SONIC_BUILD $gh_token)
 
-BF3_FW_FILE = fw-BlueField-3-rel-$(subst .,_,$(BF3_FW_VERSION)).mfa
-
-ifeq ($(BF3_FW_BASE_URL),)
-$(eval $(foreach fw,$(BF3_FW_FILE),$(call make_url_fw,$(fw))))
-else
-$(BF3_FW_FILE)_URL = $(BF3_FW_BASE_URL)/$(BF3_FW_FILE)
-endif
-
-BF_FW_FILES = $(BF3_FW_FILE)
-
-export BF3_FW_FILE
-export BF_FW_FILES
-
-SONIC_ONLINE_FILES += $(BF_FW_FILES)
-
+cmd="/usr/bin/curl -s -L -f -H 'Accept: application/octet-stream' -H 'Authorization: token $gh_token' --output $path https://api.github.com/repos/$repo/releases/assets/$asset_id"
+eval "$cmd"
