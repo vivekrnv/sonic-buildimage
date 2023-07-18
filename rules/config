@@ -138,13 +138,13 @@ INCLUDE_GNMI_TEST = y
 INCLUDE_ICCPD = n
 
 # INCLUDE_SFLOW - build docker-sflow for sFlow support
-INCLUDE_SFLOW = n
+INCLUDE_SFLOW = y
 
 # ENABLE_SFLOW_DROPMON - support of drop packets monitoring feature for sFlow deamon
 ENABLE_SFLOW_DROPMON = n
 
 # INCLUDE_MGMT_FRAMEWORK - build docker-sonic-mgmt-framework for CLI and REST server support
-INCLUDE_MGMT_FRAMEWORK = n
+INCLUDE_MGMT_FRAMEWORK = y
 
 # ENABLE_HOST_SERVICE_ON_START - enable sonic-host-server for mgmt-framework and/or
 # telemetry containers to access host functionality by default
@@ -154,10 +154,10 @@ ENABLE_HOST_SERVICE_ON_START = y
 INCLUDE_RESTAPI = n
 
 # INCLUDE_NAT - build docker-nat for nat support
-INCLUDE_NAT = n
+INCLUDE_NAT = y
 
 # INCLUDE_DHCP_RELAY - build and install dhcp-relay package
-INCLUDE_DHCP_RELAY = n
+INCLUDE_DHCP_RELAY = y
 
 # INCLUDE_P4RT - build docker-p4rt for P4RT support
 INCLUDE_P4RT = y
@@ -174,13 +174,13 @@ ENABLE_AUTO_TECH_SUPPORT = y
 ENABLE_NATIVE_WRITE = y
 
 # INCLUDE_MACSEC - build docker-macsec for macsec support
-INCLUDE_MACSEC = n
+INCLUDE_MACSEC = y
 
 # INCLUDE_TEAMD - build docker-teamd for LAG protocol support
-INCLUDE_TEAMD ?= n
+INCLUDE_TEAMD ?= y
 
 # INCLUDE_ROUTER_ADVERTISER - build docker-router-advertiser for router advertisements support
-INCLUDE_ROUTER_ADVERTISER ?= n
+INCLUDE_ROUTER_ADVERTISER ?= y
 
 # INCLUDE_KUBERNETES - if set to y kubernetes packages are installed to be able to
 # run as worker node in kubernetes cluster.
@@ -278,7 +278,7 @@ REGISTRY_SERVER_PATH ?=
 BUILD_MULTIASIC_KVM = n
 
 # INCLUDE_MUX - build docker-mux for dual ToR (Gemini)
-INCLUDE_MUX = n
+INCLUDE_MUX = y
 
 # ENABLE_ASAN - enable address sanitizer
 ENABLE_ASAN ?= n
