@@ -16,14 +16,14 @@
 #
 
 # Bluefied Software Distribution Version
-BSD_VER = 4.0.3
-BSD_REV = 12704
+BFSOC_VERSION = 4.0.3
+BFSOC_REVISION = 12704
 BFB_IMG_TYPE = prod
 
-BSD_BASE_URL = https://linux.mellanox.com/public/repo/bluefield/${BSD_VER}/
+BSD_BASE_URL = https://linux.mellanox.com/public/repo/bluefield/${BFSOC_VERSION}/
 BSD_BASE_SOURCE_URL = $(BSD_BASE_URL)/extras/SOURCES/
 
-export BSD_VER BSD_REV BSD_BASE_SOURCE_URL BFB_IMG_TYPE
+export BFSOC_VERSION BFSOC_REVISION BSD_BASE_SOURCE_URL BFB_IMG_TYPE
 
 BF2_PLATFORM_DRIVERS =
 
@@ -170,10 +170,10 @@ export RSHIM_DRIVER_VERSION RSHIM_DEB
 
 ifeq ($(BFB_IMG_TYPE), prod)
 BOOTIMAGES_BASE_URL = $(BSD_BASE_URL)/bootimages/prod
-BOOTIMAGES = mlxbf-bootimages-signed_$(BSD_VER)-$(BSD_REV)_arm64.deb
+BOOTIMAGES = mlxbf-bootimages-signed_$(BFSOC_VERSION)-$(BFSOC_REVISION)_arm64.deb
 else
 BOOTIMAGES_BASE_URL = $(BSD_BASE_URL)/bootimages/dev
-BOOTIMAGES = mlxbf-bootimages-devsigned_$(BSD_VER)-$(BSD_REV)_arm64.deb
+BOOTIMAGES = mlxbf-bootimages-devsigned_$(BFSOC_VERSION)-$(BFSOC_REVISION)_arm64.deb
 endif
 
 $(BOOTIMAGES)_URL = $(BOOTIMAGES_BASE_URL)/$(BOOTIMAGES)
