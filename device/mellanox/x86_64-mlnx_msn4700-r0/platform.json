@@ -690,41 +690,33 @@
         "Ethernet224": {
             "index": "29,29,29,29,29,29,29,29", 
             "lanes": "224,225,226,227,228,229,230,231", 
+            "role": "Internal",
             "breakout_modes": {
-                "1x400G[200G,100G,50G,40G,25G,10G,1G]": ["etp29"],
-                "2x200G[100G,50G,40G,25G,10G,1G]": ["etp29a", "etp29b"],
-                "4x100G[50G,25G,10G,1G]": ["etp29a", "etp29b", "etp29c", "etp29d"],
-                "4x25G(4)[10G,1G]": ["etp29a", "etp29b", "etp29c", "etp29d"]
+                "1x200G": ["etp29"]
             }
         }, 
         "Ethernet232": {
             "index": "30,30,30,30,30,30,30,30", 
             "lanes": "232,233,234,235,236,237,238,239", 
+            "role": "Internal",
             "breakout_modes": {
-                "1x400G[200G,100G,50G,40G,25G,10G,1G]": ["etp30"],
-                "2x200G[100G,50G,40G,25G,10G,1G]": ["etp30a", "etp30b"],
-                "4x100G[50G,25G,10G,1G]": ["etp30a", "etp30b", "etp30c", "etp30d"],
-                "4x25G(4)[10G,1G]": ["etp30a", "etp30b", "etp30c", "etp30d"]
+                "1x200G": ["etp30"]
             }
         }, 
         "Ethernet240": {
             "index": "31,31,31,31,31,31,31,31", 
             "lanes": "240,241,242,243,244,245,246,247", 
+            "role": "Internal",
             "breakout_modes": {
-                "1x400G[200G,100G,50G,40G,25G,10G,1G]": ["etp31"],
-                "2x200G[100G,50G,40G,25G,10G,1G]": ["etp31a", "etp31b"],
-                "4x100G[50G,25G,10G,1G]": ["etp31a", "etp31b", "etp31c", "etp31d"],
-                "4x25G(4)[10G,1G]": ["etp31a", "etp31b", "etp31c", "etp31d"]
+                "1x200G": ["etp31"]
             }
         }, 
         "Ethernet248": {
             "index": "32,32,32,32,32,32,32,32", 
             "lanes": "248,249,250,251,252,253,254,255", 
+            "role": "Internal",
             "breakout_modes": {
-                "1x400G[200G,100G,50G,40G,25G,10G,1G]": ["etp32"],
-                "2x200G[100G,50G,40G,25G,10G,1G]": ["etp32a", "etp32b"],
-                "4x100G[50G,25G,10G,1G]": ["etp32a", "etp32b", "etp32c", "etp32d"],
-                "4x25G(4)[10G,1G]": ["etp32a", "etp32b", "etp32c", "etp32d"]
+                "1x200G": ["etp32"]
             }
         }
     }
