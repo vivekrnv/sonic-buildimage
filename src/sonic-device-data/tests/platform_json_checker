@@ -7,6 +7,7 @@ import sys
 
 # Global variable
 PORT_ATTRIBUTES = ["index", "lanes", "breakout_modes"]
+OPTIONAL_PORT_ATTRIBUTES = ["role"]
 ATTR_LEN = len(PORT_ATTRIBUTES)
 PORT_REG = "Ethernet(\d+)"
 PLATFORM_JSON = '*platform.json'
@@ -88,7 +89,7 @@ def check_chassis_dict(chassis_dict):
 
 def check_port_attr(port_attr):
     for each_key in port_attr:
-        if each_key not in PORT_ATTRIBUTES:
+        if each_key not in PORT_ATTRIBUTES and each_key not in OPTIONAL_PORT_ATTRIBUTES:
             print("Error: "+ each_key + " is not the correct Port attribute.")
             return False
 
@@ -130,7 +131,7 @@ def check_file(platform_json_file):
             total_attr = len(list(port_dict[each_port].keys()))
             port_attr = port_dict[each_port]
 
-            if total_attr != ATTR_LEN:
+            if total_attr < ATTR_LEN:
                 missing_attr = ', '.join(set(PORT_ATTRIBUTES).difference(list(port_attr)))
                 print("Error: " + missing_attr + " of " + each_port + " is/are missing")
                 return False
