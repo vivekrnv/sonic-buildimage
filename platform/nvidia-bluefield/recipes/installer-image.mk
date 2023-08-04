@@ -45,8 +45,14 @@ $(SONIC_BF2_IMAGE_BASE)_INSTALLS += $(ETHTOOL) \
                                     $(OFED_KERNEL_UTILS) \
                                     $(MLNX_IPROUTE2)
 
-$(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(SONIC_INSTALL_DOCKER_IMAGES)
+DISABLED_DOCKERS = $(DOCKER_SFLOW) $(DOCKER_MGMT_FRAMEWORK) $(DOCKER_NAT) $(DOCKER_TEAMD) $(DOCKER_ROUTER_ADVERTISER) $(DOCKER_MUX)
+DISABLED_PACKAGES_LOCAL = $(DOCKER_DHCP_RELAY) $(DOCKER_MACSEC)
+$(info Disabling the following docker images: $(DISABLED_DOCKERS))
+$(info Disabling the following packages:  $(DISABLED_PACKAGES_LOCAL))
 
+SONIC_PACKAGES_LOCAL := $(filter-out $(DISABLED_PACKAGES_LOCAL), $(SONIC_PACKAGES_LOCAL))
+
+$(SONIC_BF2_IMAGE_BASE)_DOCKERS = $(filter-out $(DISABLED_DOCKERS), $(SONIC_INSTALL_DOCKER_IMAGES))
 $(SONIC_BF2_IMAGE_BASE)_FILES = $(BF_FW_FILES)
 
 # A compressed archive which contains individual files required for PXE boot
