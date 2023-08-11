@@ -259,6 +259,9 @@ function postStartAction()
             # This flag will be set to "1" after DB migration/initialization is completed as part of config-setup
             $SONIC_DB_CLI CONFIG_DB SET "CONFIG_DB_INITIALIZED" "0"
         else
+            if [[ ("$BOOT_TYPE" != "warm" ]]; then
+                $SONIC_DB_CLI CONFIG_DB SET "CONFIG_DB_INITIALIZED" "0"
+            fi
             # this is not a first time boot to a new image. Datbase container starts w/ old pre-existing config
             if [[ -x /usr/local/bin/db_migrator.py ]]; then
                 # Migrate the DB to the latest schema version if needed
