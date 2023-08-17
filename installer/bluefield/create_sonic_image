@@ -30,7 +30,6 @@ CHROOT_DIR=
 INITRD=
 VMLINUZ=
 MODULES_DIR=
-EFIVARS_MOD=
 
 CDIR=/sonic/
 SDIR=$CDIR/installer/bluefield
@@ -205,11 +204,6 @@ validate_config() {
 
     if [[ ! -f $SDHCI_OF_DWCMSHC_DRIVER ]]; then
         echo "ERROR: Bootctl driver $SDHCI_OF_DWCMSHC_DRIVER does not exist"
-        exit 1
-    fi
-
-    if [[ ! -f $EFIVARS_MOD  ]]; then
-        echo "ERROR: EFIVARS driver $EFIVARS_MOD does not exist"
         exit 1
     fi
 
@@ -397,7 +391,6 @@ create_bfb_image() {
     cp $BOOTCTL_DRIVER .
     cp $TMFIFO_DRIVER .
     cp $SDHCI_OF_DWCMSHC_DRIVER .
-    cp $EFIVARS_MOD .
     cp $WATCHDOG .
 
     mkdir -p ./lib/firmware/mellanox/boot/
@@ -486,7 +479,6 @@ main() {
         INITRD=$CDIR/$FILESYSTEM_ROOT/boot/initrd.img-$KERNEL_VERSION
         VMLINUZ=$CDIR/$FILESYSTEM_ROOT/boot/vmlinuz-$KERNEL_VERSION
         MODULES_DIR=$CDIR/$FILESYSTEM_ROOT/lib/modules/$KERNEL_VERSION
-        EFIVARS_MOD=$MODULES_DIR/kernel/fs/efivarfs/efivarfs.ko
         WATCHDOG=$MODULES_DIR/kernel/drivers/watchdog/sbsa_gwdt.ko
 
         validate_config

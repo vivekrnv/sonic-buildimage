@@ -87,18 +87,14 @@ if [ -e /etc/bf.cfg ]; then
 fi
 
 ex() {
-    if [[ ${DEBUG} == "all" ]]; then
-        log "Executing command: $@"
-    fi
+    echo "Executing command: $@" > /dev/ttyAMA0
 
     local rc=0
-    $@
+    $@ 2>&1 > /dev/ttyAMA0
     rc=$?
 
-    if [[ ${DEBUG} == "all" ]] || [[ ${DEBUG} == "error" ]]; then
-        if [[ $rc -ne 0 ]]; then
-            log "RC: $rc"
-        fi
+    if [[ $rc -ne 0 ]]; then
+        echo "RC: $rc" > /dev/ttyAMA0
     fi
 }
 
@@ -247,7 +243,6 @@ else
 	grub_cfg_root=UUID=$uuid
 fi
 
-
 cat <<EOF >> $grub_cfg
 {{GRUB_CFG}}
 EOF
@@ -270,36 +265,39 @@ ex blockdev --rereadpt ${device}
 ex fsck.vfat -a ${device}p1
 sync
 
+if function_exists bfb_pre_bootmgr_update; then
+    log "Running bfb_pre_bootmgr_update from bf.cfg"
+    bfb_pre_bootmgr_update
+fi
+
 if [ -e ${capsule} ]; then
     log "Update capsule: ${capsule}"
     ex bfrec --capsule ${capsule}
 fi
 
-ex bfbootmgr --cleanall
-
-# Make it the boot partition
-mounted_efivarfs=0
-if [ ! -d /sys/firmware/efi/efivars ]; then
-	ex mount -t efivarfs none /sys/firmware/efi/efivars
-	mounted_efivarfs=1
-fi
-
 log "Updating EFIBootMgr"
 
-bfbootmgr --cleanall > /dev/null 2>&1
+if [ ! -d /sys/firmware/efi/efivars ]; then
+	ex mount -t efivarfs none /sys/firmware/efi/efivars
+fi
 
-# Update boot partition
-mount -t efivarfs none /sys/firmware/efi/efivars
-/bin/rm -f /sys/firmware/efi/efivars/Boot* > /dev/null 2>&1
-/bin/rm -f /sys/firmware/efi/efivars/dump-* > /dev/null 2>&1
+# Cleanup boot partition
+ex bfbootmgr --cleanall
+ex rm -f /sys/firmware/efi/efivars/Boot*
+ex rm -f /sys/firmware/efi/efivars/dump-*
 
-if [ -x /usr/sbin/grub-install ]; then
-	mount ${device}p2 /mnt/
-	mount ${device}p1 /mnt/boot/efi/
-	grub-install ${device}p1 --bootloader-id=$device_label --locale-directory=/mnt/usr/share/locale --efi-directory=/mnt/boot/efi/ --boot-directory=/mnt/
-	umount /mnt/boot/efi
-	umount /mnt
+# If any of the following commands fail or the image is not booting after the installation check if efivars driver is available and loaded
+if [[ $(which grub-install) != "" ]]; then
+	log "Installing grub with grub-install utility"
+
+	ex mount ${device}p2 /mnt/
+	ex mount ${device}p1 /mnt/boot/efi/
+	ex grub-install ${device}p1 --bootloader-id=$device_label --locale-directory=/mnt/usr/share/locale --efi-directory=/mnt/boot/efi/ --boot-directory=/mnt/
+	ex umount /mnt/boot/efi
+	ex umount /mnt
 else
+	log "Updating bootmgr with efibootmgr utility"
+
 	if efibootmgr | grep $device_label; then
 		ex efibootmgr --delete-bootnum  -b "$(efibootmgr | grep $device_label | cut -c 5-8)"
 	fi
@@ -330,10 +328,6 @@ EOF
 	if [ -e /etc/bf.cfg.orig ]; then
 		mv /etc/bf.cfg.orig /etc/bf.cfg
 	fi
-fi
-
-if [ $mounted_efivarfs -eq 1 ]; then
-	umount /sys/firmware/efi/efivars > /dev/null 2>&1
 fi
 
 if [ -n "$BFCFG" ]; then
