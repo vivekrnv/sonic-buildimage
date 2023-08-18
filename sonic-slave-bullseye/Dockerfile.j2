@@ -344,6 +344,8 @@ RUN apt-get update && apt-get install -y \
         libnetfilter-conntrack-dev \
         libnftnl-dev \
 # For SAI3.7
+        protobuf-compiler \
+        libprotobuf-dev \
         xxd \
 # For DHCP Monitor tool
         libexplain-dev \
@@ -440,13 +442,7 @@ RUN apt-get update && apt-get install -y \
         net-tools \
 # For audisp-tacplus
         libauparse-dev \
-        auditd \
-# For protobuf
-        dh-elpa \
-        xmlto \
-        rake-compiler \
-        default-jdk \
-        libgoogle-gson-java
+        auditd
 
 {%- if CROSS_BUILD_ENVIRON == "y" %}
 # Arm vs. amd64 versions conflict - remove amd64 packages
