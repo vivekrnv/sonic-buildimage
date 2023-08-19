@@ -1,0 +1,120 @@
+From 7c99125f690e50aea22d9a11854564a162000687 Mon Sep 17 00:00:00 2001
+From: Vivek Reddy <vkarri@nvidia.com>
+Date: Sat, 19 Aug 2023 00:01:28 +0000
+Subject: [PATCH] TFrom 5d74a7e54a4bc2964b72f8301d868a9ddadb676c Mon Sep 17
+ 00:00:00 2001 Subject: [PATCH] From 8b93f8c395f06d774f05551b5f88758e2521084a
+ Mon Sep 17  00:00:00 2001 Subject: [PATCH] only start/stop sw drops for
+ nvidia
+
+1) start/stop of hw drops is controlled by a different daemon in nvidia
+2) Improve logging
+3) Only start/stop sw drops if the sw=on in configured through config
+
+Signed-off-by: vkarri <vkarri@contoso.com>
+---
+ src/Linux/mod_dropmon.c | 40 ++++++++++++++++++++--------------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
+
+diff --git a/src/Linux/mod_dropmon.c b/src/Linux/mod_dropmon.c
+index e8f26e5..c9e6884 100644
+--- a/src/Linux/mod_dropmon.c
++++ b/src/Linux/mod_dropmon.c
+@@ -143,7 +143,7 @@ extern "C" {
+   static void setState(EVMod *mod, EnumDropmonState newState) {
+     HSP_mod_DROPMON *mdata = (HSP_mod_DROPMON *)mod->data;
+     if(newState != mdata->state) {
+-      myDebug(1, "dropmon state %s -> %s",
++      myLog(LOG_INFO, "dropmon state %s -> %s",
+ 	      HSPDropmonStateNames[mdata->state],
+ 	      HSPDropmonStateNames[newState]);
+       mdata->state = newState;
+@@ -410,37 +410,34 @@ That would allow everything to stay on the stack as it does here, which has nice
+ 	     startIt
+ 	     ? HSP_DROPMON_STATE_START
+ 	     : HSP_DROPMON_STATE_STOP);
+-    
++
+     struct nlmsghdr nlh = { };
+     struct genlmsghdr ge = { };
+-    struct nlattr attr1 = { };
+-    struct nlattr attr2 = { };
++    struct nlattr attr = { };
+ 
+-    attr1.nla_len = sizeof(attr1);
+-    attr1.nla_type = NET_DM_ATTR_SW_DROPS;
+-    attr2.nla_len = sizeof(attr2);
+-    attr2.nla_type = NET_DM_ATTR_HW_DROPS;
++    /* sflow should only control start/stop SW_DROPS, HW_DROPS is controlled by a different daemon for NVIDIA */
++    attr.nla_len = sizeof(attr);
++    attr.nla_type = NET_DM_ATTR_SW_DROPS;
+ 
+     ge.cmd = startIt
+       ? NET_DM_CMD_START
+       : NET_DM_CMD_STOP;
+     ge.version = 1;
+ 
+-    nlh.nlmsg_len = NLMSG_LENGTH(sizeof(ge) + sizeof(attr1) + sizeof(attr2));
++    nlh.nlmsg_len = NLMSG_LENGTH(sizeof(ge) + sizeof(attr));
+     nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+     nlh.nlmsg_type = mdata->family_id;
+     nlh.nlmsg_seq = ++mdata->nl_seq;
+     nlh.nlmsg_pid = UTNLGeneric_pid(mod->id);
+ 
+-    struct iovec iov[4] = {
++    struct iovec iov[3] = {
+       { .iov_base = &nlh,  .iov_len = sizeof(nlh) },
+       { .iov_base = &ge,   .iov_len = sizeof(ge) },
+-      { .iov_base = &attr1, .iov_len = sizeof(attr1) },
+-      { .iov_base = &attr2, .iov_len = sizeof(attr2) },
++      { .iov_base = &attr, .iov_len = sizeof(attr) },
+     };
+ 
+     struct sockaddr_nl sa = { .nl_family = AF_NETLINK };
+-    struct msghdr msg = { .msg_name = &sa, .msg_namelen = sizeof(sa), .msg_iov = iov, .msg_iovlen = 4 };
++    struct msghdr msg = { .msg_name = &sa, .msg_namelen = sizeof(sa), .msg_iov = iov, .msg_iovlen = 3 };
+     return sendmsg(mdata->nl_sock, &msg, 0);
+   }
+ 
+@@ -871,9 +868,10 @@ That would allow everything to stay on the stack as it does here, which has nice
+ 		    mdata->state,
+ 		    err_msg->error,
+ 		    strerror(-err_msg->error));
+-	    if(mdata->state == HSP_DROPMON_STATE_CONFIGURE
+-	       || mdata->state == HSP_DROPMON_STATE_START)
++	    if(mdata->state == HSP_DROPMON_STATE_START)
+ 	      mdata->feedControlErrors++;
++      else if (mdata->state == HSP_DROPMON_STATE_CONFIGURE && err_msg->error == -EBUSY)
++        myLog(LOG_INFO, "Configuring DropMon Failed, Module is already in Monitoring State, Continue...");
+ 	  }
+ 	  break;
+ 	}
+@@ -944,11 +942,11 @@ That would allow everything to stay on the stack as it does here, which has nice
+       // TODO: may want to confirm that none of the parameters were
+       // changed under our feet too?
+       if(mdata->feedControlErrors > 0) {
+-	myDebug(1, "dropmon: detected feed-control errors: %u", mdata->feedControlErrors);
+-	myDebug(1, "dropmon: assume external control - not stopping feed");
++	myLog(LOG_INFO, "dropmon: detected feed-control errors: %u", mdata->feedControlErrors);
++	myLog(LOG_INFO, "dropmon: assume external control - not stopping feed");
+       }
+-      else {
+-	myDebug(1, "dropmon: graceful shutdown: turning off feed");
++      else if(sp->dropmon.sw) {
++	myLog(LOG_INFO, "dropmon: graceful shutdown: turning off feed");
+ 	start_DROPMON(mod, NO);
+       }
+     }
+@@ -1022,7 +1020,9 @@ That would allow everything to stay on the stack as it does here, which has nice
+       // failure if the channel was already configured externally.
+       // TODO: should probably wait for answer before ploughing
+       // ahead with this start_DROPMON call.
+-      start_DROPMON(mod, YES);
++      // Configure SW_DROPS only if sp->dropmon.sw == YES
++      if (sp->dropmon.sw)
++        start_DROPMON(mod, YES);
+       break;
+     case HSP_DROPMON_STATE_START:
+       // waiting for start response
+-- 
+2.17.1
+

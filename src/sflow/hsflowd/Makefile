@@ -19,6 +19,10 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	if [[ $(ENABLE_SFLOW_DROPMON) == y ]]; then
 		stg repair
 		stg import -s ../patch/dropmon/series
+
+		if [[ $(CONFIGURED_PLATFORM) == mellanox ]]; then
+			stg import ../patch/dropmon/0001-only-start-stop-sw-drops-for-nvidia.patch
+		fi
 	fi
 
 	mkdir -p debian
