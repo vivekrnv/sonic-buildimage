@@ -1,22 +1,19 @@
-From 7c99125f690e50aea22d9a11854564a162000687 Mon Sep 17 00:00:00 2001
+From 891ed872a95bc2a77c14bfe859b89ad3db21b7ad Mon Sep 17 00:00:00 2001
 From: Vivek Reddy <vkarri@nvidia.com>
 Date: Sat, 19 Aug 2023 00:01:28 +0000
-Subject: [PATCH] TFrom 5d74a7e54a4bc2964b72f8301d868a9ddadb676c Mon Sep 17
- 00:00:00 2001 Subject: [PATCH] From 8b93f8c395f06d774f05551b5f88758e2521084a
- Mon Sep 17  00:00:00 2001 Subject: [PATCH] only start/stop sw drops for
- nvidia
+Subject: [PATCH] only start/stop sw drops for nvidia
 
-1) start/stop of hw drops is controlled by a different daemon in nvidia
+1) Don't start/stop hw drops for nvidia
 2) Improve logging
-3) Only start/stop sw drops if the sw=on in configured through config
+3) Only start/stop sw drops if sw=on
 
-Signed-off-by: vkarri <vkarri@contoso.com>
+Signed-off-by: vkarri <vkarri@nvidia.com>
 ---
- src/Linux/mod_dropmon.c | 40 ++++++++++++++++++++--------------------
- 1 file changed, 20 insertions(+), 20 deletions(-)
+ src/Linux/mod_dropmon.c | 39 +++++++++++++++++++++------------------
+ 1 file changed, 21 insertions(+), 18 deletions(-)
 
 diff --git a/src/Linux/mod_dropmon.c b/src/Linux/mod_dropmon.c
-index e8f26e5..c9e6884 100644
+index e8f26e5..869ea0c 100644
 --- a/src/Linux/mod_dropmon.c
 +++ b/src/Linux/mod_dropmon.c
 @@ -143,7 +143,7 @@ extern "C" {
@@ -28,11 +25,20 @@ index e8f26e5..c9e6884 100644
  	      HSPDropmonStateNames[mdata->state],
  	      HSPDropmonStateNames[newState]);
        mdata->state = newState;
-@@ -410,37 +410,34 @@ That would allow everything to stay on the stack as it does here, which has nice
+@@ -405,42 +405,43 @@ That would allow everything to stay on the stack as it does here, which has nice
+ 
+   static int start_DROPMON(EVMod *mod, bool startIt)
+   {
++    HSP *sp = (HSP *)EVROOTDATA(mod);
+     HSP_mod_DROPMON *mdata = (HSP_mod_DROPMON *)mod->data;
+     setState(mod,
  	     startIt
  	     ? HSP_DROPMON_STATE_START
  	     : HSP_DROPMON_STATE_STOP);
 -    
++
++    if (!sp->dropmon.sw)
++      return 0;
 +
      struct nlmsghdr nlh = { };
      struct genlmsghdr ge = { };
@@ -75,7 +81,7 @@ index e8f26e5..c9e6884 100644
      return sendmsg(mdata->nl_sock, &msg, 0);
    }
  
-@@ -871,9 +868,10 @@ That would allow everything to stay on the stack as it does here, which has nice
+@@ -871,9 +872,10 @@ That would allow everything to stay on the stack as it does here, which has nice
  		    mdata->state,
  		    err_msg->error,
  		    strerror(-err_msg->error));
@@ -88,7 +94,7 @@ index e8f26e5..c9e6884 100644
  	  }
  	  break;
  	}
-@@ -944,11 +942,11 @@ That would allow everything to stay on the stack as it does here, which has nice
+@@ -944,11 +946,11 @@ That would allow everything to stay on the stack as it does here, which has nice
        // TODO: may want to confirm that none of the parameters were
        // changed under our feet too?
        if(mdata->feedControlErrors > 0) {
@@ -97,24 +103,20 @@ index e8f26e5..c9e6884 100644
 +	myLog(LOG_INFO, "dropmon: detected feed-control errors: %u", mdata->feedControlErrors);
 +	myLog(LOG_INFO, "dropmon: assume external control - not stopping feed");
        }
--      else {
+       else {
 -	myDebug(1, "dropmon: graceful shutdown: turning off feed");
-+      else if(sp->dropmon.sw) {
 +	myLog(LOG_INFO, "dropmon: graceful shutdown: turning off feed");
  	start_DROPMON(mod, NO);
        }
      }
-@@ -1022,7 +1020,9 @@ That would allow everything to stay on the stack as it does here, which has nice
+@@ -1022,6 +1024,7 @@ That would allow everything to stay on the stack as it does here, which has nice
        // failure if the channel was already configured externally.
        // TODO: should probably wait for answer before ploughing
        // ahead with this start_DROPMON call.
--      start_DROPMON(mod, YES);
 +      // Configure SW_DROPS only if sp->dropmon.sw == YES
-+      if (sp->dropmon.sw)
-+        start_DROPMON(mod, YES);
+       start_DROPMON(mod, YES);
        break;
      case HSP_DROPMON_STATE_START:
-       // waiting for start response
 -- 
 2.17.1
 
