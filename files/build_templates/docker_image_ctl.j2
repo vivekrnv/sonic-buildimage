@@ -251,13 +251,25 @@ function postStartAction()
             fi
         fi
 
-        # First boot to a new image: config-setup execution is pending.
-        # Warmboot: DB is loaded but migration is still pending
-        # firstbboot/fast/cold reboot: DB contains nothing at this point
-        # successive reboot: DB might contain a custom config_db json. Migration pending
-        # unset CONFIG_DB_INITIALIZED to indicate pending config load and/or migration
-        # This flag will be set to "1" after DB migration/initialization is completed as part of config-setup
-        $SONIC_DB_CLI CONFIG_DB SET "CONFIG_DB_INITIALIZED" "0"
+        if [ -e /tmp/pending_config_migration ] || [ -e /tmp/pending_config_initialization ]; then
+            # this is first boot to a new image, config-setup execution is pending.
+            # for warmboot case, DB is loaded but migration is still pending
+            # For firstbboot/fast/cold reboot case, DB contains nothing at this point
+            # unset CONFIG_DB_INITIALIZED to indicate pending config load and migration
+            # This flag will be set to "1" after DB migration/initialization is completed as part of config-setup
+            $SONIC_DB_CLI CONFIG_DB SET "CONFIG_DB_INITIALIZED" "0"
+        else
+            $SONIC_DB_CLI CONFIG_DB SET "CONFIG_DB_INITIALIZED" "0"
+            # this is not a first time boot to a new image. Datbase container starts w/ old pre-existing config
+            if [[ -x /usr/local/bin/db_migrator.py ]]; then
+                # Migrate the DB to the latest schema version if needed
+                if [ -z "$DEV" ]; then
+                    /usr/local/bin/db_migrator.py -o migrate
+                fi
+            fi
+            # set CONFIG_DB_INITIALIZED to indicate end of config load and migration
+            $SONIC_DB_CLI CONFIG_DB SET "CONFIG_DB_INITIALIZED" "1"
+        fi
 
         # Add redis UDS to the redis group and give read/write access to the group
         REDIS_SOCK="/var/run/redis${DEV}/redis.sock"

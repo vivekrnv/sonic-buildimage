@@ -422,8 +422,6 @@ boot_config()
     check_system_warm_boot
     if [ -e /tmp/pending_config_migration ] || [ -e  ${CONFIG_SETUP_POST_MIGRATION_FLAG} ]; then
         do_config_migration
-    else
-        do_db_migration
     fi
 
     # For multi-npu platfrom we don't support config initialization. Assumption
@@ -436,8 +434,6 @@ boot_config()
 
     if [ -e /tmp/pending_config_initialization ] || [ -e  ${CONFIG_SETUP_INITIALIZATION_FLAG} ]; then
         do_config_initialization
-    else
-        do_db_migration
     fi
 
     # If no startup configuration is found, create a configuration to be used
