@@ -28,7 +28,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	pushd mlnx_sai
 
 	# Build the package 
-	debuild -e 'make_extra_flags="DEFS=-DACS_OS -DCONFIG_SYSLOG=1 -DENABLE_ASAN=0"' -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	debuild -e 'make_extra_flags="DEFS=-DACS_OS -DCONFIG_SYSLOG"' -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
 
 	popd
 
