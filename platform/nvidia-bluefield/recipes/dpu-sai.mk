@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-DPU_SAI_VERSION = SAIBuild0.0.22.0
+DPU_SAI_VERSION = SAIBuild0.0.23.0
 
 export DPU_SAI_VERSION
 
