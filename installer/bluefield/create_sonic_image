@@ -146,6 +146,8 @@ generate_s2s_installer_image_bluefield()
     # Replace variables in the sharch template
     sed -i -e "s/%%IMAGE_SHA1%%/$sha1/" /sonic/$OUTPUT_ONIE_IMAGE
     echo -n "."
+    tar_size="$(wc -c < "${sharch}")"
+    sed -i -e "s|%%PAYLOAD_IMAGE_SIZE%%|${tar_size}|" /sonic/$OUTPUT_ONIE_IMAGE
     cat $sharch >> /sonic/$OUTPUT_ONIE_IMAGE
     rm -rf $tmp_dir
 
