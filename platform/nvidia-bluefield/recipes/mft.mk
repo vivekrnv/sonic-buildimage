@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MFT_VERSION = 4.23.0
-MFT_REVISION = 104
+MFT_VERSION = 4.25.0
+MFT_REVISION = 62
 
 export MFT_VERSION MFT_REVISION
 
