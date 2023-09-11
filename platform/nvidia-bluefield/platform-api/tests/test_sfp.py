@@ -44,3 +44,12 @@ class TestSfp:
         sfp = chassis.get_sfp(1)
 
         assert sfp.get_presence() == True
+
+    @patch('sonic_platform.sfp.check_ethtool_link_detected', MagicMock(return_value=False))
+    @patch('sonic_platform.chassis.Chassis.get_num_sfps', MagicMock(return_value=2))
+    def test_sfp_unpluged(self, *args):
+        chassis = Chassis()
+
+        sfp = chassis.get_sfp(1)
+
+        assert sfp.get_presence() == False

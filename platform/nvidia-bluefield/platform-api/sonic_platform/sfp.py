@@ -39,6 +39,26 @@ QSFP_DD_TYPE_LIST = [
 
 EEPROM_ETHTOOL_READ_RETRIES = 5
 
+
+def check_ethtool_link_detected(name):
+    ethtool_cmd = "ethtool {} 2>/dev/null".format(name)
+
+    try:
+        output = subprocess.check_output(ethtool_cmd,
+                                         shell=True,
+                                         universal_newlines=True)
+        output_lines = output.splitlines()
+        link_detected_info = next(filter(lambda x: x.strip().startswith('Link detected:'), output_lines), None)
+        if not link_detected_info:
+            return False
+
+        link_detected_val = link_detected_info.strip().split(':')[1].strip()
+        return link_detected_val == 'yes'
+
+    except subprocess.CalledProcessError as e:
+        return False
+
+
 def read_eeprom_ethtool(name, offset, num_bytes):
     eeprom_raw = []
     ethtool_cmd = "ethtool -m {} hex on offset {} length {} 2>/dev/null".format(name, offset, num_bytes)
@@ -88,6 +108,9 @@ class Sfp(SfpOptoeBase):
             bytearray, if raw sequence of bytes are read correctly from the offset of size num_bytes
             None, if the read_eeprom fails
         """
+        if not check_ethtool_link_detected(self.data.name):
+            return None
+
         # Temporary workaround to address instability
         for _ in range(EEPROM_ETHTOOL_READ_RETRIES):
             eeprom = read_eeprom_ethtool(self.data.name, offset, num_bytes)
