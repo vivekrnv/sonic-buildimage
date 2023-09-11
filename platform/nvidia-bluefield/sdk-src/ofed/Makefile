@@ -43,20 +43,6 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	pushd $(OFED_SRC)/
 	find . -type f -exec touch {} +
 
-	pushd SOURCES/
-
-	ofed_kernel_arch=`ls mlnx-ofed-kernel*.tar.gz`
-	tar xf $$ofed_kernel_arch
-	rm -f $$ofed_kernel_arch
-	ofed_kernel_dir=`ls -d mlnx-ofed-kernel-*/`
-
-	pushd $$ofed_kernel_dir
-	patch -p1 < ../../../mlx5_core.patch
-	popd
-
-	tar czf $$ofed_kernel_arch $$ofed_kernel_dir
-	popd
-
 	sudo mv /bin/uname /bin/uname.orig
 	cat << EOF >> /tmp/uname
 	#!/bin/bash
