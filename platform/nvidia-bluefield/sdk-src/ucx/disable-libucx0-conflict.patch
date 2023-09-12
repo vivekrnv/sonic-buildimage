@@ -1,0 +1,13 @@
+--- debian/control.in	2023-09-11 19:43:53.689684446 +0300
++++ debian/control.in	2023-09-11 19:54:22.633378507 +0300
+@@ -19,8 +19,8 @@
+ Section: libs
+ Depends: libc6, libgomp1
+ Architecture: any
+-Conflicts: libucx0 (<< ${binary:Version}), libucx-dev (<< ${binary:Version}), ucx-utils (<< ${binary:Version})
+-Replaces:  libucx0 (<< ${binary:Version}), libucx-dev (<< ${binary:Version}), ucx-utils (<< ${binary:Version})
++#Conflicts: libucx0 (<< ${binary:Version}), libucx-dev (<< ${binary:Version}), ucx-utils (<< ${binary:Version})
++#Replaces:  libucx0 (<< ${binary:Version}), libucx-dev (<< ${binary:Version}), ucx-utils (<< ${binary:Version})
+ Description: Unified Communication X
+  UCX is a communication library implementing high-performance messaging.
+  .
