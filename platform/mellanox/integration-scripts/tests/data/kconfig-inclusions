@@ -6,6 +6,8 @@
 
 [common]
 CONFIG_LOG_BUF_SHIFT=20
+###-> mellanox_common-start
+###-> mellanox_common-end
 
 [amd64]
 # For Inventec d7032
@@ -29,6 +31,10 @@ CONFIG_GPIOLIB=y
 CONFIG_OF_GPIO=y
 CONFIG_OF=y
 CONFIG_OF_MDIO=m
+
+[arm64]
+###-> mellanox_arm64-start
+###-> mellanox_arm64-end
 
 [armhf]
 CONFIG_EEPROM_SFF_8436=m
