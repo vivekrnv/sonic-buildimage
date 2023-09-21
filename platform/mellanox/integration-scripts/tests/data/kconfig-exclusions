@@ -6,6 +6,8 @@ CONFIG_CGROUP_NET_CLASSID
 CONFIG_NET_CLS_CGROUP
 CONFIG_NETFILTER_XT_MATCH_CGROUP
 CONFIG_CGROUP_NET_PRIO
+###-> mellanox_common-start
+###-> mellanox_common-end
 
 [amd64]
 # Unset X86_PAT according to Broadcom's requirement
@@ -13,8 +15,12 @@ CONFIG_SENSORS_UCD9200
 CONFIG_X86_PAT
 CONFIG_MLXSW_PCI
 CONFIG_THERMAL_STATISTICS
+###-> mellanox-start
+###-> mellanox-end
 
 [arm64]
+###-> mellanox_arm64-start
+###-> mellanox_arm64-end
 
 [armhf]
 
