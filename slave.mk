@@ -1237,6 +1237,8 @@ $(DOCKER_LOAD_TARGETS) : $(TARGET_PATH)/%.gz-load : .platform docker-start $$(TA
 # $(KDUMP_TOOLS)
 # $(NTP)
 # $(LIBNSS_TACPLUS)
+# $(LIBPAM_TACPLUS)
+# $(AUDISP_TACPLUS))
 $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
         .platform \
         onie-image.conf \
@@ -1254,7 +1256,6 @@ $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
                 $(IFUPDOWN2) \
                 $(LIBPAM_RADIUS) \
                 $(LIBNSS_RADIUS) \
-                $(LIBPAM_TACPLUS) \
                 $(MONIT) \
                 $(OPENSSH_SERVER) \
                 $(PYTHON_SWSSCOMMON) \
@@ -1264,8 +1265,7 @@ $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
                 $(SONIC_UTILITIES_DATA) \
                 $(SONIC_HOST_SERVICES_DATA) \
                 $(BASH) \
-                $(BASH_TACPLUS) \
-                $(AUDISP_TACPLUS)) \
+                $(BASH_TACPLUS)) \
         $$(addprefix $(TARGET_PATH)/,$$($$*_DOCKERS)) \
         $$(addprefix $(TARGET_PATH)/,$$(SONIC_PACKAGES_LOCAL)) \
         $$(addprefix $(FILES_PATH)/,$$($$*_FILES)) \
