@@ -54,6 +54,7 @@ integrate-mlnx-hw-mgmt:
 	# Fetch the vanilla .config files
 	pushd $(KCFG_BASE_TMPDIR) $(LOG_SIMPLE)
 	rm -rf linux/; mkdir linux
+	# Note: gregkh is the stable linux mirror
 	git clone --depth 1 --branch v$(KERNEL_VERSION) https://github.com/gregkh/linux.git linux $(LOG_SIMPLE)
 
 	pushd linux
