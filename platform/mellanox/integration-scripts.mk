@@ -36,8 +36,7 @@ SB_HEAD = $(shell git rev-parse --short HEAD)
 SLK_HEAD = $(shell cd src/sonic-linux-kernel; git rev-parse --short HEAD)
 
 # kconfig related variables
-# KCFG_BASE_TMPDIR = $(shell mktemp -d /tmp/linux_kconfig.XXXXXXXXXX)
-KCFG_BASE_TMPDIR = /tmp/linux_kconfig.7lfq0jWjxe
+KCFG_BASE_TMPDIR = $(shell mktemp -d /tmp/linux_kconfig.XXXXXXXXXX)
 KCFG_BASE = $(KCFG_BASE_TMPDIR)/x86.config
 KCFG_LIST = $(TEMP_HW_MGMT_DIR)/kconfig
 KCFG_DOWN_LIST = $(TEMP_HW_MGMT_DIR)/kconfig_downstream
@@ -82,7 +81,7 @@ endif
 	pushd $(BUILD_WORKDIR)/$(PLATFORM_PATH) $(LOG_SIMPLE)
 
 	# Run tests
-	# pushd integration-scripts/tests; pytest-3 -v; popd
+	pushd integration-scripts/tests; pytest-3 -v; popd
 
 	# Checkout to the corresponding hw-mgmt version and update mk file
 	pushd hw-management/hw-mgmt; git checkout V.${MLNX_HW_MANAGEMENT_VERSION}; popd
