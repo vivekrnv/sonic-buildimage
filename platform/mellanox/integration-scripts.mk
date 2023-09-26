@@ -36,7 +36,7 @@ SB_HEAD = $(shell git rev-parse --short HEAD)
 SLK_HEAD = $(shell cd src/sonic-linux-kernel; git rev-parse --short HEAD)
 
 # kconfig related variables
-KCFG_BASE_TMPDIR = $(shell mktemp -d /tmp/linux_kconfig.XXXXXXXXXX)
+KCFG_BASE_TMPDIR = $(TEMP_HW_MGMT_DIR)/linux_kconfig/
 KCFG_BASE = $(KCFG_BASE_TMPDIR)/x86.config
 KCFG_LIST = $(TEMP_HW_MGMT_DIR)/kconfig
 KCFG_DOWN_LIST = $(TEMP_HW_MGMT_DIR)/kconfig_downstream
@@ -47,6 +47,10 @@ KCFG_DOWN_LIST_ARM = $(TEMP_HW_MGMT_DIR)/kconfig_downstream_arm64
 
 integrate-mlnx-hw-mgmt:
 	$(FLUSH_LOG)
+	rm -rf $(TEMP_HW_MGMT_DIR) $(TMPFILE_OUT)
+	mkdir -p $(PTCH_DIR) $(NON_UP_PTCH_DIR) $(KCFG_BASE_TMPDIR)
+	touch $(PTCH_LIST) $(KCFG_LIST) $(KCFG_DOWN_LIST) $(KCFG_LIST_ARM) $(KCFG_DOWN_LIST_ARM)
+
 	# Fetch the vanilla .config files
 	pushd $(KCFG_BASE_TMPDIR) $(LOG_SIMPLE)
 	rm -rf linux/; mkdir linux
@@ -57,10 +61,6 @@ integrate-mlnx-hw-mgmt:
 	rm -rf .config; make ARCH=arm64 defconfig; cp -f .config $(KCFG_BASE_ARM) $(LOG_SIMPLE)
 	popd
 	popd $(LOG_SIMPLE)
-
-	rm -rf $(TEMP_HW_MGMT_DIR) $(TMPFILE_OUT)
-	mkdir -p $(PTCH_DIR) $(NON_UP_PTCH_DIR)
-	touch $(PTCH_LIST) $(KCFG_LIST) $(KCFG_DOWN_LIST) $(KCFG_LIST_ARM) $(KCFG_DOWN_LIST_ARM)
 
 	# clean up existing untracked files
 	pushd $(BUILD_WORKDIR); git clean -f -- platform/mellanox/
