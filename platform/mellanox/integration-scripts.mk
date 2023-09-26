@@ -37,9 +37,9 @@ SLK_HEAD = $(shell cd src/sonic-linux-kernel; git rev-parse --short HEAD)
 
 # kconfig related variables
 KCFG_BASE_TMPDIR = $(TEMP_HW_MGMT_DIR)/linux_kconfig/
-KCFG_BASE = $(KCFG_BASE_TMPDIR)/x86.config
-KCFG_LIST = $(TEMP_HW_MGMT_DIR)/kconfig
-KCFG_DOWN_LIST = $(TEMP_HW_MGMT_DIR)/kconfig_downstream
+KCFG_BASE = $(KCFG_BASE_TMPDIR)/amd64.config
+KCFG_LIST = $(TEMP_HW_MGMT_DIR)/kconfig_amd64
+KCFG_DOWN_LIST = $(TEMP_HW_MGMT_DIR)/kconfig_downstream_amd64
 KCFG_BASE_ARM = $(KCFG_BASE_TMPDIR)/arm64.config
 KCFG_LIST_ARM = $(TEMP_HW_MGMT_DIR)/kconfig_arm64
 KCFG_DOWN_LIST_ARM = $(TEMP_HW_MGMT_DIR)/kconfig_downstream_arm64
@@ -184,6 +184,8 @@ endif
 	popd
 
 	popd $(LOG_SIMPLE)
+
+	rm -rf $(TEMP_HW_MGMT_DIR)
 
 integrate-mlnx-sdk:
 	$(FLUSH_LOG)

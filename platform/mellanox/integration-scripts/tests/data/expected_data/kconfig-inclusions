@@ -19,13 +19,13 @@ CONFIG_SENSORS_MAX31790=m
 # For optoe
 CONFIG_EEPROM_OPTOE=m
 
-###-> mellanox-start
+###-> mellanox_amd64-start
 CONFIG_PINCTRL=y
 CONFIG_DW_DMAC_PCI=y
 CONFIG_TI_ADS1015=m
 CONFIG_I2C_DESIGNWARE_CORE=m
 CONFIG_I2C_DESIGNWARE_PCI=m
-###-> mellanox-end
+###-> mellanox_amd64-end
 
 # For Cisco 8000
 CONFIG_PHYLIB=m

@@ -46,11 +46,11 @@ CONFIG_LOG_BUF_SHIFT=20
 [amd64]
 CONFIG_SENSORS_DPS1900=m
 
-###-> mellanox-start
+###-> mellanox_amd64-start
 CONFIG_OF=y
 CONFIG_THERMAL_OF=y
 CONFIG_DW_DMAC_PCI=y
-###-> mellanox-end
+###-> mellanox_amd64-end
 
 [armhf]
 CONFIG_EEPROM_SFF_8436=m
@@ -67,7 +67,7 @@ CONFIG_LOG_BUF_SHIFT=20
 [amd64]
 CONFIG_SENSORS_DPS1900=m
 
-###-> mellanox-start
+###-> mellanox_amd64-start
 CONFIG_OF=y
 CONFIG_THERMAL_OF=y
 CONFIG_DW_DMAC_PCI=y
@@ -76,7 +76,7 @@ CONFIG_PINCTRL=y
 CONFIG_PINCTRL_INTEL=m
 CONFIG_I2C_MUX_PCA954x=m
 CONFIG_SPI_PXA2XX=m
-###-> mellanox-end
+###-> mellanox_amd64-end
 
 [armhf]
 CONFIG_EEPROM_SFF_8436=m
@@ -181,8 +181,8 @@ class TestFilehandler:
                 "CONFIG_SPI_PXA2XX" : "m"
         })
         x86_start, x86_end = FileHandler.find_marker_indices(kcfg_inc_raw, MLNX_KFG_MARKER)
-        assert "###-> mellanox-start" in kcfg_inc_raw[x86_start]
-        assert "###-> mellanox-end" in kcfg_inc_raw[x86_end]
+        assert "###-> mellanox_amd64-start" in kcfg_inc_raw[x86_start]
+        assert "###-> mellanox_amd64-end" in kcfg_inc_raw[x86_end]
         final_kcfg = FileHandler.insert_kcfg_data(kcfg_inc_raw, x86_start, x86_end, new_opts)
         assert final_kcfg == FINAL_MOCK_SLK_KCFG.splitlines(True)
 

@@ -20,7 +20,7 @@ import glob
 from collections import OrderedDict
 
 MARK_ID = "###->"
-MLNX_KFG_MARKER = "mellanox"
+MLNX_KFG_MARKER = "mellanox_amd64"
 MLNX_NOARCH_MARKER = "mellanox_common"
 MLNX_ARM_KFG_MARKER = "mellanox_arm64"
 SDK_MARKER = "mellanox_sdk"

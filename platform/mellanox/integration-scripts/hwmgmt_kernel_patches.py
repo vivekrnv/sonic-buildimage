@@ -18,6 +18,122 @@
 
 from hwmgmt_helper import *
 
+COMMIT_TITLE = "Intgerate HW-MGMT {} Changes"
+
+PATCH_TABLE_LOC = "platform/mellanox/hw-management/hw-mgmt/recipes-kernel/linux/"
+PATCHWORK_LOC = "linux-{}/patchwork"
+PATCH_TABLE_NAME = "Patch_Status_Table.txt"
+PATCH_TABLE_DELIMITER = "----------------------"
+PATCH_NAME = "patch name"
+COMMIT_ID = "Upstream commit id"
+
+# Strips the subversion
+def get_kver(k_version):
+    major, minor, subversion = k_version.split(".")
+    k_ver = "{}.{}".format(major, minor)
+    return k_ver
+
+def trim_array_str(str_list):
+    ret = [elem.strip() for elem in str_list]
+    return ret
+
+def get_line_elements(line):
+    columns_raw = line.split("|")
+    if len(columns_raw) < 3:
+        return False
+    # remove empty firsta and last elem
+    columns_raw = columns_raw[1:-1]
+    columns = trim_array_str(columns_raw)
+    return columns
+
+def load_patch_table(path, k_ver):
+    patch_table_filename = os.path.join(path, PATCH_TABLE_NAME)
+    print("Loading patch table {} kver:{}".format(patch_table_filename, k_ver))
+
+    if not os.path.isfile(patch_table_filename):
+        print("-> ERR: file {} not found".format(patch_table_filename))
+        return None
+
+    # opening the file
+    patch_table_file = open(patch_table_filename, "r")
+    # reading the data from the file
+    patch_table_data = patch_table_file.read()
+    # splitting the file data into lines
+    patch_table_lines = patch_table_data.splitlines()
+    patch_table_file.close()
+
+    # Extract patch table for specified kernel version
+    kversion_line = "Kernel-{}".format(k_ver)
+    table_ofset = 0
+    for table_ofset, line in enumerate(patch_table_lines):
+        if line == kversion_line:
+            break
+
+    # if kernel version not found
+    if table_ofset >= len(patch_table_lines)-5:
+        print ("Err: kernel version {} not found in {}".format(k_ver, patch_table_filename))
+        return None
+
+    table = []
+    delimiter_count = 0
+    column_names = None
+    for idx, line in enumerate(patch_table_lines[table_ofset:]):
+        if PATCH_TABLE_DELIMITER in line:
+            delimiter_count += 1
+            if delimiter_count >= 3:
+                print ("Err: too much leading delimers line #{}: {}".format(table_ofset + idx, line))
+                return None
+            elif table:
+                break
+            continue
+
+        # line without delimiter but header still not found
+        if delimiter_count > 0:
+            if not column_names:
+                column_names = get_line_elements(line)
+                if not column_names:
+                    print ("Err: parsing table header line #{}: {}".format(table_ofset + idx, line))
+                    return None
+                delimiter_count = 0
+                continue
+            elif column_names:
+                line_arr = get_line_elements(line)
+                if len(line_arr) != len(column_names):
+                    print ("Err: patch table wrong format linex #{}: {}".format(table_ofset + idx, line))
+                    return None
+                else:
+                    table_line = dict(zip(column_names, line_arr))
+                    table.append(table_line)
+    return table
+
+
+class Data:
+    # list of new upstream patches
+    new_up = list()
+    # list of new non-upstream patches
+    new_non_up = list()
+    # old upstream patches
+    old_up_patches = list()
+    # current series file raw data
+    old_series = list()
+    # current non-upstream patch list
+    old_non_up = list()
+    # New series file written by hw_mgmt integration script
+    new_series = list()
+    # index of the mlnx_hw_mgmt patches start marker in old_series
+    i_mlnx_start = -1 
+    # index of the mlnx_hw_mgmt patches end marker in old_series
+    i_mlnx_end = -1
+    # Updated sonic-linux-kernel/patch/series file contents
+    up_slk_series = list()
+    # SLK series file content updated with non-upstream patches, used to generate diff
+    agg_slk_series = list()
+    # Diff to be written into the series.patch file
+    agg_slk_series_diff = list()
+    # kernel version
+    k_ver = ""
+
+
 class HwMgmtAction(Action):
 
     @staticmethod
