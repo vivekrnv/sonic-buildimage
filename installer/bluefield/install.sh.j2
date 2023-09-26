@@ -210,9 +210,34 @@ EOF
 chmod a+r /mnt/machine.conf
 
 sync
+{% if SECURE_UPGRADE_MODE in ['dev', 'prod'] %}
+demo_volume_label="SONiC-OS"
+log "creating demo_volume_label=$demo_volume_label dir under EFI partition to include all boot related modules"
+mkdir -p /mnt/boot/efi/EFI/$demo_volume_label
 
+if [ ! -f /secure-boot/mmaa64.efi ]; then
+   echo "ERROR: /secure-boot/mmaa64.efi file does not exist"
+   exit 1
+fi
+
+if [ ! -f /secure-boot/shimaa64.efi ]; then
+   echo "ERROR: /secure-boot/shimaa64.efi file does not exist"
+   exit 1
+fi
+
+if [ ! -f /secure-boot/grubaa64.efi ]; then
+   echo "ERROR: /secure-boot/grubaa64.efi file does not exist"
+   exit 1
+fi
+
+log "copying signed shim, mm, grub, grub.cfg from /secure-boot to /boot/efi/EFI/$demo_volume_label directory"
+MNT_DIR="/mnt/boot/efi/EFI/$demo_volume_label"
+cp /secure-boot/shimaa64.efi $MNT_DIR
+cp /secure-boot/grubaa64.efi $MNT_DIR
+cp /secure-boot/mmaa64.efi $MNT_DIR
+{% else %}
 log "Installing GRUB"
-
+{% endif %}
 # Create a minimal grub.cfg that allows for:
 #   - configure the serial console
 #   - allows for grub-reboot to work
@@ -248,9 +273,13 @@ cat <<EOF >> $grub_cfg
 EOF
 
 # Copy the grub.cfg onto the boot-directory as specified in the grub-install
-ex mkdir -p /mnt/grub 
+{% if SECURE_UPGRADE_MODE in ['dev', 'prod'] %}
+ex cp $grub_cfg /mnt/boot/efi/EFI/$demo_volume_label/grub.cfg
+{% else %}
+ex mkdir -p /mnt/grub
 ex cp $grub_cfg /mnt/grub/grub.cfg
 
+{% endif %}
 sync
 
 log "GRUB CFG Updated"
@@ -303,7 +332,17 @@ else
 	fi
 	ex efibootmgr -c -d "$device" -p 1 -L $device_label -l "\EFI\\$device_label\grubaa64.efi"
 fi
-
+{% if SECURE_UPGRADE_MODE in ['dev', 'prod'] %}
+uefi_part=1
+ex efibootmgr --create \
+    --label "$demo_volume_label" \
+    --disk "$device" --part $uefi_part \
+    --loader "\EFI\$demo_volume_label\shimaa64.efi" || {
+    echo "ERROR: efibootmgr failed to create new boot variable on: $device"
+    exit 1
+}
+echo "uefi_shim: Secure Boot components installed successfully"
+{% endif %}
 BFCFG=`which bfcfg 2> /dev/null`
 if [ -n "$BFCFG" ]; then
 	# Create PXE boot entries
