@@ -44,20 +44,20 @@ KCFG_BASE_ARM = $(KCFG_BASE_TMPDIR)/arm64.config
 KCFG_LIST_ARM = $(TEMP_HW_MGMT_DIR)/kconfig_arm64
 KCFG_DOWN_LIST_ARM = $(TEMP_HW_MGMT_DIR)/kconfig_downstream_arm64
 
-get-linux-kconfig:
+
+integrate-mlnx-hw-mgmt: get-linux-kconfig
 	$(FLUSH_LOG)
+	# Fetch the vanilla .config files
 	pushd $(KCFG_BASE_TMPDIR) $(LOG_SIMPLE)
 	rm -rf linux/; mkdir linux
 	git clone --depth 1 --branch v$(KERNEL_VERSION) https://github.com/gregkh/linux.git linux $(LOG_SIMPLE)
 
 	pushd linux
-	rm -rf .config; make ARCH=x86_64 defconfig; cp -f .config $(KCFG_BASE)
-	rm -rf .config; make ARCH=arm64 defconfig; cp -f .config $(KCFG_BASE_ARM)
+	rm -rf .config; make ARCH=x86_64 defconfig; cp -f .config $(KCFG_BASE) $(LOG_SIMPLE)
+	rm -rf .config; make ARCH=arm64 defconfig; cp -f .config $(KCFG_BASE_ARM) $(LOG_SIMPLE)
 	popd
 	popd $(LOG_SIMPLE)
 
-integrate-mlnx-hw-mgmt: get-linux-kconfig
-	$(FLUSH_LOG)
 	rm -rf $(TEMP_HW_MGMT_DIR) $(TMPFILE_OUT)
 	mkdir -p $(PTCH_DIR) $(NON_UP_PTCH_DIR)
 	touch $(PTCH_LIST) $(KCFG_LIST) $(KCFG_DOWN_LIST) $(KCFG_LIST_ARM) $(KCFG_DOWN_LIST_ARM)
@@ -235,4 +235,4 @@ endif
 
 	popd $(LOG_SIMPLE)
  
-SONIC_PHONY_TARGETS += get-linux-kconfig integrate-mlnx-hw-mgmt integrate-mlnx-sdk
+SONIC_PHONY_TARGETS += integrate-mlnx-hw-mgmt integrate-mlnx-sdk
