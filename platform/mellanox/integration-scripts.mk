@@ -45,7 +45,7 @@ KCFG_LIST_ARM = $(TEMP_HW_MGMT_DIR)/kconfig_arm64
 KCFG_DOWN_LIST_ARM = $(TEMP_HW_MGMT_DIR)/kconfig_downstream_arm64
 
 
-integrate-mlnx-hw-mgmt: get-linux-kconfig
+integrate-mlnx-hw-mgmt:
 	$(FLUSH_LOG)
 	# Fetch the vanilla .config files
 	pushd $(KCFG_BASE_TMPDIR) $(LOG_SIMPLE)
