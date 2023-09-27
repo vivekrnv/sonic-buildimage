@@ -161,14 +161,14 @@ class HwMgmtAction(Action):
             return self.return_false("-> ERR: build_root is missing")
         if not os.path.exists(self.args.build_root):
             return self.return_false("-> ERR: Build Root {} doesn't exist".format(self.args.build_root))
-        if not os.path.isfile(self.args.config_base):
-            return self.return_false("-> ERR: config_base {} doesn't exist".format(self.args.config_base))
+        if not os.path.isfile(self.args.config_base_amd):
+            return self.return_false("-> ERR: config_base {} doesn't exist".format(self.args.config_base_amd))
         if not os.path.isfile(self.args.config_base_arm):
             return self.return_false("-> ERR: config_base_arm {} doesn't exist".format(self.args.config_base_arm))
-        if not os.path.isfile(self.args.config_inc):
-            return self.return_false("-> ERR: config_inclusion {} doesn't exist".format(self.args.config_inc))
+        if not os.path.isfile(self.args.config_inc_amd):
+            return self.return_false("-> ERR: config_inclusion {} doesn't exist".format(self.args.config_inc_amd))
         if not os.path.isfile(self.args.config_inc_arm):
-            return self.return_false("-> ERR: config_inclusion {} doesn't exist".format(self.args.config_inc))
+            return self.return_false("-> ERR: config_inclusion {} doesn't exist".format(self.args.config_inc_arm))
         return True
 
 
@@ -181,7 +181,7 @@ class PreProcess(HwMgmtAction):
 
     def perform(self):
         """ Move Base Kconfig to the loc pointed by config_inclusion """
-        shutil.copy2(self.args.config_base, self.args.config_inc)
+        shutil.copy2(self.args.config_base_amd, self.args.config_inc_amd)
         shutil.copy2(self.args.config_base_arm, self.args.config_inc_arm)
         print("-> Kconfig amd64/arm64 copied to the relevant directory")
     
@@ -414,11 +414,11 @@ def create_parser():
     # Optional arguments
     parser.add_argument("--patches", type=str)
     parser.add_argument("--non_up_patches", type=str)
-    parser.add_argument("--config_base", type=str, required=True)
+    parser.add_argument("--config_base_amd", type=str, required=True)
     parser.add_argument("--config_base_arm", type=str, required=True)
-    parser.add_argument("--config_inc", type=str, required=True)
-    parser.add_argument("--config_inc_down", type=str)
+    parser.add_argument("--config_inc_amd", type=str, required=True)
     parser.add_argument("--config_inc_arm", type=str, required=True)
+    parser.add_argument("--config_inc_down_amd", type=str)
     parser.add_argument("--config_inc_down_arm", type=str)
     parser.add_argument("--series", type=str)
     parser.add_argument("--current_non_up_patches", type=str)

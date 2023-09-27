@@ -90,9 +90,9 @@ endif
 
 	# Pre-processing before runing hw_mgmt script
 	integration-scripts/hwmgmt_kernel_patches.py pre \
-							--config_base $(KCFG_BASE) \
+							--config_base_amd $(KCFG_BASE) \
 							--config_base_arm $(KCFG_BASE_ARM) \
-							--config_inc $(KCFG_LIST) \
+							--config_inc_amd $(KCFG_LIST) \
 							--config_inc_arm $(KCFG_LIST_ARM) \
 							--build_root $(BUILD_WORKDIR) \
 							--kernel_version $(KERNEL_VERSION) \
@@ -124,11 +124,11 @@ endif
 							--non_up_patches $(NON_UP_PTCH_DIR) \
 							--kernel_version $(KERNEL_VERSION) \
 							--hw_mgmt_ver ${MLNX_HW_MANAGEMENT_VERSION} \
-							--config_base $(KCFG_BASE) \
+							--config_base_amd $(KCFG_BASE) \
 							--config_base_arm $(KCFG_BASE_ARM) \
-							--config_inc $(KCFG_LIST) \
+							--config_inc_amd $(KCFG_LIST) \
 							--config_inc_arm $(KCFG_LIST_ARM) \
-							--config_inc_down $(KCFG_DOWN_LIST) \
+							--config_inc_down_amd $(KCFG_DOWN_LIST) \
 							--config_inc_down_arm $(KCFG_DOWN_LIST_ARM) \
 							--series $(PTCH_LIST) \
 							--current_non_up_patches $(HWMGMT_NONUP_LIST) \

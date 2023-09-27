@@ -51,11 +51,11 @@ class KConfigTask():
 
 
     def read_data(self):
-        KCFGData.x86_base = FileHandler.read_kconfig(self.args.config_base)
-        KCFGData.x86_updated = FileHandler.read_kconfig(self.args.config_inc)
-        if os.path.isfile(self.args.config_inc_down):
+        KCFGData.x86_base = FileHandler.read_kconfig(self.args.config_base_amd)
+        KCFGData.x86_updated = FileHandler.read_kconfig(self.args.config_inc_amd)
+        if os.path.isfile(self.args.config_inc_down_amd):
             print(" -> Downstream Config for x86 found..")
-            KCFGData.x86_down = FileHandler.read_kconfig(self.args.config_inc_down)
+            KCFGData.x86_down = FileHandler.read_kconfig(self.args.config_inc_down_amd)
 
         KCFGData.arm_base = FileHandler.read_kconfig(self.args.config_base_arm)
         KCFGData.arm_updated = FileHandler.read_kconfig(self.args.config_inc_arm)
