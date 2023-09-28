@@ -121,14 +121,29 @@ def check_file_content(path):
 
 @mock.patch('helper.SLK_PATCH_LOC', REL_INPUTS_DIR)
 @mock.patch('helper.SLK_SERIES', REL_INPUTS_DIR+"series")
+@mock.patch('hwmgmt_helper.SLK_KCONFIG', REL_INPUTS_DIR+"kconfig-inclusions")
+@mock.patch('hwmgmt_helper.SLK_KCONFIG_EXCLUDE', REL_INPUTS_DIR+"kconfig-exclusions")
 class TestHwMgmtPostAction(TestCase):
     def setUp(self):
         self.action = HwMgmtAction.get(mock_hwmgmt_args())
         self.action.read_data()
+        self.kcfgaction = KConfigTask(mock_hwmgmt_args())
+        self.kcfgaction.read_data()
         # Populate the new_up, new_non_up list
         Data.new_up = NEW_UP_LIST.splitlines()
         Data.new_non_up = NEW_NONUP_LIST.splitlines()
         Data.old_series = FileHandler.read_raw(MOCK_INPUTS_DIR+"/series")
+
+    def tearDown(self):
+        KCFGData.x86_incl.clear()
+        KCFGData.arm_incl.clear()
+        KCFGData.x86_excl.clear()
+        KCFGData.arm_excl.clear()
+        KCFGData.x86_down.clear()
+        KCFGData.arm_down.clear()
+        KCFGData.noarch_incl.clear()
+        KCFGData.noarch_excl.clear()
+        KCFGData.noarch_down.clear()
 
     def test_find_mlnx_hw_mgmt_markers(self):
         self.action.find_mlnx_hw_mgmt_markers()
@@ -143,12 +158,16 @@ class TestHwMgmtPostAction(TestCase):
         assert check_file_content(MOCK_INPUTS_DIR+"expected_data/series")
     
     @mock.patch('helper.FileHandler.write_lines', side_effect=write_lines_mock)
-    def test_write_series_diff(self, mock_write_lines):
+    def test_write_final_diff(self, mock_write_lines):
         self.action.find_mlnx_hw_mgmt_markers()
         self.action.write_final_slk_series()
         self.action.construct_series_with_non_up()
-        self.action.write_series_diff()
-        assert check_file_content(MOCK_INPUTS_DIR+"expected_data/series.patch")
+        series_diff = self.action.get_series_diff()
+        kcfg_diff = self._get_kcfg_incl_diff()
+        final_diff = self.action.get_merged_diff(series_diff, kcfg_diff)
+        print("".join(final_diff))
+        FileHandler.write_lines(os.path.join(self.action.args.build_root, NON_UP_DIFF), final_diff, True)
+        assert check_file_content(MOCK_INPUTS_DIR+"expected_data/external-changes.patch")
 
     def test_commit_msg(self):
         self.action.find_mlnx_hw_mgmt_markers()
@@ -164,39 +183,21 @@ class TestHwMgmtPostAction(TestCase):
             assert slk.split() == TEST_SLK_COMMIT.split()
             assert sb.split() == TEST_SB_COMMIT.split()
 
-@mock.patch('hwmgmt_helper.SLK_KCONFIG', REL_INPUTS_DIR+"kconfig-inclusions")
-@mock.patch('hwmgmt_helper.SLK_KCONFIG_EXCLUDE', REL_INPUTS_DIR+"kconfig-exclusions")
-class TestKConfigPostAction(TestCase):
-    def setUp(self):
-        self.action = KConfigTask(mock_hwmgmt_args())
-        self.action.read_data()
-    
-    def tearDown(self):
-        KCFGData.x86_incl.clear()
-        KCFGData.arm_incl.clear()
-        KCFGData.x86_excl.clear()
-        KCFGData.arm_excl.clear()
-        KCFGData.x86_down.clear()
-        KCFGData.arm_down.clear()
-        KCFGData.noarch_incl.clear()
-        KCFGData.noarch_excl.clear()
-        KCFGData.noarch_down.clear()
-
     def _parse_inc_excl(self):
-        KCFGData.x86_incl, KCFGData.x86_excl = self.action.parse_inc_exc(KCFGData.x86_base, KCFGData.x86_updated)
-        KCFGData.arm_incl, KCFGData.arm_excl = self.action.parse_inc_exc(KCFGData.arm_base, KCFGData.arm_updated)
+        KCFGData.x86_incl, KCFGData.x86_excl = self.kcfgaction.parse_inc_exc(KCFGData.x86_base, KCFGData.x86_updated)
+        KCFGData.arm_incl, KCFGData.arm_excl = self.kcfgaction.parse_inc_exc(KCFGData.arm_base, KCFGData.arm_updated)
 
     def _parse_noarch_inc_excl(self):
         self._parse_inc_excl()
-        self.action.parse_noarch_inc_exc()
+        self.kcfgaction.parse_noarch_inc_exc()
     
     def _get_kcfg_incl_raw(self):
         self._parse_noarch_inc_excl()
-        return self.action.get_kconfig_inc()
+        return self.kcfgaction.get_kconfig_inc()
 
     def _get_kcfg_incl_diff(self):
         kcfg_raw = self._get_kcfg_incl_raw()
-        return self.action.get_downstream_kconfig_inc(kcfg_raw)
+        return self.kcfgaction.get_downstream_kconfig_inc(kcfg_raw)
 
     def test_parse_inc_excl(self):
         self._parse_inc_excl()
@@ -256,17 +257,10 @@ class TestKConfigPostAction(TestCase):
         kcfg_raw = self._get_kcfg_incl_raw()
         FileHandler.write_lines("", kcfg_raw, True)
         assert check_file_content(MOCK_INPUTS_DIR+"expected_data/kconfig-inclusions")
-
-    @mock.patch('helper.FileHandler.write_lines', side_effect=write_lines_mock)
-    def test_kcfg_incl_diff_file(self, mock_write_lines_mock):
-        kcfg_diff = self._get_kcfg_incl_diff()
-        FileHandler.write_lines("", kcfg_diff, True)
-        assert check_file_content(MOCK_INPUTS_DIR+"expected_data/kconfig-inclusions.patch")
     
     @mock.patch('helper.FileHandler.write_lines', side_effect=write_lines_mock)
     def test_kcfg_excl(self, mock_write_lines_mock):
         self._parse_noarch_inc_excl()
-        kcfg_excl = self.action.get_kconfig_excl()
+        kcfg_excl = self.kcfgaction.get_kconfig_excl()
         FileHandler.write_lines("", kcfg_excl, True)
         assert check_file_content(MOCK_INPUTS_DIR+"expected_data/kconfig-exclusions")
-

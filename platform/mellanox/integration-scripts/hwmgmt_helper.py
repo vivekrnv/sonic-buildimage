@@ -171,11 +171,8 @@ class KConfigTask():
         # Get the updated kconfig-inclusions
         kcfg_inc_upstream = self.get_kconfig_inc()
         FileHandler.write_lines(os.path.join(self.args.build_root, SLK_KCONFIG), kcfg_inc_upstream, True)
-        # Get the kconfig-inclusions.patch
-        kcfg_inc_diff = self.get_downstream_kconfig_inc(kcfg_inc_upstream)
-        if kcfg_inc_diff:
-            FileHandler.write_lines(os.path.join(self.args.build_root, NON_UP_KCFG_INC_DIFF), kcfg_inc_diff, True)
         # Get the updated kconfig-exclusions
         kcfg_excl_upstream = self.get_kconfig_excl()
         FileHandler.write_lines(os.path.join(self.args.build_root, SLK_KCONFIG_EXCLUDE), kcfg_excl_upstream, True)
-        return
+        # return the kconfig-inclusions diff
+        return self.get_downstream_kconfig_inc(kcfg_inc_upstream)

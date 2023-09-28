@@ -128,8 +128,6 @@ class Data:
     up_slk_series = list()
     # SLK series file content updated with non-upstream patches, used to generate diff
     agg_slk_series = list()
-    # Diff to be written into the series.patch file
-    agg_slk_series_diff = list()
     # kernel version
     k_ver = ""
 
@@ -302,13 +300,16 @@ class PostProcess(HwMgmtAction):
         FileHandler.write_lines(self.args.current_non_up_patches, lines)
         print("\n -> POST: series file updated with non-upstream patches \n{}".format("".join(Data.agg_slk_series)))
 
-    def write_series_diff(self):
+    def get_series_diff(self):
         diff = difflib.unified_diff(Data.up_slk_series, Data.agg_slk_series, fromfile='a/patch/series', tofile="b/patch/series", lineterm="\n")
         lines = []
         for line in diff:
             lines.append(line)
         print("\n -> POST: final series.diff \n{}".format("".join(lines)))
-        FileHandler.write_lines(os.path.join(self.args.build_root, NON_UP_PATCH_DIFF), lines, True)
+        return lines
+    
+    def get_merged_diff(self, series_diff: list, kcfg_diff: list) -> list:
+        return series_diff + ["\n"] + kcfg_diff
 
     def list_patches(self):
         old_up_patches = []
@@ -384,11 +385,12 @@ class PostProcess(HwMgmtAction):
         self.rm_old_non_up_mlnx()
         self.mv_new_non_up_mlnx()
         self.construct_series_with_non_up()
-        self.write_series_diff()
+        series_diff = self.get_series_diff()
+        # handle kconfig and get any diff
+        kcfg_diff = self.kcfg_handler.perform()
+        final_diff = self.get_merged_diff(series_diff, kcfg_diff)
+        FileHandler.write_lines(os.path.join(self.args.build_root, NON_UP_DIFF), final_diff, True)
 
-        # Process and write the Kconfig files
-        self.kcfg_handler.perform()
-        
         path = os.path.join(self.args.build_root, PATCH_TABLE_LOC)
         patch_table = load_patch_table(path, Data.k_ver)
         
