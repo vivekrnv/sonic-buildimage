@@ -17,11 +17,13 @@
 #
 
 import os
+import io
 import sys
-import shutil
 import argparse
+import shutil
 import copy
 import difflib
+import configparser
 
 from helper import *
 
@@ -107,6 +109,30 @@ class KConfigTask():
                 del KCFGData.x86_down[key]
                 KCFGData.noarch_down[key] = val
 
+    def insert_arm64_section(self, raw_lines: list, arm_data: OrderedDict, is_exclusion=False, section=MLNX_ARM_KFG_SECTION) -> list:
+        # For arm64, config is not added under markers, but it is added under the section [mellanox-arm64]
+        # This design decision is taken because of the possibility that there might be conflicting options 
+        # present between two different arm64 platforms
+        try:
+            # comment_prefixes needed to also read comments under a section
+            configParser = configparser.ConfigParser(allow_no_value=True, strict=False, comment_prefixes='////')
+            configParser.optionxform = str
+            configParser.read_string("".join(raw_lines))
+            if not configParser.has_section(MLNX_ARM_KFG_SECTION):
+                configParser.add_section(MLNX_ARM_KFG_SECTION)
+            for (key, val) in arm_data.items():
+                if not is_exclusion:
+                    configParser.set(MLNX_ARM_KFG_SECTION, key, val)
+                else:
+                    configParser.set(MLNX_ARM_KFG_SECTION, key)
+            str_io = io.StringIO()
+            configParser.write(str_io, space_around_delimiters=False)
+            return str_io.getvalue().splitlines(True)
+        except Exception as e:
+            print("-> FATAL: Exception {} found while adding opts under arm".format(str(e)))
+            raise e
+        return raw_lines
+
 
     def get_kconfig_inc(self) -> list:
         kcfg_inc_raw = FileHandler.read_raw(os.path.join(self.args.build_root, SLK_KCONFIG))
@@ -117,8 +143,7 @@ class KConfigTask():
         x86_start, x86_end = FileHandler.find_marker_indices(kcfg_inc_raw, MLNX_KFG_MARKER)
         kcfg_inc_raw = FileHandler.insert_kcfg_data(kcfg_inc_raw, x86_start, x86_end, KCFGData.x86_incl)
         # Insert arm config
-        arm_start, arm_end = FileHandler.find_marker_indices(kcfg_inc_raw, MLNX_ARM_KFG_MARKER)
-        kcfg_inc_raw = FileHandler.insert_kcfg_data(kcfg_inc_raw, arm_start, arm_end, KCFGData.arm_incl)
+        kcfg_inc_raw = self.insert_arm64_section(kcfg_inc_raw, KCFGData.arm_incl) 
         print("\n -> INFO: kconfig-inclusion file is generated \n {}".format("".join(kcfg_inc_raw)))
         return kcfg_inc_raw
 
@@ -133,11 +158,9 @@ class KConfigTask():
         x86_start, x86_end = FileHandler.find_marker_indices(kcfg_final, MLNX_KFG_MARKER)        
         x86_final = OrderedDict(list(KCFGData.x86_incl.items()) + list(KCFGData.x86_down.items()))
         kcfg_final = FileHandler.insert_kcfg_data(kcfg_final, x86_start, x86_end, x86_final)
-        # insert arm Kconfig
-        arm_start, arm_end = FileHandler.find_marker_indices(kcfg_final, MLNX_ARM_KFG_MARKER)        
+        # insert arm Kconfig      
         arm_final = OrderedDict(list(KCFGData.arm_incl.items()) + list(KCFGData.arm_down.items()))
-        kcfg_final = FileHandler.insert_kcfg_data(kcfg_final, arm_start, arm_end, arm_final)
-        # assert arm_final != KCFGData.arm_incl
+        kcfg_final = self.insert_arm64_section(kcfg_final, arm_final)
         # generate diff
         diff = difflib.unified_diff(new_kcfg_upstream, kcfg_final, fromfile='a/patch/kconfig-inclusions', tofile="b/patch/kconfig-inclusions", lineterm="\n")
         lines = []
@@ -157,8 +180,7 @@ class KConfigTask():
         x86_start, x86_end = FileHandler.find_marker_indices(kcfg_excl_raw, MLNX_KFG_MARKER)
         kcfg_excl_raw = FileHandler.insert_kcfg_excl_data(kcfg_excl_raw, x86_start, x86_end, KCFGData.x86_excl)
         # insert arm Kconfig
-        arm_start, arm_end = FileHandler.find_marker_indices(kcfg_excl_raw, MLNX_ARM_KFG_MARKER)
-        kcfg_excl_raw = FileHandler.insert_kcfg_excl_data(kcfg_excl_raw, arm_start, arm_end, KCFGData.arm_excl)
+        kcfg_excl_raw = self.insert_arm64_section(kcfg_excl_raw, KCFGData.arm_excl, True)
         print("\n -> INFO: kconfig-exclusion file is generated \n{}".format("".join(kcfg_excl_raw)))
         return kcfg_excl_raw
 

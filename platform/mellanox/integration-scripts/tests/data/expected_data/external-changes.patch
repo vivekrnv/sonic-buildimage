@@ -14,7 +14,7 @@
 
 --- a/patch/kconfig-inclusions
 +++ b/patch/kconfig-inclusions
-@@ -43,6 +43,17 @@
+@@ -41,4 +41,15 @@
  CONFIG_HWMON=y
  CONFIG_OF=y
  CONFIG_THERMAL_NETLINK=y
@@ -29,6 +29,4 @@
 +CONFIG_MLXBF_BOOTCTL=m
 +CONFIG_MLXBF_PMC=m
 +CONFIG_MLXBF_PTM=m
- ###-> mellanox_arm64-end
  
- [armhf]

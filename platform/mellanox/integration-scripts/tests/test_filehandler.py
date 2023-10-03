@@ -95,10 +95,10 @@ CONFIG_CGROUP_NET_PRIO
 # Unset X86_PAT according to Broadcom's requirement
 CONFIG_X86_PAT
 CONFIG_MLXSW_PCI
+###-> mellanox_amd64-start
+###-> mellanox_amd64-end
 
 [arm64]
-###-> mellanox_arm64-start
-###-> mellanox_arm64-end
 CONFIG_SQUASHFS_DECOMP_MULTI_PERCPU
 """
 
@@ -113,12 +113,12 @@ CONFIG_CGROUP_NET_PRIO
 # Unset X86_PAT according to Broadcom's requirement
 CONFIG_X86_PAT
 CONFIG_MLXSW_PCI
-
-[arm64]
-###-> mellanox_arm64-start
+###-> mellanox_amd64-start
 CONFIG_OF
 CONFIG_THERMAL_OF
-###-> mellanox_arm64-end
+###-> mellanox_amd64-end
+
+[arm64]
 CONFIG_SQUASHFS_DECOMP_MULTI_PERCPU
 """
 
@@ -195,8 +195,8 @@ class TestFilehandler:
                 "CONFIG_OF" : "y",
                 "CONFIG_THERMAL_OF" : "y"
         })
-        arm_start, arm_end = FileHandler.find_marker_indices(kcfg_inc_raw, MLNX_ARM_KFG_MARKER)
-        assert "###-> mellanox_arm64-start" in kcfg_inc_raw[arm_start]
-        assert "###-> mellanox_arm64-end" in kcfg_inc_raw[arm_end]
-        final_kcfg = FileHandler.insert_kcfg_excl_data(kcfg_inc_raw, arm_start, arm_end, new_opts)
+        x86_start, x86_end = FileHandler.find_marker_indices(kcfg_inc_raw, MLNX_KFG_MARKER)
+        assert "###-> mellanox_amd64-start" in kcfg_inc_raw[x86_start]
+        assert "###-> mellanox_amd64-end" in kcfg_inc_raw[x86_end]
+        final_kcfg = FileHandler.insert_kcfg_excl_data(kcfg_inc_raw, x86_start, x86_end, new_opts)
         assert final_kcfg == FINAL_MOCK_SLK_EXCL.splitlines(True)

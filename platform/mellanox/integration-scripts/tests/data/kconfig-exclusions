@@ -19,8 +19,6 @@ CONFIG_THERMAL_STATISTICS
 ###-> mellanox_amd64-end
 
 [arm64]
-###-> mellanox_arm64-start
-###-> mellanox_arm64-end
 
 [armhf]
 
@@ -28,3 +26,5 @@ CONFIG_THERMAL_STATISTICS
 CONFIG_ARCH_VIRT
 CONFIG_ARCH_BCM
 CONFIG_ARCH_EXYNOS
+
+[mellanox-arm64]
