@@ -503,9 +503,11 @@ create_pxe_archive(){
     pushd $arxiv_wdir
 
     cp /usr/lib/grub/arm64-efi/monolithic/$GRUB_AA64 .
-    cp $CDIR/$FILESYSTEM_ROOT/boot/shimaa64.efi .
-    cp $CDIR/$FILESYSTEM_ROOT/boot/mmaa64.efi .
-    cp $CDIR/$FILESYSTEM_ROOT/boot/grubaa64.efi .
+     if [ "$SECURE_UPGRADE_MODE" = "dev" -o "$SECURE_UPGRADE_MODE" = "prod"]; then
+        cp $CDIR/$FILESYSTEM_ROOT/boot/shimaa64.efi .
+        cp $CDIR/$FILESYSTEM_ROOT/boot/mmaa64.efi .
+        cp $CDIR/$FILESYSTEM_ROOT/boot/grubaa64.efi .
+    fi
     cp $WDIR/vmlinuz Image
     cp $WDIR/dump-initramfs-v0 initramfs
 
