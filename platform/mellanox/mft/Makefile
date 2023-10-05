@@ -42,14 +42,19 @@ DERIVED_TARGETS = mft-oem_$(MFT_VERSION)-$(MFT_REVISION)_$(CONFIGURED_ARCH).deb
 DKMS_CTRL = /var/lib/dkms/kernel-mft-dkms/
 DKMS_TMP := $(shell mktemp -u -d -t dkms.XXXXXXXXXX)
 
+MFT_TMP = /tmp/mft_build/
+
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	rm -rf $(MFT_NAME)
+	mkdir -p $(MFT_TMP)
+	pushd $(MFT_TMP)
 	wget -O $(MFT_TGZ) $(MFT_TGZ_URL)
 	tar xzf $(MFT_TGZ)
 
-	# fix timestamp because we do not actually build tools, only kernel
+	# fix timestamp
 	touch $(MFT_NAME)/DEBS/*.deb
 	mv $(MFT_NAME)/DEBS/*.deb $(DEST)
+	popd
+	rm -rf $(MFT_TMP)
 
 $(addprefix $(DEST)/, $(DERIVED_TARGETS)): $(DEST)/% : $(DEST)/$(MAIN_TARGET)
 
