@@ -503,7 +503,7 @@ create_pxe_archive(){
     pushd $arxiv_wdir
 
     cp /usr/lib/grub/arm64-efi/monolithic/$GRUB_AA64 .
-     if [ "$SECURE_UPGRADE_MODE" = "dev" -o "$SECURE_UPGRADE_MODE" = "prod"]; then
+    if [[ "$SECURE_UPGRADE_MODE" == "dev" || "$SECURE_UPGRADE_MODE" == "prod" ]]; then
         cp $CDIR/$FILESYSTEM_ROOT/boot/shimaa64.efi .
         cp $CDIR/$FILESYSTEM_ROOT/boot/mmaa64.efi .
         cp $CDIR/$FILESYSTEM_ROOT/boot/grubaa64.efi .
