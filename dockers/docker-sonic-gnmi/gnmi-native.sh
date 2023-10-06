@@ -70,5 +70,6 @@ else
 fi
 
 TELEMETRY_ARGS+=" -gnmi_native_write=true"
+TELEMETRY_ARGS+=" -zmq_address=tcp://127.0.0.1:8100"
 
 exec /usr/sbin/telemetry ${TELEMETRY_ARGS}
