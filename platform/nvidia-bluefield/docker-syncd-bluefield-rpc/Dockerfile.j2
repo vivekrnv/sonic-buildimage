@@ -35,7 +35,8 @@ RUN apt-get update \
     cmake               \
     libqt5core5a        \
     libqt5network5      \
-    libboost-atomic1.74.0
+    libboost-atomic1.74.0 \
+    ethtool
 
 # Build and install python-scapy
 RUN curl http://ftp.us.debian.org/debian/pool/main/s/scapy/python-scapy_2.4.0-2_all.deb --output python-scapy_2.4.0-2_all.deb \
