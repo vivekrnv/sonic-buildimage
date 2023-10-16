@@ -64,6 +64,13 @@ tmp_dir=
 clean_up()
 {
     rm -rf $tmp_dir
+    if [ -n "$2" ]; then
+        rm -rf "$2"
+        if [ -n "$3" ];then
+            rm -rf "$3"
+        fi
+        echo "Error: CMS signature not created - exiting without signing"
+    fi
     exit $1
 }
 

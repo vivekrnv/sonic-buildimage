@@ -221,7 +221,10 @@ elif [ "$IMAGE_TYPE" = "aboot" ]; then
     fi
 
 elif [[ $CONFIGURED_PLATFORM == nvidia-bluefield ]]; then
-    sudo --preserve-env /sonic/installer/bluefield/create_sonic_image --kernel $KVERSION
+    if [[ $SECURE_UPGRADE_MODE != "no_sign" ]]; then
+         secure_upgrade_keys="--signing-key "$SECURE_UPGRADE_DEV_SIGNING_KEY" --signing-cert "$SECURE_UPGRADE_SIGNING_CERT""
+    fi
+    sudo --preserve-env /sonic/installer/bluefield/create_sonic_image --kernel $KVERSION "$secure_upgrade_keys"
     if [[ $IMAGE_TYPE != bin ]]; then
         sudo chown $USER ./$OUTPUT_BFB_IMAGE
         if [[ $IMAGE_TYPE == pxe ]]; then

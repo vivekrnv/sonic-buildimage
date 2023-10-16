@@ -31,6 +31,8 @@ INITRD=
 VMLINUZ=
 MODULES_DIR=
 
+SIGNING_CERT=
+SIGNING_KEY=
 CDIR=/sonic/
 SDIR=$CDIR/installer/bluefield
 DDIR=$CDIR
@@ -52,11 +54,12 @@ cat << EOF
 Usage: `basename $0` [ OPTIONS ]
 OPTIONS:
 -k, --kernel <kernel version>     Kernel version for the SmartNIC.
+-sc, --signing-cert               Secure upgrade signing certificate.
+-sk, --signing-key                Secure upgrade signing key.
 -v, --verbose                     Run script in verbose mode. Will print out each step of execution.
 -h, --help                        Display help
 EOF
 }
-
 parse_args() {
     while [[ $@ != "" ]]; do
         case $1 in
@@ -72,6 +75,16 @@ parse_args() {
                 shift
                 KERNEL_VERSION=$1
                 ;;
+	    -sc|--signing-cert)
+	        shift
+		echo "signing cert $1"
+		SIGNING_CERT="$1"
+		;;
+            -sk|--signing-key)
+		shift
+		echo "signing key $1"
+		SIGNING_KEY="$1"
+		;;
             *)
                 usage
                 exit 1
@@ -147,8 +160,55 @@ generate_s2s_installer_image_bluefield()
     sed -i -e "s/%%IMAGE_SHA1%%/$sha1/" /sonic/$OUTPUT_ONIE_IMAGE
     echo -n "."
     tar_size="$(wc -c < "${sharch}")"
-    sed -i -e "s|%%PAYLOAD_IMAGE_SIZE%%|${tar_size}|" /sonic/$OUTPUT_ONIE_IMAGE
+    output_file="/sonic/$OUTPUT_ONIE_IMAGE"
+    sed -i -e "s|%%PAYLOAD_IMAGE_SIZE%%|${tar_size}|" ${output_file}
     cat $sharch >> /sonic/$OUTPUT_ONIE_IMAGE
+    echo "secure upgrade flags: SECURE_UPGRADE_MODE = $SECURE_UPGRADE_MODE, \
+        SECURE_UPGRADE_DEV_SIGNING_KEY = $SIGNING_KEY, SECURE_UPGRADE_SIGNING_CERT = $SIGNING_CERT"
+key_file=${SIGNING_KEY}
+cert_file=${SIGNING_CERT}
+if [ "$SECURE_UPGRADE_MODE" = "dev" -o "$SECURE_UPGRADE_MODE" = "prod" -o "$signing_keys_path" = "ok" ]; then
+    CMS_SIG="${tmp_dir}/signature.sig"
+    scripts_dir="/sonic/scripts"
+
+    echo "$0 $SECURE_UPGRADE_MODE signing - creating CMS signature for ${output_file}. Output file ${CMS_SIG}"
+
+    if [ "$SECURE_UPGRADE_MODE" = "dev" ]; then
+        if [[ -z "$key_file" ]] || [[ -z "$cert_file" ]]; then
+            echo "dev signing key and/or cert not defined. SECURE_UPGRADE_DEV_SIGNING_KEY: $key_file SECURE_UPGRADE_SIGNING_CERT: $cert_file"
+            clean_dir $tmp_dir 1
+        fi
+        echo "$0 dev keyfile location: ${key_file}."
+        [ -f ${scripts_dir}/sign_image_dev.sh ] || {
+            echo "dev sign script ${scripts_dir}/sign_image_dev.sh not found"
+            rm -rf ${output_file}
+        }
+        (${scripts_dir}/sign_image_dev.sh ${cert_file} ${key_file} ${output_file} ${CMS_SIG}) || {
+            echo "CMS sign error $?"
+            rm -rf ${CMS_SIG} ${output_file}
+        }
+    else # "$SECURE_UPGRADE_MODE" has to be equal to "prod"
+        [ -f ${scripts_dir}/sign_image_${machine}.sh ] || {
+            echo "prod sign script ${scripts_dir}/sign_image_${machine}.sh not found"
+            rm -rf ${output_file}
+        }
+        (${scripts_dir}/sign_image_${machine}.sh ${output_file} ${CMS_SIG} ${SECURE_UPGRADE_MODE}) || {
+            echo "CMS sign error $?"
+            rm -rf ${CMS_SIG} ${output_file}
+        }
+    fi
+
+    [ -f "$CMS_SIG" ] || {
+         echo "Error: CMS signature not created - exiting without signing"
+         clean_dir $tmp_dir 1
+    }
+    # append signature to binary
+    cat ${CMS_SIG} >> ${output_file}
+    sudo rm -rf ${CMS_SIG}
+elif [ "$SECURE_UPGRADE_MODE" -ne "no_sign" ]; then
+    echo "SECURE_UPGRADE_MODE not defined or defined as $SECURE_UPGRADE_MODE - build without signing"
+fi
+
     rm -rf $tmp_dir
 
     echo " Done."
@@ -237,7 +297,7 @@ add_sonic_to_initramfs() {
     # Add the logic to put second stage installer into bfb initramfs
     mkdir -p debian
 
-    j2 ${SDIR}/install.sh.j2 -o ./debian/install.sh
+    j2 ${SDIR}/install.sh.j2 -o ./debian/install.sh -e SECURE_UPGRADE_MODE="$SECURE_UPGRADE_MODE"
     chmod 0755 ./debian/install.sh
 
     # Copy the INSTALLER payload
@@ -394,6 +454,8 @@ create_bfb_image() {
     cp $TMFIFO_DRIVER .
     cp $SDHCI_OF_DWCMSHC_DRIVER .
     cp $WATCHDOG .
+    mkdir -p ./secure-boot
+    cp -r $CDIR/$FILESYSTEM_ROOT/boot/* ./secure-boot
 
     mkdir -p ./lib/firmware/mellanox/boot/
     cp /lib/firmware/mellanox/boot/default.bfb ./lib/firmware/mellanox/boot/default.bfb
@@ -441,7 +503,11 @@ create_pxe_archive(){
     pushd $arxiv_wdir
 
     cp /usr/lib/grub/arm64-efi/monolithic/$GRUB_AA64 .
-
+    if [[ "$SECURE_UPGRADE_MODE" == "dev" || "$SECURE_UPGRADE_MODE" == "prod" ]]; then
+        cp $CDIR/$FILESYSTEM_ROOT/boot/shimaa64.efi .
+        cp $CDIR/$FILESYSTEM_ROOT/boot/mmaa64.efi .
+        cp $CDIR/$FILESYSTEM_ROOT/boot/grubaa64.efi .
+    fi
     cp $WDIR/vmlinuz Image
     cp $WDIR/dump-initramfs-v0 initramfs
 
@@ -457,20 +523,16 @@ create_pxe_archive(){
 main() {
     echo $@
     parse_args $@
-
     . $CDIR/onie-image-arm64.conf
-
     # Export ENV Variables for j2cli
     CHROOT_DIR=$CDIR/$FILESYSTEM_ROOT
     if [[ ! -d "$CHROOT_DIR" ]]; then
         echo "[create_sonic_image] Error! Path to CHROOT not found"
         exit 1
     fi
-
     export GRUB_CFG=$(cat /sonic/installer/bluefield/sonic-grub.cfg)
     export IMAGE_VERSION=$(cat $CHROOT_DIR/etc/sonic/sonic_version.yml | grep "build_version" | sed -e "s/build_version: //g;s/'//g")
-    export BF2_BOOT_ARGS BF3_BOOT_ARGS BF2_GRUB_CFG BF3_GRUB_CFG ONIE_INSTALLER_PAYLOAD FILESYSTEM_DOCKERFS DOCKERFS_DIR FILESYSTEM_SQUASHFS KERNEL_VERSION
-
+    export BF2_BOOT_ARGS BF3_BOOT_ARGS BF2_GRUB_CFG BF3_GRUB_CFG ONIE_INSTALLER_PAYLOAD FILESYSTEM_DOCKERFS DOCKERFS_DIR FILESYSTEM_SQUASHFS KERNEL_VERSION SECURE_UPGRADE_MODE SIGNING_KEY SIGNING_CERT
     if [[ $IMAGE_TYPE == bin ]]; then
         # bluefield Doesn't have ONiE Support yet and this *.bin image generated can only be used for SONiC-SONiC installation
         echo "Build SONiC to SONiC installer for Bluefield"

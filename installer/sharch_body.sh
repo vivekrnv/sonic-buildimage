@@ -13,8 +13,8 @@
 echo -n "Verifying image checksum ..."
 payload_image_size=%%PAYLOAD_IMAGE_SIZE%%
 
-sha1=$(sed -e '1,/^exit_marker$/d' "$0" | head -c $payload_image_size | sha1sum | awk '{ print $1 }')
 
+sha1=$(sed -e '1,/^exit_marker$/d' "$0" | head -c $payload_image_size | sha1sum | awk '{ print $1 }')
 payload_sha1=%%IMAGE_SHA1%%
 
 if [ "$sha1" != "$payload_sha1" ] ; then
