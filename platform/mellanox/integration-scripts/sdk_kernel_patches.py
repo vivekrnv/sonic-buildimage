@@ -82,7 +82,7 @@ class SDKAction(Action):
         major_kernel_path = os.path.join(KERNEL_BACKPORTS, "{}.{}".format(kernel, major))
 
         # if the k_dir with actual minor doesn't exit, use the closest minor version
-        for minor_i in range(minor_int, 0, -1):
+        for minor_i in range(minor_int, -1, -1):
             path = os.path.join(major_kernel_path, "{}.{}.{}".format(kernel, major, minor_i))
             if os.path.exists(os.path.join(self.args.patches, path)):
                 minor = str(minor_i)
