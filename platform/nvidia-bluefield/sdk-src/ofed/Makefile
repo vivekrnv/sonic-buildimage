@@ -25,11 +25,11 @@ DERIVED_TARGETS = $(OFED_DERIVED_DEBS)
 OFED_TAR = MLNX_OFED_SRC-debian-$(OFED_VER_FULL).tgz
 OFED_SRC = MLNX_OFED_SRC-$(OFED_VER_FULL)
 
-SRC_DEB = mlnx-ofed-kernel-dkms_$(OFED_VER_SHORT)-*_all.deb
+SRC_DEB = mlnx-ofed-kernel-dkms_$(OFED_VER_SHORT)*_all.deb
 SRC_DEB_DEPENDENCIES = mlnx-tools_*_$(BUILD_ARCH).deb \
-		mlnx-ofed-kernel-utils_$(OFED_VER_SHORT)-*_$(BUILD_ARCH).deb
+		mlnx-ofed-kernel-utils_$(OFED_VER_SHORT)*_$(BUILD_ARCH).deb
 
-DKMS_BMDEB = /var/lib/dkms/mlnx-ofed-kernel/$(OFED_VER_SHORT)/bmdeb/
+DKMS_BMDEB = /var/lib/dkms/mlnx-ofed-kernel/$(OFED_KERNEL_VER_FULL)/bmdeb/
 DKMS_TMP := $(shell mktemp -u -d -t dkms.XXXXXXXXXX)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
@@ -56,7 +56,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	sudo mv /tmp/uname /bin/uname
 
 	# Build the Debs
-	sudo ./install.pl -k $(KVERSION) --kernel-only --build-only --without-depcheck --kernel-extra-args --force
+	sudo ./install.pl -k $(KVERSION) --kernel-only --build-only --without-depcheck --kernel-extra-args --force --with-mlnx-tools
 
 	sudo chown -R ${USER} ./*
 
@@ -69,8 +69,8 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 		fi
 	done
 
-	sudo dkms build mlnx-ofed-kernel/$(OFED_VER_SHORT) -k $(KVERSION) -a $(BUILD_ARCH)
-	sudo dkms mkbmdeb mlnx-ofed-kernel/$(OFED_VER_SHORT) -k $(KVERSION) -a $(BUILD_ARCH)
+	sudo dkms build mlnx-ofed-kernel/$(OFED_KERNEL_VER_FULL) -k $(KVERSION) -a $(BUILD_ARCH)
+	sudo dkms mkbmdeb mlnx-ofed-kernel/$(OFED_KERNEL_VER_FULL) -k $(KVERSION) -a $(BUILD_ARCH)
 
 	# w/a: remove dependencies
 	mkdir -p $(DKMS_TMP)/DEBIAN
