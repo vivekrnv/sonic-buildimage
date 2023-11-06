@@ -17,7 +17,7 @@
 
 include $(PLATFORM_PATH)/$(RECIPE_DIR)/gh-helpers.mk
 
-DPU_SAI_VERSION = SAIBuild0.0.25.0
+DPU_SAI_VERSION = SAIBuild0.0.26.0
 
 # Place here URL where SAI sources exist
 DPU_SAI_SOURCE_BASE_URL=
