@@ -18,8 +18,6 @@
 try:
     from sonic_platform_base.thermal_base import ThermalBase
     from sonic_py_common.logger import Logger
-    import subprocess
-    import re
     import os
 except ImportError as e:
     raise ImportError (str(e) + "- required module not found")
@@ -32,54 +30,53 @@ MLXBF_BASE_PATH = '/sys/kernel/debug/mlxbf-ptm/monitors/status'
 SENSORS = [
     {'name': 'CPU', 'mlxbf_sensor_name': 'core_temp', 'ht': 95, 'cht': 100},
     {'name': 'DDR', 'mlxbf_sensor_name': 'ddr_temp', 'ht': 95, 'cht': 100},
-    {'name': 'SFP0', 'dev_index': '0'},
-    {'name': 'SFP1', 'dev_index': '0.1'},
+    {'name': 'SFP0', 'iface': 'Ethernet0', 'hwmon_path': None},
+    {'name': 'SFP1', 'iface': 'Ethernet4', 'hwmon_path': None},
 ]
 
-def get_mget_dev_prefix():
-    mst_devices = os.listdir('/dev/mst')
-    if not mst_devices:
-        logger.log_error('/dev/mst is empty')
-        return None
-    m = re.match(r"^(.*)_pciconf", mst_devices[0])
-    return m.group(1)
+def set_hwmon_path(sensor):
+    base = f'/sys/class/net/{sensor["iface"]}/device/hwmon'
+    dirs = os.listdir(base)
+    if len(dirs) != 1 or not dirs[0].startswith('hwmon'):
+        logger.log_error(f'Failed to find hwmon path for {sensor["iface"]}')
+        return
+    sensor['hwmon_path'] = f'{base}/{dirs[0]}'
 
 def initialize_chassis_thermals():
     thermal_list = []
-    dev_prefix = get_mget_dev_prefix()
     for s in SENSORS:
-        if 'dev_index' in s:
-            s['dev_prefix'] = dev_prefix
+        if 'hwmon_path' in s:
+            set_hwmon_path(s)
         thermal_list.append(Thermal(**s))
     return thermal_list
 
-def read_temp_mlxbf(sensor_name):
-    path = f'{MLXBF_BASE_PATH}/{sensor_name}'
+def read_fs(path, name):
     try:
         with open(path) as f:
             return float(f.readline().strip())
     except Exception as e:
-        logger.log_error(f'Failed to read {sensor_name} - {str(e)}')
+        logger.log_error(f'Failed to read {name} - {str(e)}')
         return 'N/A'
 
-def mget_temp_read(dev_prefix, dev_index):
-    path = f'/dev/mst/{dev_prefix}_pciconf{dev_index}'
-    cmd = f'mget_temp -d {path}'
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output, err = p.communicate()
-    if err:
-        logger.log_error(f'Failed to exec mget_temp - {err.decode()}')
+def read_temp_mlxbf(sensor_name):
+    path = f'{MLXBF_BASE_PATH}/{sensor_name}'
+    return read_fs(path, sensor_name)
+
+def read_temp_hwmon(hwmon_path, sensor):
+    if not hwmon_path:
         return 'N/A'
-    value = output.decode().strip()
-    return float(value)
+    path = f'{hwmon_path}/{sensor}'
+    v = read_fs(path, sensor)
+    if v == 'N/A':
+        return v
+    return v / 1000
 
 class Thermal(ThermalBase):
-    def __init__(self, name, mlxbf_sensor_name=None, dev_index=None, dev_prefix = None, ht='N/A', cht='N/A'):
+    def __init__(self, name, mlxbf_sensor_name=None, iface=None, hwmon_path=None, ht='N/A', cht='N/A'):
         super(Thermal, self).__init__()
         self.name = name
         self.mlxbf_sensor_name = mlxbf_sensor_name
-        self.dev_index = dev_index
-        self.dev_prefix = dev_prefix
+        self.hwmon_path = hwmon_path
         self.ht = ht
         self.cht = cht
 
@@ -100,11 +97,10 @@ class Thermal(ThermalBase):
             A float number of current temperature in Celsius up to nearest thousandth
             of one degree Celsius, e.g. 30.125
         """
-
         if self.mlxbf_sensor_name:
             return read_temp_mlxbf(self.mlxbf_sensor_name)
         else:
-            return mget_temp_read(self.dev_prefix, self.dev_index)
+            return read_temp_hwmon(self.hwmon_path, 'temp1_input')
 
     def get_high_threshold(self):
         """
@@ -124,7 +120,10 @@ class Thermal(ThermalBase):
             A float number, the high critical threshold temperature of thermal in Celsius
             up to nearest thousandth of one degree Celsius, e.g. 30.125
         """
-        return self.cht
+        if self.hwmon_path:
+            return read_temp_hwmon(self.hwmon_path, 'temp1_crit')
+        else:
+            return self.cht
 
     def get_low_threshold(self):
         """

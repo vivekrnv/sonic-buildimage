@@ -45,12 +45,23 @@ class TestThermal:
 
         for s in SENSORS:
             assert 'name' in s
-            assert 'mlxbf_sensor_name' in s or ('dev_index' in s and 'dev_prefix' in s)
+            assert 'mlxbf_sensor_name' in s or 'hwmon_path' in s
 
         sensor_names = list(map(lambda x: x.get('name'), SENSORS))
         thermal_names = list(map(lambda x: x.get_name(), thermal_list))
         for sn in sensor_names:
             assert sn in thermal_names
+
+
+    def test_hwmon_read(self, *args):
+        from sonic_platform import thermal_bf3 as thermal
+        from sonic_platform.thermal_bf3 import Thermal
+
+        thermal.read_fs = MagicMock(return_value=83123)
+        sensor = {'name': 'test', 'hwmon_path': '/tmp/', 'ht': 95, 'cht': 100}
+        t = Thermal(**sensor)
+        assert t.get_temperature() == 83.123
+        assert t.get_high_critical_threshold() == 83.123
 
 
     def test_thermal_get(self, *args):
@@ -70,11 +81,11 @@ class TestThermal:
             assert t.get_low_critical_threshold() == 'N/A'
 
         for tv in temp_test_mocked_vals:
-            thermal.mget_temp_read = MagicMock(return_value=tv)
-            sensor = {'name': 'test', 'dev_index': '0.1', 'ht': 95, 'cht': 100}
+            thermal.read_temp_hwmon = MagicMock(return_value=tv)
+            sensor = {'name': 'test', 'hwmon_path': '/tmp/', 'ht': 95, 'cht': 100}
             t = Thermal(**sensor)
             assert t.get_temperature() == tv
             assert t.get_high_threshold() == sensor['ht']
-            assert t.get_high_critical_threshold() == sensor['cht']
+            assert t.get_high_critical_threshold() == tv
             assert t.get_low_threshold() == 'N/A'
             assert t.get_low_critical_threshold() == 'N/A'
