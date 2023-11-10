@@ -1,6 +1,6 @@
 --- a/patch/series
 +++ b/patch/series
-@@ -114,17 +114,49 @@
+@@ -113,17 +113,49 @@
  0039-mlxsw-reg-Limit-MTBR-register-payload-to-a-single-da.patch
  0040-mlxsw-core-Extend-allowed-list-of-external-cooling-d.patch
  0041-mlxsw-i2c-Utilize-standard-macros-for-dividing-buffe.patch
@@ -53,7 +53,7 @@
 
 --- a/patch/kconfig-inclusions
 +++ b/patch/kconfig-inclusions
-@@ -204,4 +204,15 @@
+@@ -203,4 +203,15 @@
  [mellanox-arm64]
  CONFIG_THERMAL_STATISTICS=n
  CONFIG_THERMAL_WRITABLE_TRIPS=y
