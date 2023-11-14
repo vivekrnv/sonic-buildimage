@@ -20,6 +20,10 @@ RUN useradd $user -l -u $uid -g $guid -d /var/$user -m -s /bin/bash
 
 RUN gpasswd -a $user docker
 
+{% if DOCKERD_GID is defined and DOCKERD_GID|length %}
+RUN usermod -aG {{ DOCKERD_GID }} $user
+{%- endif %}
+
 # Config git for stg
 RUN su $user -c "git config --global user.name $user"
 RUN su $user -c "git config --global user.email $user@contoso.com"
