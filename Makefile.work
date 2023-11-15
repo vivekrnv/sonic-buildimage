@@ -232,7 +232,6 @@ $(shell CONFIGURED_ARCH=$(CONFIGURED_ARCH) \
 $(shell CONFIGURED_ARCH=$(CONFIGURED_ARCH) \
 	MULTIARCH_QEMU_ENVIRON=$(MULTIARCH_QEMU_ENVIRON) \
 	CROSS_BUILD_ENVIRON=$(CROSS_BUILD_ENVIRON) \
-	DOCKERD_GID=$(HOST_DOCKERD_GID) \
 	j2 $(SLAVE_DIR)/Dockerfile.user.j2 > $(SLAVE_DIR)/Dockerfile.user)
 
 ifeq ($(CROSS_BUILD_ENVIRON), y)
@@ -389,7 +388,7 @@ endif
 
 ifeq ($(SONIC_CONFIG_USE_NATIVE_DOCKERD_FOR_BUILD), y)
 ifneq ($(MULTIARCH_QEMU_ENVIRON), y)
-    DOCKER_RUN += -v /var/run/docker.sock:/var/run/docker.sock
+    DOCKER_RUN += -v /var/run/docker.sock:/var/run/docker.sock --group-add $(HOST_DOCKERD_GID)
 endif
 endif
 
