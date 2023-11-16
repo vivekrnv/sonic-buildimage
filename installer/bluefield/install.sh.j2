@@ -275,6 +275,8 @@ EOF
 # Copy the grub.cfg onto the boot-directory as specified in the grub-install
 {% if SECURE_UPGRADE_MODE in ['dev', 'prod'] %}
 ex cp $grub_cfg /mnt/boot/efi/EFI/$demo_volume_label/grub.cfg
+ex mkdir -p /mnt/grub
+ex cp $grub_cfg /mnt/grub/grub.cfg
 {% else %}
 ex mkdir -p /mnt/grub
 ex cp $grub_cfg /mnt/grub/grub.cfg
