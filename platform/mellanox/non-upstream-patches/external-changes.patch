@@ -51,3 +51,22 @@
  8006-i2c-mlxcpld-Downstream-WA-to-avoid-error-for-SMBUS-r.patch
  8007-hwmon-mlxreg-fan-Downstream-Allow-fan-speed-setting-.patch
 
+--- a/patch/kconfig-inclusions
++++ b/patch/kconfig-inclusions
+@@ -203,4 +203,15 @@
+ [mellanox-arm64]
+ CONFIG_THERMAL_STATISTICS=n
+ CONFIG_THERMAL_WRITABLE_TRIPS=y
+-
++CONFIG_SENSORS_MP2891=m
++CONFIG_MMC_SDHCI_OF_DWCMSHC=m
++CONFIG_VFIO_PLATFORM=m
++CONFIG_SENSORS_ARM_SCMI=m
++CONFIG_MLXBF_GIGE=m
++CONFIG_I2C_MLXBF=m
++CONFIG_GPIO_MLXBF3=m
++CONFIG_MLXBF_TMFIFO=m
++CONFIG_MLXBF_BOOTCTL=m
++CONFIG_MLXBF_PMC=m
++CONFIG_MLXBF_PTM=m
++
