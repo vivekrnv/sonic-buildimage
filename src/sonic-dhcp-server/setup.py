@@ -1,18 +1,12 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 dependencies = [
-    "psutil",
-    "coverage"
+    "psutil"
 ]
 
 test_deps = [
-    "pytest"
-]
-
-py_modules = [
-    "dhcp_server_utils",
-    "dhcp_cfggen",
-    "dhcp_lease"
+    "pytest",
+    "freezegun"
 ]
 
 setup(
@@ -29,14 +23,16 @@ setup(
         "wheel",
     ],
     packages=[
-        "dhcp_server"
+        "dhcp_server.common",
+        "dhcp_server.dhcpservd",
+        "dhcp_server.dhcprelayd"
     ],
     entry_points={
         "console_scripts": [
-            "dhcpservd = dhcp_server.dhcpservd:main"
+            "dhcprelayd = dhcp_server.dhcprelayd.dhcprelayd:main",
+            "dhcpservd = dhcp_server.dhcpservd.dhcpservd:main"
         ]
     },
-    py_modules=py_modules,
     classifiers=[
         "Intended Audience :: Developers",
         "Operating System :: Linux",
@@ -45,5 +41,8 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8"
-    ]
+    ],
+    package_data={
+        "dhcp_server.dhcpservd": ["dhcp_option.csv"]
+    }
 )
