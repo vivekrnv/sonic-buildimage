@@ -20,12 +20,10 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 IPMB_HOST = ipmb-host-1.0
-IPMB_HOST_TAR = ${IPMB_HOST}.tar.gz
 
 $(addprefix $(DEST)/, $(IPMB_HOST_DRIVER)): $(DEST)/% :
-	rm -rf ${IPMB_HOST} ${IPMB_HOST_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(IPMB_HOST_TAR)"
-	tar -z -f $(IPMB_HOST_TAR) -x
+	rm -rf ${IPMB_HOST}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${IPMB_HOST}
 
 	pushd ${IPMB_HOST}  
 

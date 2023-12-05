@@ -20,13 +20,11 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF_PMC = mlxbf-pmc-${MLXBF_PMC_DRIVER_VERSION}
-MLXBF_PMC_TAR = ${MLXBF_PMC}.tar.gz
 MODULE_DIR := $(shell pwd)/${MLXBF_PMC}
 
 $(addprefix $(DEST)/, $(MLXBF_PMC_DRIVER)): $(DEST)/% :
-	rm -rf ./mlxbf-pmc-$(MLXBF_PMC_DRIVER_VERSION)
-	wget -N ${BSD_BASE_SOURCE_URL}/$(MLXBF_PMC_TAR)
-	tar -z -f $(MLXBF_PMC_TAR) -x
+	rm -rf ${MLXBF_PMC}
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF_PMC}
 
 	pushd ${MLXBF_PMC}
 

@@ -20,12 +20,10 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF_BOOTCTL = mlxbf-bootctl-${MLXBF_BOOTCTL_DEB_VERSION}
-MLXBF_BOOTCTL_TAR = ${MLXBF_BOOTCTL}.tar.gz
 
 $(addprefix $(DEST)/, $(MLXBF_BOOTCTL_DEB)): $(DEST)/% :
-	rm -rf ${MLXBF_BOOTCTL} ${MLXBF_BOOTCTL_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_BOOTCTL_TAR)"
-	tar -z -f $(MLXBF_BOOTCTL_TAR) -x
+	rm -rf ${MLXBF_BOOTCTL}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF_BOOTCTL}
 
 	pushd ${MLXBF_BOOTCTL}
 

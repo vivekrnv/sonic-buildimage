@@ -20,13 +20,11 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF_LIVEFISH = mlxbf-livefish-${MLXBF_LIVEFISH_DRIVER_VERSION}
-MLXBF_LIVEFISH_TAR = ${MLXBF_LIVEFISH}.tar.gz
 MODULE_DIR := $(shell pwd)/${MLXBF_LIVEFISH}
 
 $(addprefix $(DEST)/, $(MLXBF_LIVEFISH_DRIVER)): $(DEST)/% :
-	rm -rf ./mlxbf-livefish-$(MLXBF_LIVEFISH_DRIVER_VERSION)
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_LIVEFISH_TAR)"
-	tar -z -f $(MLXBF_LIVEFISH_TAR) -x
+	rm -rf ${MLXBF_LIVEFISH}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF_LIVEFISH}
 
 	pushd ${MLXBF_LIVEFISH}
 

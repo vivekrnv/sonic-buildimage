@@ -20,22 +20,15 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 TMFIFO = tmfifo-${TMFIFO_DRIVER_VERSION}
-TMFIFO_TAR = ${TMFIFO}.tar.gz
 MODULE_DIR := $(shell pwd)/${TMFIFO}
 
 $(addprefix $(DEST)/, $(TMFIFO_DRIVER)): $(DEST)/% :
-	rm -rf ./tmfifo-${TMFIFO_DRIVER_VERSION}.tar.gz ./tmfifo-${TMFIFO_DRIVER_VERSION}
-	wget -N ${BSD_BASE_SOURCE_URL}/tmfifo-${TMFIFO_DRIVER_VERSION}.tar.gz 
-	tar -z -f tmfifo-${TMFIFO_DRIVER_VERSION}.tar.gz -x
+	rm -rf ${TMFIFO}
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${TMFIFO}
 
 	pushd ./tmfifo-${TMFIFO_DRIVER_VERSION}
 
-	# Build the package
-ifeq ($(CROSS_BUILD_ENVIRON), y)
-	make -C /lib/modules/$(KVERSION)/build ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- M=$(MODULE_DIR)
-else
 	make -C /lib/modules/$(KVERSION)/build M=$(MODULE_DIR)
-endif
 	
 	mv ${TMFIFO_DRIVER} $(DEST)/
 	popd

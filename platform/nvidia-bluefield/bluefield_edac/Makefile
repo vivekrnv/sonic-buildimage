@@ -20,12 +20,10 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 BLUEFIELD_EDAC = bluefield_edac-${BLUEFIELD_EDAC_DRIVER_VERSION}
-BLUEFIELD_EDAC_TAR = ${BLUEFIELD_EDAC}.tar.gz
 
 $(addprefix $(DEST)/, $(BLUEFIELD_EDAC_DRIVER)): $(DEST)/% :
-	rm -rf ${BLUEFIELD_EDAC} ${BLUEFIELD_EDAC_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(BLUEFIELD_EDAC_TAR)"
-	tar -z -f $(BLUEFIELD_EDAC_TAR) -x
+	rm -rf ${BLUEFIELD_EDAC}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${BLUEFIELD_EDAC}
 
 	pushd ${BLUEFIELD_EDAC}
 

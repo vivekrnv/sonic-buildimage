@@ -20,13 +20,11 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 PWR_MLXBF = pwr-mlxbf-$(PWR_MLXBF_DRIVER_VERSION)
-PWR_MLXBF_TAR = $(PWR_MLXBF).tar.gz
 MODULE_DIR := $(shell pwd)/$(PWR_MLXBF)
 
 $(addprefix $(DEST)/, $(PWR_MLXBF_DRIVER)): $(DEST)/% :
-	rm -rf mlxbf-pka-$(PWR_MLXBF_DRIVER_VERSION)
-	wget -N $(BSD_BASE_SOURCE_URL)/$(PWR_MLXBF_TAR)
-	tar -z -f $(PWR_MLXBF_TAR) -x
+	rm -rf ${PWR_MLXBF}
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${PWR_MLXBF}
 
 	pushd $(PWR_MLXBF)
 

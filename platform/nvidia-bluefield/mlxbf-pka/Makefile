@@ -20,13 +20,11 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF_PKA = mlxbf-pka-${MLXBF_PKA_DRIVER_VERSION}
-MLXBF_PKA_TAR = ${MLXBF_PKA}.tar.gz
 MODULE_DIR := $(shell pwd)/${MLXBF_PKA}
 
 $(addprefix $(DEST)/, $(MLXBF_PKA_DRIVER)): $(DEST)/% :
-	rm -rf ./mlxbf-pka-$(MLXBF_PKA_DRIVER_VERSION)
-	wget -N ${BSD_BASE_SOURCE_URL}/$(MLXBF_PKA_TAR)
-	tar -z -f $(MLXBF_PKA_TAR) -x
+	rm -rf ${MLXBF_PKA}
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF_PKA}
 
 	pushd ${MLXBF_PKA}
 

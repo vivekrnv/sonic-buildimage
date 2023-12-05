@@ -17,20 +17,17 @@
 
 .ONESHELL:
 SHELL = /bin/bash
+.SHELLFLAGS += -ex
 
 SDHCI_OF_DWCMSHC = sdhci-of-dwcmshc-${SDHCI_OF_DWCMSHC_DRIVER_VERSION}
-SDHCI_OF_DWCMSHC_TAR = ${SDHCI_OF_DWCMSHC}.tar.gz
 
 MAIN_TARGET = $(SDHCI_OF_DWCMSHC_DRIVER)
 DERIVED_TARGETS =
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	# Make sure errors will be reported
-	set -e
-
-	rm -rf ${SDHCI_OF_DWCMSHC} ${SDHCI_OF_DWCMSHC_TAR}
-	wget -N "${BSD_BASE_SOURCE_URL}/${SDHCI_OF_DWCMSHC_TAR}"
-	tar -z -f ${SDHCI_OF_DWCMSHC_TAR} -x
+	rm -rf ${SDHCI_OF_DWCMSHC}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${SDHCI_OF_DWCMSHC}
+	
 	pushd ${SDHCI_OF_DWCMSHC}
 	find . -type f -exec touch {} +
 

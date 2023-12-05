@@ -20,13 +20,11 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF_GIGE = mlxbf-gige-${MLXBF_GIGE_DRIVER_VERSION}
-MLXBF_GIGE_TAR = ${MLXBF_GIGE}.tar.gz
 MODULE_DIR := $(shell pwd)/${MLXBF_GIGE}
 
 $(addprefix $(DEST)/, $(MLXBF_GIGE_DRIVER)): $(DEST)/% :
-	rm -rf ./mlxbf-gige-$(MLXBF_GIGE_DRIVER_VERSION)
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_GIGE_TAR)"
-	tar -z -f $(MLXBF_GIGE_TAR) -x
+	rm -rf ${MLXBF_GIGE}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF_GIGE}
 
 	pushd ${MLXBF_GIGE}
 

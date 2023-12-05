@@ -20,13 +20,11 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLX_TRIO = mlx-trio-${MLX_TRIO_DRIVER_VERSION}
-MLX_TRIO_TAR = ${MLX_TRIO}.tar.gz
 MODULE_DIR := $(shell pwd)/${MLX_TRIO}
 
 $(addprefix $(DEST)/, $(MLX_TRIO_DRIVER)): $(DEST)/% :
-	rm -rf ${MLX_TRIO} ${MLX_TRIO_TAR}
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLX_TRIO_TAR)"
-	tar -z -f $(MLX_TRIO_TAR) -x
+	rm -rf ${MLX_TRIO}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLX_TRIO}
 
 	pushd ${MLX_TRIO}
 

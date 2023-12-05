@@ -20,13 +20,11 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF2_GPIO = gpio-mlxbf2-${MLXBF2_GPIO_DRIVER_VERSION}
-MLXBF2_GPIO_TAR = ${MLXBF2_GPIO}.tar.gz
 MODULE_DIR := $(shell pwd)/${MLXBF2_GPIO}
 
 $(addprefix $(DEST)/, $(MLXBF2_GPIO_DRIVER)): $(DEST)/% :
-	rm -rf ./gpio-mlxbf2-$(MLXBF2_GPIO_DRIVER_VERSION)
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF2_GPIO_TAR)"
-	tar -z -f $(MLXBF2_GPIO_TAR) -x
+	rm -rf ${MLXBF2_GPIO}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF2_GPIO}
 
 	pushd ${MLXBF2_GPIO}
 

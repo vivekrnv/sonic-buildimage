@@ -20,21 +20,14 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 IPMB_DEV_INT = ipmb-dev-int-${IPMB_DEV_INT_DRIVER_VERSION}
-IPMB_DEV_INT_TAR = ${IPMB_DEV_INT}.tar.gz
 
 $(addprefix $(DEST)/, $(IPMB_DEV_INT_DRIVER)): $(DEST)/% :
-	rm -rf ${IPMB_DEV_INT} ${IPMB_DEV_INT_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(IPMB_DEV_INT_TAR)"
-	tar -z -f $(IPMB_DEV_INT_TAR) -x
+	rm -rf ${IPMB_DEV_INT}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${IPMB_DEV_INT}
 
 	pushd ${IPMB_DEV_INT}
 
-	# Build the package
-ifeq ($(CROSS_BUILD_ENVIRON), y)
-	CONFIG_SITE=/etc/dpkg-cross/cross-config.$(CONFIGURED_ARCH) LD_LIBRARY_PATH=$(CROSS_LIB_PATH) KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -a$(CONFIGURED_ARCH) -Pcross,nocheck -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
-else
 	DEB_BUILD_OPTIONS=nocheck KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
-endif
 
 	mv $* $(DEST)/
 

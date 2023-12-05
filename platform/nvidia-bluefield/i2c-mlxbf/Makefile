@@ -20,12 +20,10 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF_I2C = i2c-mlxbf-${MLXBF_I2C_DRIVER_VERSION}
-MLXBF_I2C_TAR = ${MLXBF_I2C}.tar.gz
 
 $(addprefix $(DEST)/, $(MLXBF_I2C_DRIVER)): $(DEST)/% :
-	rm -rf ${MLXBF_I2C} ${MLXBF_I2C_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_I2C_TAR)"
-	tar -z -f $(MLXBF_I2C_TAR) -x
+	rm -rf ${MLXBF_I2C}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF_I2C}
 
 	pushd ${MLXBF_I2C}
 
