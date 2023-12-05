@@ -19,18 +19,17 @@
 SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
-IPMB_DEV_INT = ipmb-dev-int-${IPMB_DEV_INT_DRIVER_VERSION}
+MLXBF3_GPIO = gpio-mlxbf3-${MLXBF3_GPIO_DRIVER_VERSION}
+MODULE_DIR := $(shell pwd)/${MLXBF3_GPIO}
 
-$(addprefix $(DEST)/, $(IPMB_DEV_INT_DRIVER)): $(DEST)/% :
-	rm -rf ${IPMB_DEV_INT}*
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${IPMB_DEV_INT}
+$(addprefix $(DEST)/, $(MLXBF3_GPIO_DRIVER)): $(DEST)/% :
+	rm -rf ${MLXBF3_GPIO}*
+	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF3_GPIO}
 
-	pushd ${IPMB_DEV_INT}
+	pushd ${MLXBF3_GPIO}
 
-	DEB_BUILD_OPTIONS=nocheck KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	# Build the package
+	make -C /lib/modules/$(KVERSION)/build M=$(MODULE_DIR)
 
-	mv $* $(DEST)/
-
+	mv ${MLXBF3_GPIO_DRIVER} $(DEST)/
 	popd
-
-	
