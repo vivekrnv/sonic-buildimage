@@ -1,0 +1,10 @@
+Package: mlnx-ofed-kernel-modules-{{kversion}}
+Source: mlnx-ofed-kernel-modules-bin
+Version: {{mft_version}}
+Architecture: arm64
+Maintainer: Vivek Reddy <vkarri@nvidia.com>
+Provides: mlnx-ofed-kernel-modules
+Depends: linux-image-{{ kversion }}-unsigned
+Section: misc
+Priority: optional
+Description: mlnx-ofed-kernel-modules binary drivers for linux-image-{{kversion}} Kernel

@@ -20,7 +20,6 @@ SHELL = /bin/bash
 BUILD_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 
 MAIN_TARGET = $(OFED_KERNEL)
-DERIVED_TARGETS = $(OFED_DERIVED_DEBS)
 
 OFED_TAR = MLNX_OFED_SRC-debian-$(OFED_VER_FULL).tgz
 OFED_SRC = MLNX_OFED_SRC-$(OFED_VER_FULL)
@@ -29,12 +28,54 @@ SRC_DEB = mlnx-ofed-kernel-dkms_$(OFED_VER_SHORT)*_all.deb
 SRC_DEB_DEPENDENCIES = mlnx-tools_*_$(BUILD_ARCH).deb \
 		mlnx-ofed-kernel-utils_$(OFED_VER_SHORT)*_$(BUILD_ARCH).deb
 
-DKMS_BMDEB = /var/lib/dkms/mlnx-ofed-kernel/$(OFED_KERNEL_VER_FULL)/bmdeb/
+DKMS_CTRL = /var/lib/dkms/mlnx-ofed-kernel/
 DKMS_TMP := $(shell mktemp -u -d -t dkms.XXXXXXXXXX)
+
+MLNX_TOOLS_TMP = /tmp/mlnx_tools_build/
+
+$(addprefix $(DEST)/, $(MLNX_TOOLS)): $(DEST)/% :
+	# Make sure errors will be reported
+	set -e
+	mkdir -p $(MLNX_TOOLS_TMP) && pushd $(MLNX_TOOLS_TMP)
+	sudo rm -rf MLNX_OFED_SRC*
+	wget $(SDK_SOURCE_URL)/$(OFED_TAR)
+	tar xf $(OFED_TAR)
+
+	pushd $(OFED_SRC)/
+	find . -type f -exec touch {} +
+
+	# Build the Debs
+	sudo ./install.pl --kernel-only --build-only --without-depcheck --force  \
+						--with-mlnx-tools --without-knem --without-knem-dkms \
+						--without-kernel-mft-dkms --without-mlnx-ofed-kernel-dkms
+
+	sudo chown -R ${USER} ./*
+
+	pushd DEBS/*/aarch64/
+	chown ${USER} $(MLNX_TOOLS) $(OFED_KERNEL_UTILS)
+	mv $(MLNX_TOOLS) $(OFED_KERNEL_UTILS) $(DEST)/
+	popd
+
+	popd
+	popd
+	rm -rf $(MLNX_TOOLS_TMP)
+
+$(addprefix $(DEST)/, $(OFED_KERNEL_UTILS)): $(DEST)/% : $(DEST)/$(MLNX_TOOLS)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	# Make sure errors will be reported
 	set -e
+
+	# Prepare the directory to build mlnx-ofed-kernel-modules debian package
+	mkdir -p $(DKMS_TMP)/DEBIAN
+	mkdir -p $(DKMS_TMP)/lib/modules/$(KVERSION)/updates/dkms/
+	export kversion="$(KVERSION)"
+	export mft_version="$(OFED_KERNEL_VER_FULL)"
+	j2 templates/control.j2 > $(DKMS_TMP)/DEBIAN/control
+	j2 templates/postinst.j2 > $(DKMS_TMP)/DEBIAN/postinst
+	j2 templates/postrm.j2 > $(DKMS_TMP)/DEBIAN/postrm
+	chmod +x $(DKMS_TMP)/DEBIAN/postinst
+	chmod +x $(DKMS_TMP)/DEBIAN/postrm
 
 	sudo rm -rf MLNX_OFED_SRC*
 	wget $(SDK_SOURCE_URL)/$(OFED_TAR)
@@ -69,27 +110,19 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 		fi
 	done
 
+	sudo mv /bin/uname.orig /bin/uname
 	sudo dkms build mlnx-ofed-kernel/$(OFED_KERNEL_VER_FULL) -k $(KVERSION) -a $(BUILD_ARCH)
-	sudo dkms mkbmdeb mlnx-ofed-kernel/$(OFED_KERNEL_VER_FULL) -k $(KVERSION) -a $(BUILD_ARCH)
 
-	# w/a: remove dependencies
-	mkdir -p $(DKMS_TMP)/DEBIAN
-
-	dpkg -e $(DKMS_BMDEB)/$(MAIN_TARGET) $(DKMS_TMP)/DEBIAN
-	dpkg -x $(DKMS_BMDEB)/$(MAIN_TARGET) $(DKMS_TMP)
-
-	sed -i '/^Depends:/c\Depends:' $(DKMS_TMP)/DEBIAN/control
+	# copy the built modules
+	cp -r $(DKMS_CTRL)/kernel-$(KVERSION)-aarch64/module/*.ko \
+			$(DKMS_TMP)/lib/modules/$(KVERSION)/updates/dkms/
 
 	dpkg -b $(DKMS_TMP) .
 
-	chown ${USER} $(DERIVED_TARGETS) $(MAIN_TARGET)
-	mv $(DERIVED_TARGETS) $* $(DEST)/
+	chown ${USER} $(MAIN_TARGET)
+	mv $(MAIN_TARGET) $(DEST)/
 
 	rm -rf $(DKMS_TMP)
 
 	popd
 	popd
-
-	sudo mv /bin/uname.orig /bin/uname
-
-$(addprefix $(DEST)/, $(DERIVED_TARGETS)): $(DEST)/% : $(DEST)/$(MAIN_TARGET)

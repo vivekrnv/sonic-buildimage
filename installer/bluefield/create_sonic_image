@@ -391,6 +391,8 @@ create_bfb_image() {
             cat_initrd="lzcat" ;;
         "application/x-lz4")
             cat_initrd="lz4cat" ;;
+        "application/zstd")
+            cat_initrd="zstdcat" ;;
         *)
             cat_initrd="zcat" ;;
     esac
@@ -432,12 +434,12 @@ create_bfb_image() {
             `dpkg -L usbutils | grep -v share` \
             `dpkg -L mft` \
             `dpkg -L mft-oem` \
-            `dpkg -L kernel-mft-modules` \
+            `dpkg -L kernel-mft-dkms-modules-$KERNEL_VERSION` \
             `dpkg -L tar | grep -v share` \
             `dpkg -L grub-efi-arm64-bin` \
-            xz efibootmgr gcc-10 bash getopt hexdump lspci perl \
+            xz efibootmgr bash getopt hexdump lspci perl \
             lsblk shutdown systemctl strings aarch64-linux-gnu-strings \
-            mlxbf-bootctl id mkfs fsck watchdog
+            mlxbf-bootctl id mkfs fsck watchdog  dirname curl openssl
     do
         if [ -d $tool ]; then
             continue

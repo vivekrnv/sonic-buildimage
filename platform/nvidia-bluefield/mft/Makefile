@@ -23,20 +23,48 @@ MFT_TGZ = $(MFT_NAME).tgz
 
 BUILD_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 SRC_DEB = kernel-mft-dkms_$(MFT_VERSION)-$(MFT_REVISION)_all.deb
-MOD_DEB = kernel-mft-dkms-modules-$(KVERSION)_$(MFT_VERSION)_$(BUILD_ARCH).deb
+KERNEL_MFT_TARGET = kernel-mft-dkms-modules-$(KVERSION)_$(MFT_VERSION)_$(BUILD_ARCH).deb
 
 MAIN_TARGET = mft_$(MFT_VERSION)-$(MFT_REVISION)_arm64.deb
-DERIVED_TARGETS = $(MOD_DEB) mft-oem_$(MFT_VERSION)-$(MFT_REVISION)_arm64.deb
+DERIVED_TARGETS = mft-oem_$(MFT_VERSION)-$(MFT_REVISION)_arm64.deb
 
-DKMS_BMDEB = /var/lib/dkms/kernel-mft-dkms/$(MFT_VERSION)/bmdeb
+DKMS_CTRL = /var/lib/dkms/kernel-mft-dkms/
 DKMS_TMP := $(shell mktemp -u -d -t dkms.XXXXXXXXXX)
 
+MFT_TMP = /tmp/mft_build/
+
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
+	mkdir -p $(MFT_TMP)
+	pushd $(MFT_TMP)
 	rm -rf $(MFT_NAME)
 	wget -O $(MFT_TGZ) http://www.mellanox.com/downloads/MFT/$(MFT_TGZ)
 	tar xzf $(MFT_TGZ)
 
-ifneq (,$(findstring bullseye,$(DEST)))
+	# fix timestamp because we do not actually build tools, only kernel
+	touch $(MFT_NAME)/DEBS/*.deb
+	mv $(MFT_NAME)/DEBS/*.deb $(DEST)
+	popd
+	rm -rf $(MFT_TMP)
+
+$(addprefix $(DEST)/, $(DERIVED_TARGETS)): $(DEST)/% : $(DEST)/$(MAIN_TARGET)
+
+$(addprefix $(DEST)/, $(KERNEL_MFT_TARGET)): $(DEST)/% :
+	
+	rm -rf $(MFT_NAME)
+	wget -O $(MFT_TGZ) http://www.mellanox.com/downloads/MFT/$(MFT_TGZ)
+	tar xzf $(MFT_TGZ)
+	
+	# Prepare the directory to build kernel-mft-dkms-modules debian package
+	mkdir -p $(DKMS_TMP)/DEBIAN
+	mkdir -p $(DKMS_TMP)/lib/modules/$(KVERSION)/updates/dkms/
+	export kversion="$(KVERSION)"
+	export mft_version="$(MFT_VERSION)"
+	j2 templates/control.j2 > $(DKMS_TMP)/DEBIAN/control
+	j2 templates/postinst.j2 > $(DKMS_TMP)/DEBIAN/postinst
+	j2 templates/postrm.j2 > $(DKMS_TMP)/DEBIAN/postrm
+	chmod +x $(DKMS_TMP)/DEBIAN/postinst
+	chmod +x $(DKMS_TMP)/DEBIAN/postrm
+
 	pushd $(MFT_NAME)/SDEBS
 
 	# put a lock here because dpkg does not allow installing packages in parallel
@@ -49,25 +77,15 @@ ifneq (,$(findstring bullseye,$(DEST)))
 	popd
 
 	sudo dkms build kernel-mft-dkms/$(MFT_VERSION) -k $(KVERSION) -a arm64
-	sudo dkms mkbmdeb kernel-mft-dkms/$(MFT_VERSION) -k $(KVERSION) -a arm64
-
-	# w/a: remove dependencies
-	mkdir -p $(DKMS_TMP)/DEBIAN
-
-	dpkg -e $(DKMS_BMDEB)/$(MOD_DEB) $(DKMS_TMP)/DEBIAN
-	dpkg -x $(DKMS_BMDEB)/$(MOD_DEB) $(DKMS_TMP)
-
-	sed -i '/^Depends:/c\Depends:' $(DKMS_TMP)/DEBIAN/control
+	
+	# copy the built modules
+	cp -r $(DKMS_CTRL)/kernel-$(KVERSION)-$(BUILD_ARCH)/module/*.ko \
+			$(DKMS_TMP)/lib/modules/$(KVERSION)/updates/dkms/
 
 	pushd $(MFT_NAME)/DEBS
 	dpkg -b $(DKMS_TMP) .
 	popd
 
 	rm -rf $(DKMS_TMP)
-endif
 
-	# fix timestamp because we do not actually build tools, only kernel
-	touch $(MFT_NAME)/DEBS/*.deb
-	mv $(MFT_NAME)/DEBS/*.deb $(DEST)
-
-$(addprefix $(DEST)/, $(DERIVED_TARGETS)): $(DEST)/% : $(DEST)/$(MAIN_TARGET)
+	mv $(MFT_NAME)/DEBS/$(KERNEL_MFT_TARGET) $(DEST)

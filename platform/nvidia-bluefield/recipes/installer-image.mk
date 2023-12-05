@@ -25,6 +25,7 @@ $(SONIC_BF2_IMAGE_BASE)_DEPENDS += $(MLXBF_BOOTCTL_DEB) \
                                    $(MLNX_BLUEFIELD_BUILD_SCRIPTS) \
                                    $(MLNX_TOOLS) \
                                    $(OFED_KERNEL_UTILS) \
+                                   $(KERNEL_MFT) \
                                    $(MLNX_IPROUTE2)
 
 # Install the packages during the build_debian phase

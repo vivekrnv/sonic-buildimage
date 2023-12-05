@@ -21,15 +21,13 @@ export MFT_VERSION MFT_REVISION
 
 MFT = mft_$(MFT_VERSION)-$(MFT_REVISION)_arm64.deb
 $(MFT)_SRC_PATH = $(PLATFORM_PATH)/mft
-SONIC_MAKE_DEBS += $(MFT)
-
-ifeq ($(BLDENV), bullseye)
-$(MFT)_DEPENDS += $(LINUX_HEADERS) $(LINUX_HEADERS_COMMON)
-
-BUILD_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
-KERNEL_MFT = kernel-mft-dkms-modules-$(KVERSION)_$(MFT_VERSION)_$(BUILD_ARCH).deb
-$(eval $(call add_derived_package,$(MFT),$(KERNEL_MFT)))
-endif
 
 MFT_OEM = mft-oem_$(MFT_VERSION)-$(MFT_REVISION)_arm64.deb
 $(eval $(call add_derived_package,$(MFT),$(MFT_OEM)))
+
+BUILD_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
+KERNEL_MFT = kernel-mft-dkms-modules-$(KVERSION)_$(MFT_VERSION)_$(BUILD_ARCH).deb
+$(KERNEL_MFT)_SRC_PATH = $(PLATFORM_PATH)/mft
+$(KERNEL_MFT)_DEPENDS += $(LINUX_HEADERS) $(LINUX_HEADERS_COMMON)
+
+SONIC_MAKE_DEBS += $(MFT) $(KERNEL_MFT)
