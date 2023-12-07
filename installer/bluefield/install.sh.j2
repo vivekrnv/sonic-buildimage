@@ -43,12 +43,19 @@ device_emmc=/dev/mmcblk0
 
 capsule=/lib/firmware/mellanox/boot/capsule/boot_update2.cap
 
-log()
+rshim_log()
 {
+	# Write a message to rshim. Rshim can handle only a limited number of bites.
+	# It should be used only for critical messages.
 	echo "INFO: $*"
 	if [ -n "$rshimlog" ]; then
 		$rshimlog "INFO: $*"
 	fi
+}
+
+log()
+{
+	# Write message to serial concole
 	if [ -e /dev/ttyAMA0 ]; then
 		echo "INFO: $*" > /dev/ttyAMA0
 	fi
@@ -379,7 +386,7 @@ if function_exists bfb_post_install; then
 	ex bfb_post_install
 fi
 
-log "Installation finished"
-log "Rebooting..."
+rshim_log "Installation finished"
+rshim_log "Rebooting..."
 # Wait for these messages to be pulled by the rshim service
 sleep 3
