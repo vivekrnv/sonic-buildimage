@@ -23,10 +23,14 @@ SDHCI_OF_DWCMSHC = sdhci-of-dwcmshc-${SDHCI_OF_DWCMSHC_DRIVER_VERSION}
 
 MAIN_TARGET = $(SDHCI_OF_DWCMSHC_DRIVER)
 DERIVED_TARGETS =
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	rm -rf ${SDHCI_OF_DWCMSHC}*
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${SDHCI_OF_DWCMSHC}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${SDHCI_OF_DWCMSHC}
 	
 	pushd ${SDHCI_OF_DWCMSHC}
 	find . -type f -exec touch {} +

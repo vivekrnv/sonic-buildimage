@@ -20,10 +20,14 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF_BOOTCTL = mlxbf-bootctl-${MLXBF_BOOTCTL_DEB_VERSION}
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(MLXBF_BOOTCTL_DEB)): $(DEST)/% :
-	rm -rf ${MLXBF_BOOTCTL}*
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF_BOOTCTL}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${MLXBF_BOOTCTL}
 
 	pushd ${MLXBF_BOOTCTL}
 

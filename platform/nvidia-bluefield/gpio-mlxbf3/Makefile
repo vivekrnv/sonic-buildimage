@@ -20,11 +20,15 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF3_GPIO = gpio-mlxbf3-${MLXBF3_GPIO_DRIVER_VERSION}
-MODULE_DIR := $(shell pwd)/${MLXBF3_GPIO}
+MODULE_DIR := $(shell pwd)/tmp/${MLXBF3_GPIO}
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(MLXBF3_GPIO_DRIVER)): $(DEST)/% :
-	rm -rf ${MLXBF3_GPIO}*
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF3_GPIO}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${MLXBF3_GPIO}
 
 	pushd ${MLXBF3_GPIO}
 

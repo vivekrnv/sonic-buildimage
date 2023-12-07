@@ -20,10 +20,14 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 LIBPKA = libpka-${LIBPKA_DRIVER_VERSION}
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(LIBPKA_DEB)): $(DEST)/% :
-	rm -rf ${LIBPKA}*
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${LIBPKA}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${LIBPKA}
 
 	pushd ${LIBPKA}
 

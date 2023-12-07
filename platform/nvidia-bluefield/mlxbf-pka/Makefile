@@ -20,11 +20,15 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF_PKA = mlxbf-pka-${MLXBF_PKA_DRIVER_VERSION}
-MODULE_DIR := $(shell pwd)/${MLXBF_PKA}
+MODULE_DIR := $(shell pwd)/tmp/${MLXBF_PKA}
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(MLXBF_PKA_DRIVER)): $(DEST)/% :
-	rm -rf ${MLXBF_PKA}
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF_PKA}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${MLXBF_PKA}
 
 	pushd ${MLXBF_PKA}
 

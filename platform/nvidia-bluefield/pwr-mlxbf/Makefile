@@ -20,11 +20,15 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 PWR_MLXBF = pwr-mlxbf-$(PWR_MLXBF_DRIVER_VERSION)
-MODULE_DIR := $(shell pwd)/$(PWR_MLXBF)
+MODULE_DIR := $(shell pwd)/tmp/${PWR_MLXBF}
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(PWR_MLXBF_DRIVER)): $(DEST)/% :
-	rm -rf ${PWR_MLXBF}
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${PWR_MLXBF}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${PWR_MLXBF}
 
 	pushd $(PWR_MLXBF)
 

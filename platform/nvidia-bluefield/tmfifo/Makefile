@@ -20,13 +20,17 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 TMFIFO = tmfifo-${TMFIFO_DRIVER_VERSION}
-MODULE_DIR := $(shell pwd)/${TMFIFO}
+MODULE_DIR := $(shell pwd)/tmp/${TMFIFO}
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(TMFIFO_DRIVER)): $(DEST)/% :
-	rm -rf ${TMFIFO}
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${TMFIFO}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
 
-	pushd ./tmfifo-${TMFIFO_DRIVER_VERSION}
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${TMFIFO}
+
+	pushd ${TMFIFO}
 
 	make -C /lib/modules/$(KVERSION)/build M=$(MODULE_DIR)
 	

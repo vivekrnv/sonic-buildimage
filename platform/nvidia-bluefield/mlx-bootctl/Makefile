@@ -20,10 +20,14 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLX_BOOTCTL = mlx-bootctl-$(MLX_BOOTCTL_DRIVER_VERSION)
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(MLX_BOOTCTL_DRIVER)): $(DEST)/% :
-	rm -rf ${MLX_BOOTCTL}*
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLX_BOOTCTL}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${MLX_BOOTCTL}
 
 	pushd ${MLX_BOOTCTL}  
 

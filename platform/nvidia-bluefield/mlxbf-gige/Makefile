@@ -20,11 +20,15 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLXBF_GIGE = mlxbf-gige-${MLXBF_GIGE_DRIVER_VERSION}
-MODULE_DIR := $(shell pwd)/${MLXBF_GIGE}
+MODULE_DIR := $(shell pwd)/tmp/${MLXBF_GIGE}
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(MLXBF_GIGE_DRIVER)): $(DEST)/% :
-	rm -rf ${MLXBF_GIGE}*
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLXBF_GIGE}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${MLXBF_GIGE}
 
 	pushd ${MLXBF_GIGE}
 

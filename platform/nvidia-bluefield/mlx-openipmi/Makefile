@@ -23,10 +23,14 @@ MLX_OPENIPMI = mlx-OpenIPMI-${MLX_OPENIPMI_DRIVER_VERSION}
 
 MAIN_TARGET = $(MLX_OPENIPMI_DEB)
 DERIVED_TARGETS = $(MLX_OPENIPMI_SERVER_DEB)
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	rm -rf ${MLX_OPENIPMI}*
-	../recipes/get-soc-package.sh ${BSD_BASE_SOURCE_URL} ${MLX_OPENIPMI}
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${MLX_OPENIPMI}
 	
 	pushd ${MLX_OPENIPMI}
 
