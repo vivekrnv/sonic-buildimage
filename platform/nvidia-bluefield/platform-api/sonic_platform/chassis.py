@@ -271,4 +271,4 @@ class Chassis(ChassisBase):
             is "REBOOT_CAUSE_HARDWARE_OTHER", the second string can be used
             to pass a description of the reboot cause.
         """
-        return (None, None)
+        return "N/A", "N/A"
