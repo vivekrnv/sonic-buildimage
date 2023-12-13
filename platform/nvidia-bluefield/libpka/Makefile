@@ -20,12 +20,14 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 LIBPKA = libpka-${LIBPKA_DRIVER_VERSION}
-LIBPKA_TAR = ${LIBPKA}.tgz
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(LIBPKA_DEB)): $(DEST)/% :
-	rm -rf ${LIBPKA} ${LIBPKA_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(LIBPKA_TAR)"
-	tar -z -f $(LIBPKA_TAR) -x
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${LIBPKA}
 
 	pushd ${LIBPKA}
 

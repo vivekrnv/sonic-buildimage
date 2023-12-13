@@ -1,0 +1,36 @@
+#!/bin/sh
+
+config=/usr/local/bin/config
+
+log()
+{
+        echo $(date) $@ >> /tmp/dhclient-vss.log
+}
+
+vss_setup_add()
+{
+
+    if [ "$new_ip_address" != "" ] && [ "$new_subnet_mask" != "" ]; then
+        ${config} interface ip add ${interface} ${new_ip_address}/${new_subnet_mask} ${new_routers}
+    fi
+
+    # Unset new_routers variable to prevent creation of the default route.
+    unset new_routers
+}
+
+vss_setup() {
+    if [ "${interface}" != "Ethernet0" ]; then
+            log ${interface} not equal "Ethernet0"
+            return
+    fi
+
+
+
+    case $reason in
+            BOUND|RENEW|REBIND|REBOOT)
+                    vss_setup_add
+                    ;;
+    esac
+}
+
+vss_setup

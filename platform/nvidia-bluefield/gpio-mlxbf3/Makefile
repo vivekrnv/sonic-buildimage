@@ -19,19 +19,21 @@
 SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
-BLUEFIELD_EDAC = bluefield_edac-${BLUEFIELD_EDAC_DRIVER_VERSION}
-BLUEFIELD_EDAC_TAR = ${BLUEFIELD_EDAC}.tar.gz
+MLXBF3_GPIO = gpio-mlxbf3-${MLXBF3_GPIO_DRIVER_VERSION}
+MODULE_DIR := $(shell pwd)/tmp/${MLXBF3_GPIO}
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
-$(addprefix $(DEST)/, $(BLUEFIELD_EDAC_DRIVER)): $(DEST)/% :
-	rm -rf ${BLUEFIELD_EDAC} ${BLUEFIELD_EDAC_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(BLUEFIELD_EDAC_TAR)"
-	tar -z -f $(BLUEFIELD_EDAC_TAR) -x
+$(addprefix $(DEST)/, $(MLXBF3_GPIO_DRIVER)): $(DEST)/% :
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
 
-	pushd ${BLUEFIELD_EDAC}
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${MLXBF3_GPIO}
+
+	pushd ${MLXBF3_GPIO}
 
 	# Build the package
-	DEB_BUILD_OPTIONS=nocheck KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	make -C /lib/modules/$(KVERSION)/build M=$(MODULE_DIR)
 
-	mv $* $(DEST)/
-
+	mv ${MLXBF3_GPIO_DRIVER} $(DEST)/
 	popd

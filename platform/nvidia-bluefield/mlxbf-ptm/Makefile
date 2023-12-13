@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021-2022 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2021-2023 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,19 +19,21 @@
 SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
-MLXBF_I2C = i2c-mlxbf-${MLXBF_I2C_DRIVER_VERSION}
-MLXBF_I2C_TAR = ${MLXBF_I2C}.tar.gz
+MLXBF_PTM = mlxbf-ptm-${MLXBF_PTM_DRIVER_VERSION}
+MODULE_DIR := $(shell pwd)/tmp/${MLXBF_PTM}
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
-$(addprefix $(DEST)/, $(MLXBF_I2C_DRIVER)): $(DEST)/% :
-	rm -rf ${MLXBF_I2C} ${MLXBF_I2C_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLXBF_I2C_TAR)"
-	tar -z -f $(MLXBF_I2C_TAR) -x
+$(addprefix $(DEST)/, $(MLXBF_PTM_DRIVER)): $(DEST)/% :
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
 
-	pushd ${MLXBF_I2C}
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${MLXBF_PTM}
+
+	pushd ${MLXBF_PTM}
 
 	# Build the package
-	DEB_BUILD_OPTIONS=nocheck KVER=$(KVERSION) WITH_DKMS=0 dpkg-buildpackage -rfakeroot -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)
+	make -C /lib/modules/$(KVERSION)/build M=$(MODULE_DIR)
 
-	mv $* $(DEST)/
-
+	mv ${MLXBF_PTM_DRIVER} $(DEST)/
 	popd

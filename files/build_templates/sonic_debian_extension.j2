@@ -465,6 +465,10 @@ sudo cp $IMAGE_CONFIGS/corefile_uploader/core_uploader.py $FILESYSTEM_ROOT/usr/b
 sudo cp $IMAGE_CONFIGS/corefile_uploader/core_analyzer.rc.json $FILESYSTEM_ROOT_ETC_SONIC/
 sudo chmod og-rw $FILESYSTEM_ROOT_ETC_SONIC/core_analyzer.rc.json
 
+# Copy Virtual Smart Switch configuration files
+sudo cp $IMAGE_CONFIGS/virtual-smart-switch/dhclient-hooks/vss-enter-hook $FILESYSTEM_ROOT/etc/dhcp/dhclient-enter-hooks.d/
+sudo cp $IMAGE_CONFIGS/virtual-smart-switch/interfaces/Ethernet0 $FILESYSTEM_ROOT/etc/network/interfaces.d
+
 if [[ $CONFIGURED_ARCH == amd64 ]]; then
     # Rasdaemon service configuration. Use timer to start rasdaemon with a delay for better fast/warm boot performance
     sudo cp $IMAGE_CONFIGS/rasdaemon/rasdaemon.timer $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM

@@ -20,15 +20,17 @@ SHELL = /bin/bash
 .SHELLFLAGS += -ex
 
 MLX_OPENIPMI = mlx-OpenIPMI-${MLX_OPENIPMI_DRIVER_VERSION}
-MLX_OPENIPMI_TAR = ${MLX_OPENIPMI}.tar.gz
 
 MAIN_TARGET = $(MLX_OPENIPMI_DEB)
 DERIVED_TARGETS = $(MLX_OPENIPMI_SERVER_DEB)
+GET_PACKAGE := $(shell pwd)/../recipes/get-soc-package.sh
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-	rm -rf ${MLX_OPENIPMI} ${MLX_OPENIPMI_TAR} *.buildinfo *.changes *.deb
-	wget -N "${BSD_BASE_SOURCE_URL}/$(MLX_OPENIPMI_TAR)"
-	tar -z -f $(MLX_OPENIPMI_TAR) -x
+	rm -rf ./tmp/
+	mkdir ./tmp/
+	pushd ./tmp/
+
+	${GET_PACKAGE} ${BSD_BASE_SOURCE_URL} ${MLX_OPENIPMI}
 	
 	pushd ${MLX_OPENIPMI}
 

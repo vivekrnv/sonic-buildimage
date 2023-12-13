@@ -1,0 +1,3 @@
+auto Ethernet0
+iface Ethernet0 inet dhcp
+    down rm /var/lib/dhcp/dhclient.Ethernet0.leases
