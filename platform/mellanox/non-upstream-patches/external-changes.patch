@@ -1,6 +1,6 @@
 --- a/patch/series
 +++ b/patch/series
-@@ -113,17 +113,49 @@
+@@ -113,9 +113,19 @@
  0039-mlxsw-reg-Limit-MTBR-register-payload-to-a-single-da.patch
  0040-mlxsw-core-Extend-allowed-list-of-external-cooling-d.patch
  0041-mlxsw-i2c-Utilize-standard-macros-for-dividing-buffe.patch
@@ -17,10 +17,10 @@
  0052-i2c-mux-Add-register-map-based-mux-driver.patch
 +0053-platform-mellanox-Add-support-for-dynamic-I2C-channe.patch
 +0054-platform-mellanox-Introduce-support-for-switches-equ.patch
-+0055-mellanox-Relocate-mlx-platform-driver.patch
+ 0055-mellanox-Relocate-mlx-platform-driver.patch
  0056-Documentation-ABI-Add-new-attribute-for-mlxreg-io-sy.patch
  0057-Documentation-ABI-Add-new-attribute-for-mlxreg-io-sy.patch
- 0061-pinctrl-Introduce-struct-pinfunction-and-PINCTRL_PIN.patch
+@@ -123,9 +133,30 @@
  0062-pinctrl-mlxbf3-Add-pinctrl-driver-support.patch
  0063-gpio-mlxbf3-Add-gpio-driver-support.patch
  0064-pinctrl-mlxbf3-set-varaiable-mlxbf3_pmx_funcs-storag.patch
@@ -44,6 +44,7 @@
 +0083-UBUNTU-SAUCE-mlxbf-ptm-update-module-version.patch
 +0084-UBUNTU-SAUCE-mlxbf-bootctl-Fix-kernel-panic-due-to-b.patch
  0085-hwmon-mlxreg-fan-Separate-methods-of-fan-setting-com.patch
+ 0086-platform-mellanox-indicate-deferred-I2C-bus-creation.patch
 +8000-mlxsw-Use-weak-reverse-dependencies-for-firmware-fla.patch
  8003-mlxsw-i2c-SONIC-ISSU-Prevent-transaction-execution-f.patch
 +8004-mlxsw-minimal-Downstream-Ignore-error-reading-SPAD-r.patch
@@ -51,3 +52,22 @@
  8006-i2c-mlxcpld-Downstream-WA-to-avoid-error-for-SMBUS-r.patch
  8007-hwmon-mlxreg-fan-Downstream-Allow-fan-speed-setting-.patch
 
+--- a/patch/kconfig-inclusions
++++ b/patch/kconfig-inclusions
+@@ -204,4 +204,15 @@
+ [mellanox-arm64]
+ CONFIG_THERMAL_STATISTICS=n
+ CONFIG_THERMAL_WRITABLE_TRIPS=y
+-
++CONFIG_SENSORS_MP2891=m
++CONFIG_MMC_SDHCI_OF_DWCMSHC=m
++CONFIG_VFIO_PLATFORM=m
++CONFIG_SENSORS_ARM_SCMI=m
++CONFIG_MLXBF_GIGE=m
++CONFIG_I2C_MLXBF=m
++CONFIG_GPIO_MLXBF3=m
++CONFIG_MLXBF_TMFIFO=m
++CONFIG_MLXBF_BOOTCTL=m
++CONFIG_MLXBF_PMC=m
++CONFIG_MLXBF_PTM=m
++

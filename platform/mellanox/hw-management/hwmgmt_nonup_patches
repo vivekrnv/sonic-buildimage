@@ -9,7 +9,6 @@
 0050-leds-mlxreg-Skip-setting-LED-color-during-initializa.patch
 0053-platform-mellanox-Add-support-for-dynamic-I2C-channe.patch
 0054-platform-mellanox-Introduce-support-for-switches-equ.patch
-0055-mellanox-Relocate-mlx-platform-driver.patch
 0066-UBUNTU-SAUCE-sdhci-of-dwcmshc-Enable-host-V4-support.patch
 0067-UBUNTU-SAUCE-mmc-sdhci-of-dwcmshc-add-the-missing-de.patch
 0068-UBUNTU-SAUCE-mmc-sdhci-of-dwcmshc-Add-runtime-PM-ope.patch
