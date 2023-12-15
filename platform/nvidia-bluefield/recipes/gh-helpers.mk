@@ -36,6 +36,10 @@ define get_fw_asset_id_gh
 $(shell $(PLATFORM_PATH)/recipes/get_package_gh_asset_id.sh fw-$(BF3_FW_VERSION) $(1) $(SDK_ASSETS_GITHUB_TOKEN))
 endef
 
+define get_bfsoc_asset_id_gh
+$(shell $(PLATFORM_PATH)/recipes/get_package_gh_asset_id.sh bfsoc-$(BFSOC_VERSION)-$(BFSOC_REVISION)-$(BLDENV) $(1) $(SDK_ASSETS_GITHUB_TOKEN))
+endef
+
 define make_url_sdk
 	$(1)_URL="https://api.github.com/repos/$(BF_ASSETS_GITHUB_REPO)/releases/assets/$(call get_sdk_asset_id_gh, $(1))"
 	$(1)_CURL_OPTIONS=-H "Accept: application/octet-stream" -H "Authorization: token $(SDK_ASSETS_GITHUB_TOKEN)"
@@ -52,6 +56,13 @@ endef
 
 define make_url_fw
 	$(1)_URL="https://api.github.com/repos/$(BF_ASSETS_GITHUB_REPO)/releases/assets/$(call get_fw_asset_id_gh, $(1))"
+	$(1)_CURL_OPTIONS=-H "Accept: application/octet-stream" -H "Authorization: token $(SDK_ASSETS_GITHUB_TOKEN)"
+	$(1)_SKIP_VERSION=y
+
+endef
+
+define make_url_bfsoc
+	$(1)_URL="https://api.github.com/repos/$(BF_ASSETS_GITHUB_REPO)/releases/assets/$(call get_bfsoc_asset_id_gh, $(1))"
 	$(1)_CURL_OPTIONS=-H "Accept: application/octet-stream" -H "Authorization: token $(SDK_ASSETS_GITHUB_TOKEN)"
 	$(1)_SKIP_VERSION=y
 
