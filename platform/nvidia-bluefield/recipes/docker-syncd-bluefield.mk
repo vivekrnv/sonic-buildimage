@@ -18,7 +18,7 @@
 DOCKER_SYNCD_PLATFORM_CODE = bluefield
 include $(PLATFORM_PATH)/../template/docker-syncd-bullseye.mk
 
-$(DOCKER_SYNCD_BASE)_DEPENDS += $(SYNCD) $(MFT) $(SDN_APPL) $(DPU_SAI)
+$(DOCKER_SYNCD_BASE)_DEPENDS += $(SYNCD) $(MFT) $(SDN_APPL) $(DPU_SAI) $(MLNX_IPROUTE2)
 
 $(DOCKER_SYNCD_BASE)_DBG_DEPENDS += $(SYNCD_DBG) \
                                 $(LIBSWSSCOMMON_DBG) \

@@ -21,15 +21,15 @@ SDK_ASSETS_GITHUB_TOKEN = github_pat_11AEHROUI0NJki5RqFnRK8_TZrAfK1tPactdVgUcdXf
 export BF_ASSETS_GITHUB_REPO SDK_ASSETS_GITHUB_TOKEN
 
 define get_sdk_version_file_gh
-$(shell $(PLATFORM_PATH)/recipes/get_sdk_version_file_gh.sh sdk-$(SDK_VERSION) $(1) $(SDK_ASSETS_GITHUB_TOKEN))
+$(shell $(PLATFORM_PATH)/recipes/get_sdk_version_file_gh.sh sdk-$(SDK_VERSION)-$(BLDENV) $(1) $(SDK_ASSETS_GITHUB_TOKEN))
 endef
 
 define get_sdk_asset_id_gh
-$(shell $(PLATFORM_PATH)/recipes/get_package_gh_asset_id.sh sdk-$(SDK_VERSION) $(1) $(SDK_ASSETS_GITHUB_TOKEN))
+$(shell $(PLATFORM_PATH)/recipes/get_package_gh_asset_id.sh sdk-$(SDK_VERSION)-$(BLDENV) $(1) $(SDK_ASSETS_GITHUB_TOKEN))
 endef
 
 define get_sai_asset_id_gh
-$(shell $(PLATFORM_PATH)/recipes/get_package_gh_asset_id.sh sai-$(DPU_SAI_VERSION) $(1) $(SDK_ASSETS_GITHUB_TOKEN))
+$(shell $(PLATFORM_PATH)/recipes/get_package_gh_asset_id.sh sai-$(DPU_SAI_VERSION)-$(BLDENV) $(1) $(SDK_ASSETS_GITHUB_TOKEN))
 endef
 
 define get_fw_asset_id_gh
