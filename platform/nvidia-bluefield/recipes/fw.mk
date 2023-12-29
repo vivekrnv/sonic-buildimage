@@ -19,7 +19,7 @@ include $(PLATFORM_PATH)/$(RECIPE_DIR)/gh-helpers.mk
 
 BF3_FW_BASE_URL =
 
-BF3_FW_VERSION = 32.98.9936
+BF3_FW_VERSION = 32.39.1002
 
 BF3_FW_FILE = fw-BlueField-3-rel-$(subst .,_,$(BF3_FW_VERSION)).mfa
 
