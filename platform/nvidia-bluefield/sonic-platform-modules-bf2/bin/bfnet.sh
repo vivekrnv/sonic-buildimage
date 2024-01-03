@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,10 +19,12 @@
 start()
 {
     modprobe mlx5_core
+    /usr/bin/mst start
 }
 
 stop()
 {
+    /usr/bin/mst stop
     rmmod mlx5_ib mlx5_core
 }
 
