@@ -21,6 +21,12 @@ SHELL = /bin/bash
 MFT_NAME = mft-$(MFT_VERSION)-$(MFT_REVISION)-arm64-deb
 MFT_TGZ = $(MFT_NAME).tgz
 
+ifeq ($(MFT_FROM_INTERNAL),y)
+MFT_TGZ_URL = $(MFT_INTERNAL_SOURCE_BASE_URL)/$(MFT_TGZ)
+else
+MFT_TGZ_URL = http://www.mellanox.com/downloads/MFT/$(MFT_TGZ)
+endif
+
 BUILD_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 SRC_DEB = kernel-mft-dkms_$(MFT_VERSION)-$(MFT_REVISION)_all.deb
 KERNEL_MFT_TARGET = kernel-mft-dkms-modules-$(KVERSION)_$(MFT_VERSION)_$(BUILD_ARCH).deb
@@ -37,7 +43,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	mkdir -p $(MFT_TMP)
 	pushd $(MFT_TMP)
 	rm -rf $(MFT_NAME)
-	wget -O $(MFT_TGZ) http://www.mellanox.com/downloads/MFT/$(MFT_TGZ)
+	wget -O $(MFT_TGZ) $(MFT_TGZ_URL)
 	tar xzf $(MFT_TGZ)
 
 	# fix timestamp because we do not actually build tools, only kernel
@@ -51,7 +57,7 @@ $(addprefix $(DEST)/, $(DERIVED_TARGETS)): $(DEST)/% : $(DEST)/$(MAIN_TARGET)
 $(addprefix $(DEST)/, $(KERNEL_MFT_TARGET)): $(DEST)/% :
 	
 	rm -rf $(MFT_NAME)
-	wget -O $(MFT_TGZ) http://www.mellanox.com/downloads/MFT/$(MFT_TGZ)
+	wget -O $(MFT_TGZ) $(MFT_TGZ_URL)
 	tar xzf $(MFT_TGZ)
 	
 	# Prepare the directory to build kernel-mft-dkms-modules debian package
