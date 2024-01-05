@@ -426,11 +426,8 @@ RUN apt-get update && apt-get install -y \
         efibootmgr \
         watchdog \
 # For protobuf
-        dh-elpa \
-        xmlto \
-        rake-compiler \
-        default-jdk \
-        libgoogle-gson-java
+        protobuf-compiler \
+        libprotobuf-dev
 
 {%- if CROSS_BUILD_ENVIRON == "y" %}
 # Arm vs. amd64 versions conflict - remove amd64 packages
@@ -568,7 +565,7 @@ RUN echo "DOCKER_OPTS=\"--experimental --storage-driver=vfs {{ DOCKER_EXTRA_OPTS
 RUN update-alternatives --set iptables /usr/sbin/iptables-legacy
 
 # Install m2crypto package, needed by SWI tools
-RUN sudo apt-get install python3-m2crypto
+RUN apt-get install python3-m2crypto
 
 # Install swi tools
 RUN pip3 install git+https://github.com/aristanetworks/swi-tools.git@bead66bf261770237f7dd21ace3774ba04a017e9
