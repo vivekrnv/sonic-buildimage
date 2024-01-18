@@ -304,6 +304,14 @@ $(eval $(foreach deb,$(SDK_SRC_TARGETS) $(SDK_ONLINE_TARGETS) $(SDK_DEBS),$(call
 SONIC_ONLINE_DEBS += $(SDK_SRC_TARGETS) $(SDK_ONLINE_TARGETS)
 endif
 
-sdk-packages: $(addprefix $(DEBS_PATH)/, $(SDK_ONLINE_TARGETS) $(SDK_SRC_TARGETS))
+ifeq ($(BLDENV),bullseye)
+SDK_PACKAGES = $(SDK_ONLINE_TARGETS) $(SDK_SRC_TARGETS)
+endif
+
+ifeq ($(BLDENV),bookworm)
+SDK_PACKAGES = $(OFED_KERNEL) $(OFED_KERNEL_UTILS) $(MLNX_IPROUTE2)
+endif
+
+sdk-packages: $(addprefix $(DEBS_PATH)/, $(SDK_PACKAGES))
 
 SONIC_PHONY_TARGETS += sdk-packages
