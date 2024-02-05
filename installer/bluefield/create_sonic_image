@@ -192,6 +192,7 @@ if [ "$SECURE_UPGRADE_MODE" = "dev" -o "$SECURE_UPGRADE_MODE" = "prod" -o "$sign
             echo "prod sign script ${scripts_dir}/sign_image_${machine}.sh not found"
             rm -rf ${output_file}
         }
+        echo "prod sign script ${scripts_dir}/sign_image_${machine}.sh"
         (${scripts_dir}/sign_image_${machine}.sh ${output_file} ${CMS_SIG} ${SECURE_UPGRADE_MODE}) || {
             echo "CMS sign error $?"
             rm -rf ${CMS_SIG} ${output_file}

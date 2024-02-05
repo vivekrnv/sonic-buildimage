@@ -21,16 +21,17 @@ fi
 if [[ "${SECURE_MODE_FLAG}" == "prod" ]]; then
     SIGN_FLAG="--prod"
 fi
+echo "XXX999 this is dev"
 echo "INFO: SECURE_MODE_FLAG=${SECURE_MODE_FLAG} & SIGN_FLAG=${SIGN_FLAG} "
 echo "XXX0 hostname is: $(hostname)"
 DOCKER_INSPECT=$(docker container inspect $(hostname))
 echo "XXX1 docker inspect: $DOCKER_INSPECT"
-HOST_BINDS=$($(DOCKER_INSPECT) | jq -c -r .[].HostConfig.Binds)
-echo "XXX2 host binds: $HOST_BINDS"
-A_HOST_BINDS=$($(HOST_BINDS) | jq -r '.[]' )
-echo "XXX3 host binds 2: $A_HOST_BINDS"
-HOST_BIND_GREP=$( $(A_HOST_BINDS) | grep -e ":/sonic_dpu$")
-echo "XXX4 host binds grep : $HOST_BIND_GREP"
+#HOST_BINDS=$($(DOCKER_INSPECT) | jq -c -r .[].HostConfig.Binds)
+#echo "XXX2 host binds: $HOST_BINDS"
+#A_HOST_BINDS=$($(HOST_BINDS) | jq -r '.[]' )
+#echo "XXX3 host binds 2: $A_HOST_BINDS"
+#HOST_BIND_GREP=$( $(A_HOST_BINDS) | grep -e ":/sonic_dpu$")
+#echo "XXX4 host binds grep : $HOST_BIND_GREP"
 HOST_PATH=$(docker container inspect $(hostname) | jq -c -r .[].HostConfig.Binds | jq -r '.[]' | grep -e ":/sonic_dpu$" | cut -d ":" -f1)
 echo "XXX5 host path: $HOST_PATH"
 SERVER_SIGN_SCRIPT=/opt/nvidia/sonic_sign.sh
