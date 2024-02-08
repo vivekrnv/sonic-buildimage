@@ -255,7 +255,7 @@ class Eeprom(TlvInfoDecoder):
         Returns:
             int: EEPROM CRC
         """
-        encoded = [self.encoder((k,), v) for k,v in tlvs_info.items()]
+        encoded = [self.encoder((k,), tlvs_info[k]) for k in sorted(tlvs_info.keys())]
         tlvs = reduce(lambda x,y: x+y, encoded)
 
         # adding TLV_CODE_CRC_32 [type, len] for checksum calculation
@@ -276,16 +276,21 @@ class Eeprom(TlvInfoDecoder):
         data = {}
         db_initialized = self._redis_hget('EEPROM_INFO|State', 'Initialized')
         if db_initialized == '1':
-            for code in range(self._TLV_CODE_PRODUCT_NAME, self._TLV_CODE_CRC_32 + 1):
+            tlvs = [self._TLV_CODE_PRODUCT_NAME,
+                    self._TLV_CODE_PART_NUMBER,
+                    self._TLV_CODE_SERIAL_NUMBER,
+                    self._TLV_CODE_MAC_BASE,
+                    self._TLV_CODE_LABEL_REVISION]
+            for code in tlvs:
                 value = self._redis_hget('EEPROM_INFO|{}'.format(hex(code)), 'Value')
                 if value:
                     data[code] = value
         else:
             data = {
-                self._TLV_CODE_MAC_BASE: self._fwmngr.get_base_mac(),
-                self._TLV_CODE_SERIAL_NUMBER: self._vpd.get_serial_number(),
                 self._TLV_CODE_PRODUCT_NAME: self._vpd.get_product_name(),
                 self._TLV_CODE_PART_NUMBER: self._vpd.get_part_number(),
+                self._TLV_CODE_SERIAL_NUMBER: self._vpd.get_serial_number(),
+                self._TLV_CODE_MAC_BASE: self._fwmngr.get_base_mac(),
                 self._TLV_CODE_LABEL_REVISION: self._vpd.get_revision(),
             }
         return data
