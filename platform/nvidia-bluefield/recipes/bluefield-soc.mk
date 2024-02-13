@@ -37,7 +37,7 @@ endif
 
 BSD_BASE_SOURCE_URL = $(BSD_BASE_URL)/build/install/distro/SRPMS/
 DEV_BOOTIMAGES_BASE_URL = $(BSD_BASE_URL)/build/install/distro/dev-release/DEBS/
-PROD_BOOTIMAGES_BASE_URL = $(BSD_BASE_URL)build/install/distro/ga-release/DEBS/
+PROD_BOOTIMAGES_BASE_URL = $(BSD_BASE_URL)/build/install/distro/ga-release/DEBS/
 endif
 
 export BFSOC_VERSION BFSOC_REVISION BSD_BASE_SOURCE_URL BFB_IMG_TYPE BFSOC_FROM_INTERNAL PLATFORM_PATH
