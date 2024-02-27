@@ -298,12 +298,11 @@ define SAVE_INTO_CACHE
 	cp $($(1)_DST_PATH)/$(1).log $($(1)_DST_PATH)/$(1).cached.log
 	$($(1)_CACHE_USER) tar -C $($(1)_BASE_PATH) -mczvf $($(1)_CACHE_DIR)/$(MOD_CACHE_FILE) $(2) $(addprefix $($(1)_DST_PATH)/,$($(1)_DERIVED_DEBS) $($(1)_EXTRA_DEBS) $(1).cached.log)  \
 		1>>$($(1)_DST_PATH)/$(1).log
-
-	echo "File $($(1)_CACHE_DIR)/$(MOD_CACHE_FILE) saved in cache " >> $($(1)_DST_PATH)/$(1).log
-	echo "[ CACHE::SAVED ] $($(1)_CACHE_DIR)/$(MOD_CACHE_FILE)" >> $($(1)_DST_PATH)/$(1).log
-
 	sudo chmod 777 $($(1)_CACHE_DIR)/$(MOD_CACHE_FILE)
 	rm -f $($(1)_DST_PATH)/$(1).cached.log
+	
+	echo "File $($(1)_CACHE_DIR)/$(MOD_CACHE_FILE) saved in cache " >> $($(1)_DST_PATH)/$(1).log
+	echo "[ CACHE::SAVED ] $($(1)_CACHE_DIR)/$(MOD_CACHE_FILE)" >> $($(1)_DST_PATH)/$(1).log
 
 	$(call MOD_UNLOCK,$(1))
 endef
