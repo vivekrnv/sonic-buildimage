@@ -7,9 +7,12 @@ Table of Contents
    * [Introduction](#introduction)
    * [Configuration](#configuration)
    * [<strong>Config Load and Save</strong>](#config-load-and-save)
+
          * [Incremental Configuration](#incremental-configuration)
    * [<strong>Redis and Json Schema</strong>](#redis-and-json-schema)
+
          * [ACL and Mirroring](#acl-and-mirroring)
+         * [BGP BBR](#bgp-bbr)
          * [BGP Device Global](#bgp-device-global)
          * [BGP Sessions](#bgp-sessions)
          * [BUFFER_PG](#buffer_pg)
@@ -365,6 +368,18 @@ and migration plan
             "SRC_IP": "1.1.1.1/32",
         }
     }
+}
+```
+### BGP BBR
+
+The **BGP_BBR** table contains device-level BBR state.
+```
+{
+        "BGP_BBR": {
+            "all": {
+                "status": "enabled"/"disabled"
+            }
+        }
 }
 ```
 ### BGP Device Global
@@ -1009,7 +1024,7 @@ IPV4 DHPC Server related configuration are defined in **DHCP_SERVER_IPV4**, **DH
     "DHCP_SERVER_IPV4_CUSTOMIZED_OPTIONS": {
         "option60": {
             "id": 60,
-            "type": "text",
+            "type": "string",
             "value": "dummy_value"
         }
     },
