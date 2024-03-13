@@ -37,6 +37,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	find . -type f -exec touch {} +
 
 	patch -p0 < ../../../disable-libucx0-conflict.patch
+	patch -p1 < ../../../disable-go-bindings-generation.patch
 
 	# Build the Debs
 	PATH=/usr/bin/:$(PATH) dpkg-buildpackage -us -uc -b -j$(SONIC_CONFIG_MAKE_JOBS) --admindir $(SONIC_DPKG_ADMINDIR)

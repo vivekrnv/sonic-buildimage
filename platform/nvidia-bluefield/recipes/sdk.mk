@@ -23,7 +23,7 @@ SDK_BASE_PATH = $(PLATFORM_PATH)/sdk-src/sonic-bluefield-packages/bin
 SDK_SOURCE_BASE_URL =
 SDK_VERSION = 24.1-RC2
 
-SDK_COLLECTX_URL = https://linux.mellanox.com/public/repo/doca/1.5.2/debian11/aarch64/
+SDK_COLLECTX_URL = https://linux.mellanox.com/public/repo/doca/1.5.2/debian12/aarch64/
 
 ifneq ($(SDK_SOURCE_BASE_URL), )
 SDK_FROM_SRC = y
@@ -195,12 +195,12 @@ SDK_SRC_TARGETS += $(DPDK)
 
 # Collectx
 
-COLLECTX_CLXAPI = collectx-1.11.0-6421322.aarch64_debian-11.2-clxapi.deb
-$(COLLECTX_CLXAPI)_URL = $(SDK_COLLECTX_URL)/collectx_1.11.1-6607484-debian11.2-aarch64-clxapi.deb
+COLLECTX_CLXAPI = collectx_1.14.3-9642347-debian12.1-aarch64-clxapi.deb
+$(COLLECTX_CLXAPI)_URL = $(SDK_COLLECTX_URL)/collectx_1.14.3-9642347-debian12.1-aarch64-clxapi.deb
 $(COLLECTX_CLXAPI)_RDEPENDS = $(IB_UMAD)
 
-COLLECTX_CLXAPI_DEV = collectx-1.11.0-6421322.aarch64_debian-11.2-clxapidev.deb
-$(COLLECTX_CLXAPI_DEV)_URL = $(SDK_COLLECTX_URL)/collectx_1.11.1-6607484-debian11.2-aarch64-clxapidev.deb
+COLLECTX_CLXAPI_DEV = collectx_1.14.3-9642347-debian12.1-aarch64-clxapidev.deb
+$(COLLECTX_CLXAPI_DEV)_URL = $(SDK_COLLECTX_URL)/collectx_1.14.3-9642347-debian12.1-aarch64-clxapidev.deb
 $(COLLECTX_CLXAPI_DEV)_DEPENDS = $(COLLECTX_CLXAPI)
 $(COLLECTX_CLXAPI_DEV)_RDEPENDS = $(IB_UMAD)
 
@@ -304,13 +304,7 @@ $(eval $(foreach deb,$(SDK_SRC_TARGETS) $(SDK_ONLINE_TARGETS) $(SDK_DEBS),$(call
 SONIC_ONLINE_DEBS += $(SDK_SRC_TARGETS) $(SDK_ONLINE_TARGETS)
 endif
 
-ifeq ($(BLDENV),bullseye)
-SDK_PACKAGES = $(SDK_ONLINE_TARGETS) $(SDK_SRC_TARGETS)
-endif
-
-ifeq ($(BLDENV),bookworm)
-SDK_PACKAGES = $(OFED_KERNEL) $(OFED_KERNEL_UTILS) $(MLNX_IPROUTE2)
-endif
+SDK_PACKAGES = $(OFED_KERNEL) $(OFED_KERNEL_UTILS) $(MLNX_IPROUTE2) $(SDK_ONLINE_TARGETS) $(SDK_SRC_TARGETS)
 
 sdk-packages: $(addprefix $(DEBS_PATH)/, $(SDK_PACKAGES))
 
