@@ -371,38 +371,6 @@
                         "name": "xSFP module 28 Temp"
                     }
                 ]
-            },
-            {
-                "name": "sfp29",
-                "thermals": [
-                    {
-                        "name": "xSFP module 29 Temp"
-                    }
-                ]
-            },
-            {
-                "name": "sfp30",
-                "thermals": [
-                    {
-                        "name": "xSFP module 30 Temp"
-                    }
-                ]
-            },
-            {
-                "name": "sfp31",
-                "thermals": [
-                    {
-                        "name": "xSFP module 31 Temp"
-                    }
-                ]
-            },
-            {
-                "name": "sfp32",
-                "thermals": [
-                    {
-                        "name": "xSFP module 32 Temp"
-                    }
-                ]
             }
         ]
     },
