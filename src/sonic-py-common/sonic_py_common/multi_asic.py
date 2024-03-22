@@ -494,7 +494,7 @@ def get_asic_presence_list():
     return asics_list
 
 
-def is_front_panel_port(port: str, role=None):
+def is_front_panel_port(port, role=None):
     """
     @summary: This function will check if the interface is a front-panel port
     @return:  Boolean
