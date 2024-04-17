@@ -87,12 +87,13 @@ RUN pip3 install cffi==1.16.0    \
 COPY ["ptf_nn_agent.conf", "/etc/supervisor/conf.d/"]
 
 ## Clean up
-RUN apt-get purge -y \
-    libssl-dev && \
-    libffi-dev && \
-    python3-dev && \
-    libthrift-dev && \
-    cmake build-essential
+RUN apt-get -y purge \
+    cmake            \
+    libssl-dev       \
+    libffi-dev       \
+    python3-dev      \
+    libthrift-dev    \
+    build-essential
 
 RUN apt-get clean -y && \
     apt-get autoclean -y && \
