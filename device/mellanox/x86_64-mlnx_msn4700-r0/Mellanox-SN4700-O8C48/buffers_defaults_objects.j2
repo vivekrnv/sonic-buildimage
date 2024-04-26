@@ -320,15 +320,16 @@
 {%- macro generate_pg_profiles(port_names_active, port_names_inactive) %}
     "BUFFER_PG": {
 {% for port in port_names_active.split(',') %}
-{% if dynamic_mode is defined and port is not in PORT_DPC %}
+{% if dynamic_mode is defined %}
         "{{ port }}|3-4": {
             "profile" : {{find_profile_to_attach('BUFFER_PG', port, 'active', 'dynamic')}}
         },
-{% endif %}
-{% if port in PORT_DPC and dynamic_mode is not defined %}
+{% else %}
+{% if port in PORT_DPC %}
         "{{ port }}|3-4": {
             "profile" : {{find_profile_to_attach('BUFFER_PG', port, 'active', 'static')}}
         },
+{% endif %}
 {% endif %}
         "{{ port }}|0": {
             "profile" : "ingress_lossy_profile"
@@ -338,15 +339,16 @@
 {% if port_names_inactive|length > 0 %}
 {%- for port in port_names_inactive.split(',') %}
        {%- if loop.first -%},{%- endif -%}
-{% if dynamic_mode is defined and port is not in PORT_DPC %}
+{% if dynamic_mode is defined %}
         "{{ port }}|3-4": {
             "profile" : {{find_profile_to_attach('BUFFER_PG', port, 'inactive', 'dynamic')}}
         },
-{% endif %}
-{% if port in PORT_DPC and dynamic_mode is not defined %}
+{% else %}
+{% if port in PORT_DPC %}
         "{{ port }}|3-4": {
             "profile" : {{find_profile_to_attach('BUFFER_PG', port, 'inactive', 'static')}}
         },
+{% endif %}
 {% endif %}
        "{{ port }}|0": {
 {% if dynamic_mode is defined %}
