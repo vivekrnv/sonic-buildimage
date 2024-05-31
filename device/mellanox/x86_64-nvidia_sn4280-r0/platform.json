@@ -110,20 +110,6 @@
                 "name": "SODIMM 4 Temp"
             }
         ],
-        "dpus": [
-            {
-                "name": "dpu1"
-            },
-            {
-                "name": "dpu2"
-            },
-            {
-                "name": "dpu3"
-            },
-            {
-                "name": "dpu4"
-            }
-        ],
         "sfps": [
             {
                 "name": "sfp1",
@@ -659,6 +645,20 @@
             "breakout_modes": {
                 "1x400G": ["etp32"]
             }
+        }
+    },
+    "DPUS": {
+        "dpu0": {
+            "midplane_interface":  "dpu0"
+        },
+        "dpu1": {
+            "midplane_interface":  "dpu1"
+        },
+        "dpu2": {
+            "midplane_interface":  "dpu2"
+        },
+        "dpu3": {
+            "midplane_interface":  "dpu3"
         }
     }
 }
