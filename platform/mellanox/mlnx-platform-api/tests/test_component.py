@@ -35,6 +35,8 @@ from sonic_platform.component import ComponentONIE,       \
                                      ComponentBIOSSN2201, \
                                      ComponentCPLD,       \
                                      ComponentCPLDSN2201, \
+                                     ComponentCPLDSN4280, \
+                                     ComponenetFPGADPU,   \
                                      MPFAManager,         \
                                      ONIEUpdater,         \
                                      Component
@@ -284,6 +286,13 @@ class TestComponent:
         for index, item in enumerate(component_list):
             assert item.name == 'CPLD{}'.format(index + 1)
 
+    @mock.patch('sonic_platform.component.ComponenetFPGADPU._read_generic_file', mock.MagicMock(return_value='4'))
+    def test_cpld_get_component_list_dpu(self):
+        component_list = ComponenetFPGADPU.get_component_list()
+        assert len(component_list) == 4
+        for index, item in enumerate(component_list):
+            assert item.name == 'DPU{}_FPGA'.format(index + 1)
+
     def test_cpld_get_mst_device(self):
         ComponentCPLD.MST_DEVICE_PATH = '/tmp/mst'
         os.system('rm -rf /tmp/mst')
@@ -298,6 +307,20 @@ class TestComponent:
     @mock.patch('sonic_platform.component.subprocess.check_call')
     def test_cpld_2201_component(self, mock_check_call):
         c = ComponentCPLDSN2201(1)
+        assert c._install_firmware('')
+        mock_check_call.side_effect = subprocess.CalledProcessError(1, None)
+        assert not c._install_firmware('')
+
+    @mock.patch('sonic_platform.component.subprocess.check_call')
+    def test_cpld_4280_component(self, mock_check_call):
+        c = ComponentCPLDSN4280(1)
+        assert c._install_firmware('')
+        mock_check_call.side_effect = subprocess.CalledProcessError(1, None)
+        assert not c._install_firmware('')
+
+    @mock.patch('sonic_platform.component.subprocess.check_call')
+    def test_cpld_dpu_component(self, mock_check_call):
+        c = ComponenetFPGADPU(1)
         assert c._install_firmware('')
         mock_check_call.side_effect = subprocess.CalledProcessError(1, None)
         assert not c._install_firmware('')

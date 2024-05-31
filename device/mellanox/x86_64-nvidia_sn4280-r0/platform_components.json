@@ -8,7 +8,10 @@
                 "CPLD1": { },
                 "CPLD2": { },
                 "CPLD3": { },
-                "CPLD4": { }
+                "DPU1_FPGA": { },
+                "DPU2_FPGA": { },
+                "DPU3_FPGA": { },
+                "DPU4_FPGA": { }
             }
         }
     }

@@ -732,6 +732,7 @@ class ComponentCPLD(Component):
 
     MST_DEVICE_PATH = '/dev/mst'
     MST_DEVICE_PATTERN = 'mt[0-9]*_pci_cr0'
+    FW_VERSION_FORMAT = 'CPLD{}_REV{}{}'
 
     CPLD_NUMBER_FILE = '/var/run/hw-management/config/cpld_num'
     CPLD_PART_NUMBER_FILE = '/var/run/hw-management/system/cpld{}_pn'
@@ -833,7 +834,7 @@ class ComponentCPLD(Component):
         version = version.rstrip('\n').zfill(self.CPLD_VERSION_MAX_LENGTH)
         version_minor = version_minor.rstrip('\n').zfill(self.CPLD_VERSION_MINOR_MAX_LENGTH)
 
-        return "CPLD{}_REV{}{}".format(part_number, version, version_minor)
+        return self.FW_VERSION_FORMAT.format(part_number, version, version_minor)
 
     def get_available_firmware_version(self, image_path):
         with MPFAManager(image_path) as mpfa:
@@ -897,6 +898,46 @@ class ComponentCPLDSN2201(ComponentCPLD):
 
     def _install_firmware(self, image_path):
         self.CPLD_FIRMWARE_UPDATE_COMMAND[2] = image_path
+
+        try:
+            print("INFO: Installing {} firmware update: path={}".format(self.name, image_path))
+            subprocess.check_call(self.CPLD_FIRMWARE_UPDATE_COMMAND, universal_newlines=True)
+        except subprocess.CalledProcessError as e:
+            print("ERROR: Failed to update {} firmware: {}".format(self.name, str(e)))
+            return False
+
+        return True
+
+class ComponentCPLDSN4280(ComponentCPLD):
+    CPLD_FIRMWARE_UPDATE_COMMAND = ['cpldupdate', '--gpio', '--print-progress', '']
+
+    def _install_firmware(self, image_path):
+        self.CPLD_FIRMWARE_UPDATE_COMMAND[3] = image_path
+
+        try:
+            print("INFO: Installing {} firmware update: path={}".format(self.name, image_path))
+            subprocess.check_call(self.CPLD_FIRMWARE_UPDATE_COMMAND, universal_newlines=True)
+        except subprocess.CalledProcessError as e:
+            print("ERROR: Failed to update {} firmware: {}".format(self.name, str(e)))
+            return False
+
+        return True
+
+class ComponenetFPGADPU(ComponentCPLD):
+    CPLD_NUMBER_FILE = '/var/run/hw-management/config/dpu_num'
+
+    COMPONENT_NAME = 'DPU{}_FPGA'
+    COMPONENT_DESCRIPTION = 'FPGA - Field-Programmable Gate Array'
+    FW_VERSION_FORMAT = 'FPGA{}_REV{}{}'
+
+    CPLD_PART_NUMBER_FILE = '/var/run/hw-management/dpu{}/system/fpga1_pn'
+    CPLD_VERSION_FILE = '/var/run/hw-management/dpu{}/system/fpga1_version'
+    CPLD_VERSION_MINOR_FILE = '/var/run/hw-management/dpu{}/system/fpga1_version_min'
+
+    CPLD_FIRMWARE_UPDATE_COMMAND = ['cpldupdate', '--cpld_chain 2', '--gpio', '--print-progress', '']
+
+    def _install_firmware(self, image_path):
+        self.CPLD_FIRMWARE_UPDATE_COMMAND[4] = image_path
 
         try:
             print("INFO: Installing {} firmware update: path={}".format(self.name, image_path))
