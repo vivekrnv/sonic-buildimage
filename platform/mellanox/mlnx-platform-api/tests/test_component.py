@@ -376,6 +376,26 @@ class TestComponent:
         assert onie_minor == '3'
         assert onie_release == '0010'
         assert onie_baudrate == '9600'
+
+        # Verify presence of release candidate (rc) string doesn't throw an exception
+        onie_year, onie_month, onie_major, onie_minor, onie_release, onie_baudrate = \
+            o.parse_onie_version('2023.11-5.3.0012-rc2-9600')
+        assert onie_year == '2023'
+        assert onie_month == '11'
+        assert onie_major == '5'
+        assert onie_minor == '3'
+        assert onie_release == '0012'
+        assert onie_baudrate == '9600'
+
+        onie_year, onie_month, onie_major, onie_minor, onie_release, onie_baudrate = \
+            o.parse_onie_version('2023.11-5.3.0012-rc24-dev-115200')
+        assert onie_year == '2023'
+        assert onie_month == '11'
+        assert onie_major == '5'
+        assert onie_minor == '3'
+        assert onie_release == '0012'
+        assert onie_baudrate == '115200'
+
         with pytest.raises(RuntimeError):
             o.parse_onie_version('invalid', is_base=True)
         with pytest.raises(RuntimeError):
@@ -390,6 +410,10 @@ class TestComponent:
         assert onie_baudrate is None
 
         assert o.get_onie_required_version() == o.ONIE_VERSION_REQUIRED
+
+    def test_parse_onie_version_extra_prefix(self):
+        o = ONIEUpdater()
+        
 
     @mock.patch('sonic_platform.component.ONIEUpdater.get_onie_version')
     @mock.patch('sonic_platform.component.device_info.get_platform')

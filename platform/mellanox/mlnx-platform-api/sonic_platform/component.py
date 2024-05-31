@@ -130,7 +130,7 @@ class ONIEUpdater(object):
     ONIE_FW_UPDATE_CMD_INSTALL = ['/usr/bin/mlnx-onie-fw-update.sh', 'update', '--no-reboot']
     ONIE_FW_UPDATE_CMD_SHOW_PENDING = ['/usr/bin/mlnx-onie-fw-update.sh', 'show-pending']
 
-    ONIE_VERSION_PARSE_PATTERN = '([0-9]{4})\.([0-9]{2})-([0-9]+)\.([0-9]+)\.([0-9]+)-?(dev)?-([0-9]+)'
+    ONIE_VERSION_PARSE_PATTERN = '([0-9]{4})\.([0-9]{2})-([0-9]+)\.([0-9]+)\.([0-9]+)-?(rc[0-9]+)?-?(dev)?-([0-9]+)'
     ONIE_VERSION_BASE_PARSE_PATTERN = '([0-9]+)\.([0-9]+)\.([0-9]+)'
     ONIE_VERSION_REQUIRED = '5.2.0016'
 
@@ -153,7 +153,7 @@ class ONIEUpdater(object):
 
     def __add_prefix(self, image_path):
         if image_path.endswith(self.BIOS_UPDATE_FILE_EXT_CAB):
-            return image_path;
+            return image_path
         elif self.BIOS_UPDATE_FILE_EXT_ROM not in image_path:
             rename_path = "/tmp/00-{}".format(os.path.basename(image_path))
         else:
@@ -281,8 +281,9 @@ class ONIEUpdater(object):
         onie_major = m.group(3)
         onie_minor = m.group(4)
         onie_release = m.group(5)
-        onie_signtype = m.group(6)
-        onie_baudrate = m.group(7)
+        onie_rc = m.group(6)
+        onie_signtype = m.group(7)
+        onie_baudrate = m.group(8)
 
         return onie_year, onie_month, onie_major, onie_minor, onie_release, onie_baudrate
 
