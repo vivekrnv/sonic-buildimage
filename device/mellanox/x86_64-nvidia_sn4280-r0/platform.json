@@ -96,6 +96,18 @@
             },
             {
                 "name": "CPU Pack Temp"
+            },
+            {
+                "name": "SODIMM 1 Temp"
+            },
+            {
+                "name": "SODIMM 2 Temp"
+            },
+            {
+                "name": "SODIMM 3 Temp"
+            },
+            {
+                "name": "SODIMM 4 Temp"
             }
         ],
         "dpus": [
