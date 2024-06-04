@@ -935,10 +935,10 @@ class ComponenetFPGADPU(ComponentCPLD):
     CPLD_VERSION_FILE = '/var/run/hw-management/dpu{}/system/fpga1_version'
     CPLD_VERSION_MINOR_FILE = '/var/run/hw-management/dpu{}/system/fpga1_version_min'
 
-    CPLD_FIRMWARE_UPDATE_COMMAND = ['cpldupdate', '--cpld_chain 2', '--gpio', '--print-progress', '']
+    CPLD_FIRMWARE_UPDATE_COMMAND = ['cpldupdate', '--cpld_chain', '2', '--gpio', '--print-progress', '']
 
     def _install_firmware(self, image_path):
-        self.CPLD_FIRMWARE_UPDATE_COMMAND[4] = image_path
+        self.CPLD_FIRMWARE_UPDATE_COMMAND[5] = image_path
 
         try:
             print("INFO: Installing {} firmware update: path={}".format(self.name, image_path))
