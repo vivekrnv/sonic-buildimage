@@ -48,7 +48,7 @@ def enable_counters():
         enable_counter_group(db, key)
 
     platform_info = device_info.get_platform_info(db)
-    if platform_info.get('switch_type', '') == 'dpu':
+    if platform_info.get('switch_type') == 'dpu':
         for key in dpu_counters:
             enable_counter_group(db, key)
 
