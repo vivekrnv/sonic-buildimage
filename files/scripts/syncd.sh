@@ -4,50 +4,17 @@
 
 declare -r UNKN_MST="unknown"
 
-function GetMstDevice() {
-    local _MST_DEVICE="$(ls /dev/mst/*_pci_cr0 2>&1)"
-
-    if [[ ! -c "${_MST_DEVICE}" ]]; then
-        echo "${UNKN_MST}"
-    else
-        echo "${_MST_DEVICE}"
-    fi
-}
 
 function startplatform() {
 
     # platform specific tasks
-
-    # start mellanox drivers regardless of
-    # boot type
     if [[ x"$sonic_asic_platform" == x"mellanox" ]]; then
-        BOOT_TYPE=`getBootType`
-        if [[ x"$WARM_BOOT" == x"true" || x"$BOOT_TYPE" == x"fast" ]]; then
-            export FAST_BOOT=1
-        fi
-
         if [[ x"$WARM_BOOT" != x"true" ]]; then
             if [[ x"$(/bin/systemctl is-active pmon)" == x"active" ]]; then
                 /bin/systemctl stop pmon
                 debug "pmon is active while syncd starting, stop it first"
             fi
         fi
-
-        debug "Starting Firmware update procedure"
-        /usr/bin/mst start --with_i2cdev
-
-        local -r _MST_DEVICE="$(GetMstDevice)"
-        if [[ "${_MST_DEVICE}" != "${UNKN_MST}" ]]; then
-            /usr/bin/flint -d $_MST_DEVICE --clear_semaphore
-        fi
-
-        /usr/bin/mlnx-fw-upgrade.sh -v
-        if [[ "$?" -ne "${EXIT_SUCCESS}" ]]; then
-            debug "Failed to upgrade fw. " "$?" "Restart syncd"
-            exit 1
-        fi
-        /etc/init.d/sxdkernel restart
-        debug "Firmware update procedure ended"
     fi
 
     if [[ x"$sonic_asic_platform" == x"broadcom" ]]; then

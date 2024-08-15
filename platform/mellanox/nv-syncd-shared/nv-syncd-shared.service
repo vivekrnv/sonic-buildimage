@@ -1,7 +1,7 @@
 [Unit]
-Description=Manage Nvidia specific syncd shared volume
-Requires=docker.service
-After=docker.service
+Description=Handle pre-syncd start tasks
+Requires=database.service
+After=database.service
 BindsTo=sonic.target
 After=sonic.target
 PartOf=syncd.service
@@ -9,9 +9,7 @@ PartOf=syncd.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=rm -rf /tmp/nv-syncd-shared/
-ExecStart=mkdir -m 777 -p /tmp/nv-syncd-shared/
+ExecStart=/usr/bin/nv-syncd-shared.sh start
 
 [Install]
 WantedBy=sonic.target
-
