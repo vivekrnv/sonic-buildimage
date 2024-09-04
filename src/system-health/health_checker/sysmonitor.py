@@ -484,6 +484,8 @@ class Sysmonitor(ProcessTaskBase):
         while not self.task_stopping_event.is_set():
             try:
                 msg = self.myQ.get(timeout=QUEUE_TIMEOUT)
+                if msg == "Bye":
+                    break
                 event = msg["unit"]
                 event_src = msg["evt_src"]
                 event_time = msg["time"]
@@ -494,6 +496,8 @@ class Sysmonitor(ProcessTaskBase):
                 pass
             except Exception as e:
                 logger.log_error("system_service"+str(e))
+
+        logger.log_notice("Sysmon: stop request acknowledged")
 
         #cleanup tables  "'ALL_SERVICE_STATUS*', 'SYSTEM_READY*'" from statedb
         self.state_db.delete_all_by_pattern(self.state_db.STATE_DB, "ALL_SERVICE_STATUS|*")
@@ -510,8 +514,8 @@ class Sysmonitor(ProcessTaskBase):
     def task_stop(self):
         # Signal the process to stop
         self.task_stopping_event.set()
-        #Clear the resources of mpmgr- Queue
-        self.mpmgr.shutdown()
+        # Send a Bye message to not let the Q get blocked on get call
+        self.myQ.put("Bye")
 
         # Wait for the process to exit
         self._task_process.join(self._stop_timeout_secs)
