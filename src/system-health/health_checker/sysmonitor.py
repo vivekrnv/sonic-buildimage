@@ -22,6 +22,7 @@ spl_srv_list = ['database-chassis', 'gbsyncd']
 SELECT_TIMEOUT_MSECS = 1000
 QUEUE_TIMEOUT = 15
 TASK_STOP_TIMEOUT = 10
+QUEUE_STOP_FLAG = "BYE!!"
 logger = Logger(log_identifier=SYSLOG_IDENTIFIER)
 exclude_srv_list = ['ztp.service']
 
@@ -122,6 +123,9 @@ class Sysmonitor(ProcessTaskBase):
         self.config = Config()
         self.mpmgr = multiprocessing.Manager()
         self.myQ = self.mpmgr.Queue()
+        self.monitor_system_bus = MonitorSystemBusTask(self.myQ)
+        self.monitor_statedb_table = MonitorStateDbTask(self.myQ)
+            
 
     #Sets system ready status to state db
     def post_system_status(self, state):
@@ -466,16 +470,11 @@ class Sysmonitor(ProcessTaskBase):
             self.state_db.connect(self.state_db.STATE_DB)
 
         try:
-            monitor_system_bus = MonitorSystemBusTask(self.myQ)
-            monitor_system_bus.task_run()
-
-            monitor_statedb_table = MonitorStateDbTask(self.myQ)
-            monitor_statedb_table.task_run()
-
+            self.monitor_system_bus.task_run()
+            self.monitor_statedb_table.task_run()
         except Exception as e:
             logger.log_error("SubProcess-{}".format(str(e)))
             sys.exit(1)
-
 
         self.update_system_status()
 
@@ -484,27 +483,20 @@ class Sysmonitor(ProcessTaskBase):
         while not self.task_stopping_event.is_set():
             try:
                 msg = self.myQ.get(timeout=QUEUE_TIMEOUT)
-                if msg == "Bye":
-                    break
-                event = msg["unit"]
-                event_src = msg["evt_src"]
-                event_time = msg["time"]
-                logger.log_debug("Main process- received event:{} from source:{} time:{}".format(event,event_src,event_time))
-                logger.log_info("check_unit_status for [ "+event+" ] ")
-                self.check_unit_status(event)
+                if msg != QUEUE_STOP_FLAG:
+                    event = msg["unit"]
+                    event_src = msg["evt_src"]
+                    event_time = msg["time"]
+                    logger.log_debug("Main process- received event:{} from source:{} time:{}".format(event,event_src,event_time))
+                    logger.log_info("check_unit_status for [ "+event+" ] ")
+                    self.check_unit_status(event)
             except (Empty, EOFError):
                 pass
             except Exception as e:
                 logger.log_error("system_service"+str(e))
+        
+        logger.log_notice("sysmon main task is stopped!")
 
-        logger.log_notice("Sysmon: stop request acknowledged")
-
-        #cleanup tables  "'ALL_SERVICE_STATUS*', 'SYSTEM_READY*'" from statedb
-        self.state_db.delete_all_by_pattern(self.state_db.STATE_DB, "ALL_SERVICE_STATUS|*")
-        self.state_db.delete_all_by_pattern(self.state_db.STATE_DB, "SYSTEM_READY|*")
-
-        monitor_system_bus.task_stop()
-        monitor_statedb_table.task_stop()
 
     def task_worker(self):
         if self.task_stopping_event.is_set():
@@ -512,10 +504,19 @@ class Sysmonitor(ProcessTaskBase):
         self.system_service()
 
     def task_stop(self):
-        # Signal the process to stop
+        # stop the child sysmon processes
+        self.monitor_system_bus.task_stop()
+        self.monitor_statedb_table.task_stop()
+        
+        # Signal the main sysmon process to stop
         self.task_stopping_event.set()
-        # Send a Bye message to not let the Q get blocked on get call
-        self.myQ.put("Bye")
+
+        # Send a exit message to not let the Q get blocked on get call
+        self.myQ.put(QUEUE_STOP_FLAG)
+
+        #cleanup tables  "'ALL_SERVICE_STATUS*', 'SYSTEM_READY*'" from statedb
+        self.state_db.delete_all_by_pattern(self.state_db.STATE_DB, "ALL_SERVICE_STATUS|*")
+        self.state_db.delete_all_by_pattern(self.state_db.STATE_DB, "SYSTEM_READY|*")
 
         # Wait for the process to exit
         self._task_process.join(self._stop_timeout_secs)
