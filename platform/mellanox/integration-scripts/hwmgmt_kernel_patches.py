@@ -26,6 +26,30 @@ PATCH_TABLE_NAME = "Patch_Status_Table.txt"
 PATCH_TABLE_DELIMITER = "----------------------"
 PATCH_NAME = "patch name"
 COMMIT_ID = "Upstream commit id"
+PATCH_STATUS = "status"
+PATCH_NAME = "patch name"
+DOWNSTREAM = set(["Downstream", "Downstream accepted"])
+# Patches that are already in upstream but tool says moving to downstream
+KEEP_UPSTREAM_LIST = [
+    "0054-mlxsw-minimal-Simplify-method-of-modules-number-dete.patch",
+    "0067-platform-mellanox-Add-dedicated-match-for-system-typ.patch",
+    "0152-mlxsw-i2c-Prevent-transaction-execution-for-spec.patch",
+    "0166-DS-leds-leds-mlxreg-Send-udev-event-from-leds-mlxreg.patch",
+    "0172-DS-platform-mlx-platform-Add-SPI-path-for-rack-switc.patch",
+]
+# Patches that should be in downstream but tool says moving to upstream
+KEEP_DOWNSTREAM = [
+    "0098-2-Revert-mlxsw-i2c-Fix-chunk-size-setting.patch",
+    "0296-platform-mellanox-indicate-deferred-I2C-bus-creation.patch",
+    "0298-platform-mellanox-mlx-platform-Fix-FAN-tacho-reading.patch"
+]
+# Patches that add new features/platforms and in downstream
+SKIP_DOWNSTREAM = [
+    "0297-platform-mellanox-mlxreg-dpu-Add-initial-support-for.patch",
+    "0299-platform-mellanox-Introduce-support-of-Nvidia-smart-.patch"
+]
+# MOve
+
 
 # Strips the subversion
 def get_kver(k_version):
@@ -202,24 +226,49 @@ class PostProcess(HwMgmtAction):
             return self.return_false("-> ERR: current non_up_patches doesn't exist {}".format(self.args.current_non_up_patches))
         return True
 
+    def filter_downstream_patches(self, patch_table):
+        hwmgmt_up_patches = FileHandler.read_dir(self.args.patches, "*.patch")
+        # Move the Downstream accepted and Downstream patches into non_up folder
+        print(" -> POST: Filtering DA patches")
+        for patch in hwmgmt_up_patches:
+            for patch_t in patch_table:
+                if patch == patch_t.get(PATCH_NAME, ""):
+                    status_str = patch_t.get(PATCH_STATUS, "")
+                    status_str = status_str.split(';')[0]
+                    if (status_str in DOWNSTREAM and patch not in KEEP_UPSTREAM_LIST) or patch in KEEP_DOWNSTREAM:
+                        print(f" -> POST: Patch {patch} with status {status_str} is moved to non upstream folder")
+                        shutil.move(os.path.join(self.args.patches, patch), os.path.join(self.args.non_up_patches, patch))
+
+        # Remove any SKIP_DOWNSTREAM patches from non_up list
+        for patch in SKIP_DOWNSTREAM:
+            print(f" -> POST: Downstream Patch {patch} is not applied in SONiC")
+            os.remove(os.path.join(self.args.non_up_patches, patch))
+        print(" -> POST: Filtering DA patches completed")
+
     def read_data(self):
         # Read the data written by hw-mgmt script into the internal Data Structures
         Data.new_series = FileHandler.read_strip_minimal(self.args.series)
         Data.old_series = FileHandler.read_raw(os.path.join(self.args.build_root, SLK_SERIES))
         Data.old_non_up = FileHandler.read_strip_minimal(self.args.current_non_up_patches)
 
+        for patch in SKIP_DOWNSTREAM:
+            if patch in Data.new_series:
+                print(f" -> POST: Downstream Patch {patch} is not removed from the series file")
+                Data.new_series.remove(patch)
+
         new_up = set(FileHandler.read_dir(self.args.patches, "*.patch"))
         new_non_up = set(FileHandler.read_dir(self.args.non_up_patches, "*.patch"))
 
         for patch in Data.new_series:
             if patch in new_up:
-                Data.new_up.append(patch)
+                Data.new_up.append(patch.strip())
             elif patch in new_non_up:
-                Data.new_non_up.append(patch)
+                Data.new_non_up.append(patch.strip())
             else:
                 print("-> FATAL: Patch {} not found either in upstream or non-upstream list".format(patch))
                 if not self.args.is_test:
                     sys.exit(1)
+        print(Data.new_non_up)
         Data.k_ver = get_kver(self.args.kernel_version)
 
     def find_mlnx_hw_mgmt_markers(self):
@@ -256,7 +305,8 @@ class PostProcess(HwMgmtAction):
         """
         print("\n -> POST: Removed the following supposedly non-upstream patches:")
         # Remove all the old patches and any patches that got accepted with this kernel version
-        for patch in Data.old_non_up + Data.new_up:
+        # In addition, also remove the platform-changes.patch file
+        for patch in Data.old_non_up + Data.new_up + ["platform-changes.patch"]:
             file_n = os.path.join(self.args.build_root, os.path.join(NON_UP_PATCH_LOC, patch))
             if os.path.isfile(file_n):
                 print(patch)
@@ -289,17 +339,22 @@ class PostProcess(HwMgmtAction):
                 if index == 0:
                     # if the first patch is a non-upstream patch, then use the marker as the prev index
                     prev_patch = Data.old_series[Data.i_mlnx_start]
-                else:    
+                else:
                     prev_patch = Data.new_series[index-1] + "\n"
+                
+                print(Data.new_non_up)
+                if prev_patch.strip() in Data.new_non_up:
+                    prev_patch = "mellanox/" + prev_patch
+
                 if prev_patch not in Data.agg_slk_series:
                     print("\n -> FATAL: ERR: patch {} is not found in agg_slk_series list: \n {}".format(prev_patch, "".join(Data.agg_slk_series)))
                     sys.exit(1)
                 index_prev_patch =  Data.agg_slk_series.index(prev_patch)
                 if index_prev_patch < len(Data.agg_slk_series) - 1:
-                    Data.agg_slk_series = Data.agg_slk_series[0:index_prev_patch+1] + [patch] +  Data.agg_slk_series[index_prev_patch + 1:]
+                    Data.agg_slk_series = Data.agg_slk_series[0:index_prev_patch+1] + ["mellanox/" + patch] +  Data.agg_slk_series[index_prev_patch + 1:]
                 else:
-                    Data.agg_slk_series = Data.agg_slk_series + [patch]
-                print("\n -> INFO: patch {} added to agg_slk_series:".format(patch.strip()))
+                    Data.agg_slk_series = Data.agg_slk_series + ["mellanox/" + patch]
+                print("\n -> INFO: patch {} added to agg_slk_series:".format("mellanox/"+patch.strip()))
                 lines.append(patch.strip())
 
         # Update the non_up_current_patch_list file
@@ -397,6 +452,11 @@ class PostProcess(HwMgmtAction):
     def perform(self):
         """ Read the data output from the deploy_kernel_patches.py script 
             and move to appropriate locations """
+        # Read patch table first
+        path = os.path.join(self.args.build_root, PATCH_TABLE_LOC)
+        patch_table = load_patch_table(path, get_kver(self.args.kernel_version))
+        # Move Down Accepted and Down Patches from up foler to non_up folder
+        self.filter_downstream_patches(patch_table)
         # Handle Patches related logic
         self.read_data()
         self.find_mlnx_hw_mgmt_markers()
@@ -411,9 +471,6 @@ class PostProcess(HwMgmtAction):
         # handle kconfig and get any diff
         kcfg_diff = self.kcfg_handler.perform()
         self.write_non_up_diff(series_diff, kcfg_diff)
-
-        path = os.path.join(self.args.build_root, PATCH_TABLE_LOC)
-        patch_table = load_patch_table(path, Data.k_ver)
         
         sb_msg, slk_msg = self.create_commit_msg(patch_table)
 

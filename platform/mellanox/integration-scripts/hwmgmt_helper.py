@@ -31,6 +31,24 @@ from helper import *
 ####  KConfig Processing                                                    ####
 ################################################################################
 
+# Kconfig the tool considers upstream but should be Downstream
+DOWNSTREAM_KCFG = [
+    "CONFIG_X86_AMD_PLATFORM_DEVICE",
+    "CONFIG_AMD_XGBE",
+    "CONFIG_HW_RANDOM_AMD",
+    "CONFIG_SENSORS_K10TEMP",
+    "CONFIG_SENSORS_MP2855",
+    "CONFIG_SENSORS_MP2891",
+    "CONFIG_SPI_AMD",
+    "CONFIG_PINCTRL_AMD",
+    "CONFIG_EDAC_AMD64",
+    "CONFIG_AMD_XGBE_DCB",
+    "CONFIG_AMD_XGBE_HAVE_ECC",
+    "CONFIG_USB_NET_DRIVERS",
+    "CONFIG_USB_USBNET",
+    "CONFIG_USB_NET_CDCETHER"
+]
+
 class KCFGData:
     x86_base = OrderedDict()
     x86_updated = OrderedDict()
@@ -46,11 +64,22 @@ class KCFGData:
     noarch_excl = OrderedDict()
     noarch_down = OrderedDict()
 
-
 class KConfigTask():
     def __init__(self, args):
         self.args = args
 
+    def filter_x86_config(self):
+        for kcfg in DOWNSTREAM_KCFG:
+            if kcfg in KCFGData.x86_down:
+                continue
+            if kcfg in KCFGData.x86_updated:
+                print(f"-> Kcfg {kcfg}:{KCFGData.x86_updated[kcfg]} moved from upstream to downstream")
+                KCFGData.x86_down[kcfg] = KCFGData.x86_updated[kcfg]
+                # Set the updated just like base kconfig if exists or delete the kconfig
+                if kcfg in KCFGData.x86_base:
+                    KCFGData.x86_updated[kcfg] = KCFGData.x86_base[kcfg]
+                else:
+                    del KCFGData.x86_updated[kcfg]
 
     def read_data(self):
         KCFGData.x86_base = FileHandler.read_kconfig(self.args.config_base_amd)
@@ -58,6 +87,8 @@ class KConfigTask():
         if os.path.isfile(self.args.config_inc_down_amd):
             print(" -> Downstream Config for x86 found..")
             KCFGData.x86_down = FileHandler.read_kconfig(self.args.config_inc_down_amd)
+
+        self.filter_x86_config()
 
         KCFGData.arm_base = FileHandler.read_kconfig(self.args.config_base_arm)
         KCFGData.arm_updated = FileHandler.read_kconfig(self.args.config_inc_arm)
@@ -158,7 +189,7 @@ class KConfigTask():
         x86_start, x86_end = FileHandler.find_marker_indices(kcfg_final, MLNX_KFG_MARKER)        
         x86_final = OrderedDict(list(KCFGData.x86_incl.items()) + list(KCFGData.x86_down.items()))
         kcfg_final = FileHandler.insert_kcfg_data(kcfg_final, x86_start, x86_end, x86_final)
-        # insert arm Kconfig      
+        # insert arm Kconfig
         arm_final = OrderedDict(list(KCFGData.arm_incl.items()) + list(KCFGData.arm_down.items()))
         kcfg_final = self.insert_arm64_section(kcfg_final, arm_final)
         # generate diff

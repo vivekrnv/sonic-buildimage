@@ -29,9 +29,9 @@ SLK_PATCH_LOC = "src/sonic-linux-kernel/patch/"
 SLK_KCONFIG = SLK_PATCH_LOC + "kconfig-inclusions"
 SLK_KCONFIG_EXCLUDE = SLK_PATCH_LOC + "kconfig-exclusions"
 SLK_SERIES = SLK_PATCH_LOC + "series"
-NON_UP_PATCH_DIR = "platform/mellanox/non-upstream-patches/"
-NON_UP_PATCH_LOC = NON_UP_PATCH_DIR + "patches"
-NON_UP_DIFF = NON_UP_PATCH_DIR + "external-changes.patch"
+NON_UP_PATCH_DIR = SLK_PATCH_LOC + "mellanox"
+NON_UP_PATCH_LOC = NON_UP_PATCH_DIR
+NON_UP_DIFF = NON_UP_PATCH_DIR + "/platform-changes.patch"
 KCFG_HDR_RE = "\[(.*)\]"
 KERNEL_BACKPORTS = "kernel_backports"
  # kconfig_inclusion headers to consider

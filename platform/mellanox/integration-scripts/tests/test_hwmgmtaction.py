@@ -24,7 +24,7 @@ from hwmgmt_helper import *
 from hwmgmt_kernel_patches import *
 
 
-NEW_NONUP_LIST = """ \
+NEW_NONUP_LIST = """\
 0168-TMP-mlxsw-minimal-Ignore-error-reading-SPAD-register.patch
 0169-TMP-mlxsw-i2c-Prevent-transaction-execution-for-spec.patch
 0172-DS-platform-mlx-platform-Add-SPI-path-for-rack-switc.patch
