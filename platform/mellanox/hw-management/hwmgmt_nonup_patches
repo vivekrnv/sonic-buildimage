@@ -2,7 +2,6 @@
 0049-leds-mlxreg-Provide-conversion-for-hardware-LED-colo.patch
 0050-leds-mlxreg-Skip-setting-LED-color-during-initializa.patch
 0051-leds-mlxreg-Allow-multi-instantiation-of-same-name-L.patch
-0098-2-Revert-mlxsw-i2c-Fix-chunk-size-setting.patch
 0098-mlxsw-Use-weak-reverse-dependencies-for-firmware-fla.patch
 0099-mlxsw-core_hwmon-Fix-variable-names-for-hwmon-attrib.patch
 0100-mlxsw-core_thermal-Rename-labels-according-to-naming.patch
