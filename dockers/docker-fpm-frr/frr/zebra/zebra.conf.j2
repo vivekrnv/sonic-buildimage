@@ -6,6 +6,8 @@
 !
 {% endblock banner %}
 !
+debug zebra dplane
+debug zebra events
 {% block fpm %}
 {% if ( ('localhost' in DEVICE_METADATA) and ('nexthop_group' in  DEVICE_METADATA['localhost']) and
         (DEVICE_METADATA['localhost']['nexthop_group'] == 'enabled') ) %}
