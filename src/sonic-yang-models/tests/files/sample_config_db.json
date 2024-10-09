@@ -329,9 +329,9 @@
                 "BTH_OPCODE": "0x11/0xbf",
                 "AETH_SYNDROME": "0x60/0x60"
             },
-            "TUNNEL_TERM_TABLE|RULE0": {
+            "DATAACL|RULE0": {
                 "PRIORITY": "999",
-                "REDIRECT_ACTION": "2.2.2.2",
+                "PACKET_ACTION": "FORWARD",
                 "TUNNEL_TERM": "true",
                 "DST_IP": "1.1.1.1/32"
             }
