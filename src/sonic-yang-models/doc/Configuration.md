@@ -369,7 +369,7 @@ and migration plan
             "PRIORITY": "999",
             "PACKET_ACTION": "DROP",
             "SRC_IP": "1.1.1.1/32",
-            "TUNNEL_TERM": 'true"
+            "TUNNEL_TERM": "true"
         }
     }
 }
