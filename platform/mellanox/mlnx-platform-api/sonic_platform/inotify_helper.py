@@ -19,7 +19,7 @@
 import os
 import errno
 # Inotify causes an exception when DEBUG env variable is set to a non-integer convertible
-# Ref: https://github.com/dsoprea/PyInotify/pull/88
+# https://github.com/dsoprea/PyInotify/blob/0.2.10/inotify/adapters.py#L37
 os.environ['DEBUG'] = '0'
 import inotify.adapters
 
