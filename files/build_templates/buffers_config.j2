@@ -79,6 +79,8 @@ def
             {%- endif %}
         {%- endif %}
     {%- endfor %}
+    {%- if port_name in PORT_DPC -%}
+        {{ '0m' }}
     {%- if cable_len -%}
         {{ cable_len.0 }}
     {%- else %}
