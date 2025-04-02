@@ -1,0 +1,221 @@
+From c679412820c5ed925f9b50312f12e40d9871c6b2 Mon Sep 17 00:00:00 2001
+From: Donald Sharp <sharpd@nvidia.com>
+Date: Wed, 12 Mar 2025 12:37:21 -0400
+Subject: [PATCH] bgpd: Tie in more clear events to clear code
+
+The `clear bgp *` and the interface down events
+cause a global clearing of data from the bgp rib.
+Let's tie those into the clear peer code such
+that we can take advantage of the reduced load
+in these cases too.
+
+Signed-off-by: Donald Sharp <sharpd@nvidia.com>
+---
+ bgpd/bgp_nht.c |  6 ++++++
+ bgpd/bgp_vty.c | 20 +++++++++++++++++++-
+ bgpd/bgpd.c    | 26 +++++++++++++++++++++++++-
+ bgpd/bgpd.h    |  6 ++++++
+ 4 files changed, 56 insertions(+), 2 deletions(-)
+
+diff --git a/bgpd/bgp_nht.c b/bgpd/bgp_nht.c
+index c364a15be..edf44c27c 100644
+--- a/bgpd/bgp_nht.c
++++ b/bgpd/bgp_nht.c
+@@ -819,6 +819,9 @@ static void bgp_nht_ifp_handle(struct interface *ifp, bool up)
+ 	if (!bgp)
+ 		return;
+ 
++	if (!up)
++		bgp_clearing_batch_begin(bgp);
++
+ 	bgp_nht_ifp_table_handle(bgp, &bgp->nexthop_cache_table[AFI_IP], ifp,
+ 				 up);
+ 	bgp_nht_ifp_table_handle(bgp, &bgp->import_check_table[AFI_IP], ifp,
+@@ -827,6 +830,9 @@ static void bgp_nht_ifp_handle(struct interface *ifp, bool up)
+ 				 up);
+ 	bgp_nht_ifp_table_handle(bgp, &bgp->import_check_table[AFI_IP6], ifp,
+ 				 up);
++
++	if (!up)
++		bgp_clearing_batch_end_event_start(bgp);
+ }
+ 
+ void bgp_nht_ifp_up(struct interface *ifp)
+diff --git a/bgpd/bgp_vty.c b/bgpd/bgp_vty.c
+index ee99ecfe1..884c79d94 100644
+--- a/bgpd/bgp_vty.c
++++ b/bgpd/bgp_vty.c
+@@ -1097,9 +1097,12 @@ static int bgp_clear(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
+ 	int ret = 0;
+ 	bool found = false;
+ 	struct peer *peer;
++	bool afi_safi_unspec = false;
+ 
+ 	VTY_BGP_GR_DEFINE_LOOP_VARIABLE;
+ 
++	afi_safi_unspec = ((afi == AFI_UNSPEC) && (safi == SAFI_UNSPEC));
++
+ 	/* Clear all neighbors. */
+ 	/*
+ 	 * Pass along pointer to next node to peer_clear() when walking all
+@@ -1107,6 +1110,8 @@ static int bgp_clear(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
+ 	 * doppelganger
+ 	 */
+ 	if (sort == clear_all) {
++		if (afi_safi_unspec)
++			bgp_clearing_batch_begin(bgp);
+ 		for (ALL_LIST_ELEMENTS(bgp->peer, node, nnode, peer)) {
+ 
+ 			bgp_peer_gr_flags_update(peer);
+@@ -1133,6 +1138,8 @@ static int bgp_clear(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
+ 		if (stype == BGP_CLEAR_SOFT_NONE)
+ 			bgp->update_delay_over = 0;
+ 
++		if (afi_safi_unspec)
++			bgp_clearing_batch_end_event_start(bgp);
+ 		return CMD_SUCCESS;
+ 	}
+ 
+@@ -1188,6 +1195,8 @@ static int bgp_clear(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
+ 			return CMD_WARNING;
+ 		}
+ 
++		if (afi_safi_unspec)
++			bgp_clearing_batch_begin(bgp);
+ 		for (ALL_LIST_ELEMENTS(group->peer, node, nnode, peer)) {
+ 			ret = bgp_peer_clear(peer, afi, safi, &nnode, stype);
+ 
+@@ -1196,6 +1205,8 @@ static int bgp_clear(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
+ 			else
+ 				found = true;
+ 		}
++		if (afi_safi_unspec)
++			bgp_clearing_batch_end_event_start(bgp);
+ 
+ 		if (!found)
+ 			vty_out(vty,
+@@ -1207,6 +1218,8 @@ static int bgp_clear(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
+ 
+ 	/* Clear all external (eBGP) neighbors. */
+ 	if (sort == clear_external) {
++		if (afi_safi_unspec)
++			bgp_clearing_batch_begin(bgp);
+ 		for (ALL_LIST_ELEMENTS(bgp->peer, node, nnode, peer)) {
+ 			if (peer->sort == BGP_PEER_IBGP)
+ 				continue;
+@@ -1231,7 +1244,8 @@ static int bgp_clear(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
+ 			   && bgp->present_zebra_gr_state == ZEBRA_GR_ENABLE) {
+ 			bgp_zebra_send_capabilities(bgp, true);
+ 		}
+-
++		if (afi_safi_unspec)
++			bgp_clearing_batch_end_event_start(bgp);
+ 		if (!found)
+ 			vty_out(vty,
+ 				"%% BGP: No external %s peer is configured\n",
+@@ -1249,6 +1263,8 @@ static int bgp_clear(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
+ 			return CMD_WARNING;
+ 		}
+ 
++		if (afi_safi_unspec)
++			bgp_clearing_batch_begin(bgp);
+ 		for (ALL_LIST_ELEMENTS(bgp->peer, node, nnode, peer)) {
+ 			if (peer->as != as)
+ 				continue;
+@@ -1274,6 +1290,8 @@ static int bgp_clear(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi,
+ 			bgp_zebra_send_capabilities(bgp, true);
+ 		}
+ 
++		if (afi_safi_unspec)
++			bgp_clearing_batch_end_event_start(bgp);
+ 		if (!found)
+ 			vty_out(vty,
+ 				"%% BGP: No %s peer is configured with AS %s\n",
+diff --git a/bgpd/bgpd.c b/bgpd/bgpd.c
+index ca535901f..aa6448a46 100644
+--- a/bgpd/bgpd.c
++++ b/bgpd/bgpd.c
+@@ -3963,6 +3963,7 @@ int bgp_delete(struct bgp *bgp)
+ 	EVENT_OFF(bgp->t_maxmed_onstartup);
+ 	EVENT_OFF(bgp->t_update_delay);
+ 	EVENT_OFF(bgp->t_establish_wait);
++	EVENT_OFF(bgp->clearing_end);
+ 
+ 	/* Set flag indicating bgp instance delete in progress */
+ 	SET_FLAG(bgp->flags, BGP_FLAG_DELETE_IN_PROGRESS);
+@@ -8822,10 +8823,13 @@ static void bgp_clearing_peer_done(struct peer *peer)
+ /*
+  * Initialize a new batch struct for clearing peer(s) from the RIB
+  */
+-static void bgp_clearing_batch_begin(struct bgp *bgp)
++void bgp_clearing_batch_begin(struct bgp *bgp)
+ {
+ 	struct bgp_clearing_info *cinfo;
+ 
++	if (event_is_scheduled(bgp->clearing_end))
++		return;
++
+ 	cinfo = XCALLOC(MTYPE_CLEARING_BATCH, sizeof(struct bgp_clearing_info));
+ 
+ 	cinfo->bgp = bgp;
+@@ -8848,6 +8852,9 @@ static void bgp_clearing_batch_end(struct bgp *bgp)
+ {
+ 	struct bgp_clearing_info *cinfo;
+ 
++	if (event_is_scheduled(bgp->clearing_end))
++		return;
++
+ 	cinfo = bgp_clearing_info_first(&bgp->clearing_list);
+ 
+ 	assert(cinfo != NULL);
+@@ -8871,6 +8878,23 @@ static void bgp_clearing_batch_end(struct bgp *bgp)
+ 	bgp_clear_route_batch(cinfo);
+ }
+ 
++static void bgp_clearing_batch_end_event(struct event *event)
++{
++	struct bgp *bgp = EVENT_ARG(event);
++
++	bgp_clearing_batch_end(bgp);
++	bgp_unlock(bgp);
++}
++
++void bgp_clearing_batch_end_event_start(struct bgp *bgp)
++{
++	if (!event_is_scheduled(bgp->clearing_end))
++		bgp_lock(bgp);
++
++	EVENT_OFF(bgp->clearing_end);
++	event_add_timer_msec(bm->master, bgp_clearing_batch_end_event, bgp, 100, &bgp->clearing_end);
++}
++
+ /* Check whether a dest's peer is relevant to a clearing batch */
+ bool bgp_clearing_batch_check_peer(struct bgp_clearing_info *cinfo,
+ 				   const struct peer *peer)
+diff --git a/bgpd/bgpd.h b/bgpd/bgpd.h
+index dd163acd0..c51b902fa 100644
+--- a/bgpd/bgpd.h
++++ b/bgpd/bgpd.h
+@@ -523,6 +523,8 @@ struct bgp {
+ 	/* start-up timer on only once at the beginning */
+ 	struct event *t_startup;
+ 
++	struct event *clearing_end;
++
+ 	uint32_t v_maxmed_onstartup; /* Duration of max-med on start-up */
+ #define BGP_MAXMED_ONSTARTUP_UNCONFIGURED  0 /* 0 means off, its the default */
+ 	uint32_t maxmed_onstartup_value;     /* Max-med value when active on
+@@ -2897,6 +2899,10 @@ bool bgp_clearing_batch_dests_present(struct bgp_clearing_info *cinfo);
+ struct bgp_dest *bgp_clearing_batch_next_dest(struct bgp_clearing_info *cinfo);
+ /* Done with a peer clearing batch; deal with refcounts, free memory */
+ void bgp_clearing_batch_completed(struct bgp_clearing_info *cinfo);
++/* Start a new batch of peers to clear */
++void bgp_clearing_batch_begin(struct bgp *bgp);
++/* End a new batch of peers to clear */
++void bgp_clearing_batch_end_event_start(struct bgp *bgp);
+ 
+ #ifdef _FRR_ATTRIBUTE_PRINTFRR
+ /* clang-format off */
+-- 
+2.43.2
+
