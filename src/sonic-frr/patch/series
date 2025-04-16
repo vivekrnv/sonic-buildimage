@@ -103,7 +103,6 @@
 0119-bgpd-batch-peer-connection-error-clearing.patch
 0120-zebra-move-peer-conn-error-list-to-connection-struct.patch
 0121-bgpd-Allow-batch-clear-to-do-partial-work-and-contin.patch
-0122-bgpd-Tie-in-more-clear-events-to-clear-code.patch
 0123-zebra-send-v6-fast-RA-at-faster-interval.patch
 0124-lib-add-option-to-start-stop-wheel-timer.patch
 0125-bgpd-Paths-received-from-shutdown-peer-not-deleted.patch
