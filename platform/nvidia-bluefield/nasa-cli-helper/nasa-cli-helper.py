@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES.
 # Apache-2.0
