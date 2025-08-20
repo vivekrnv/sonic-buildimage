@@ -35,7 +35,14 @@ def main():
     if args.command == 'get_packet_debug_mode':
         status, filename = nvda_bf.get_packet_debug_mode(docker_client)
     elif args.command == 'get_sai_debug_mode':
-        status, filename = nvda_bf.get_sai_debug_mode(docker_client)
+    try:
+        if args.command == 'get_packet_debug_mode':
+            status, filename = nvda_bf.get_packet_debug_mode(docker_client)
+        elif args.command == 'get_sai_debug_mode':
+            status, filename = nvda_bf.get_sai_debug_mode(docker_client)
+    except Exception as e:
+        print(f"Error: Failed to execute '{args.command}': {e}", file=sys.stderr)
+        sys.exit(1)
     
     if args.filename:
         print(filename)
