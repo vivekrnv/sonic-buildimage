@@ -30,11 +30,12 @@ def main():
 
     args = parser.parse_args()
 
-    docker_client = docker.from_env()
+    try:
+        docker_client = docker.from_env()
+    except docker.errors.DockerException as e:
+        print(f"Error: Unable to connect to Docker. {e}", file=sys.stderr)
+        sys.exit(1)
 
-    if args.command == 'get_packet_debug_mode':
-        status, filename = nvda_bf.get_packet_debug_mode(docker_client)
-    elif args.command == 'get_sai_debug_mode':
     try:
         if args.command == 'get_packet_debug_mode':
             status, filename = nvda_bf.get_packet_debug_mode(docker_client)
