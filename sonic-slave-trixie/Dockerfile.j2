@@ -769,3 +769,6 @@ RUN eatmydata apt install -y python-is-python3
 ARG bazelisk_url=https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-{{ CONFIGURED_ARCH }}
 RUN curl -fsSL -o /usr/local/bin/bazel ${bazelisk_url} && chmod 755 /usr/local/bin/bazel
 {% endif -%}
+
+# Install cargo-tarpaulin for code coverage
+RUN cargo install cargo-tarpaulin
