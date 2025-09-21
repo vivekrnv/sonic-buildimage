@@ -336,6 +336,7 @@ sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y in
     pciutils                \
     iptables-persistent     \
     ebtables                \
+    linux-sysctl-defaults   \
     logrotate               \
     curl                    \
     kexec-tools             \
