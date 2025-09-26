@@ -18,22 +18,25 @@ fi
 mkdir -p /var/log/swss
 ORCHAGENT_ARGS="-d /var/log/swss "
 
+SWITCH_TYPE=$(echo $SWSS_VARS | jq -r '.switch_type')
 LOCALHOST_SWITCHTYPE=`sonic-db-cli CONFIG_DB hget "DEVICE_METADATA|localhost" "switch_type"`
 if [[ x"${LOCALHOST_SWITCHTYPE}" == x"chassis-packet" ]]; then
     # Set orchagent pop batch size to 128 for faster link notification handling 
     # during route-churn
     ORCHAGENT_ARGS+="-b 128 "
-else
+elif [ "$SWITCH_TYPE" != "dpu" ]; then
     # Set orchagent pop batch size to 1024
     ORCHAGENT_ARGS+="-b 1024 "
+else
+    # To handle high volume of objects in DPU
+    ORCHAGENT_ARGS+="-b 65536 "
 fi
 
-# Set zmq mode by default for smartswitch DPU
+# Set zmq mode by default for smartswitch DPU and increase the max bulk limit
 # Otherwise, set synchronous mode if it is enabled in CONFIG_DB
 SYNC_MODE=$(echo $SWSS_VARS | jq -r '.synchronous_mode')
-SWITCH_TYPE=$(echo $SWSS_VARS | jq -r '.switch_type')
 if [ "$SWITCH_TYPE" == "dpu" ]; then
-    ORCHAGENT_ARGS+="-z zmq_sync "
+    ORCHAGENT_ARGS+="-z zmq_sync -k 65536 "
 elif [ "$SYNC_MODE" == "enable" ]; then
     ORCHAGENT_ARGS+="-s "
 fi
