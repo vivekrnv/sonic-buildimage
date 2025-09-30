@@ -210,7 +210,7 @@ program_console_speed()
 request_dpu_midplane_ip()
 {
     local INTERFACE="eth0-midplane"
-    if ip link show "$INTERFACE" &> /dev/null; then
+    if ip link show "$INTERFACE" 2> /dev/null; then
         echo "dhclient -r $INTERFACE"
         /usr/sbin/dhclient -r "$INTERFACE"
         sleep 1
@@ -261,7 +261,7 @@ else
 fi
 
 # W/A for https://github.com/sonic-net/sonic-buildimage/issues/24086
-if /usr/bin/jq -e 'has("DPU")' /usr/share/sonic/device/$platform/platform.json &>/dev/null; then
+if /usr/bin/jq -e 'has("DPU")' /usr/share/sonic/device/$platform/platform.json 2>/dev/null; then
     echo "DPU type detected. Requesting IP ..."
     request_dpu_midplane_ip
 fi
