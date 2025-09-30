@@ -24,12 +24,12 @@ if [[ x"${LOCALHOST_SWITCHTYPE}" == x"chassis-packet" ]]; then
     # Set orchagent pop batch size to 128 for faster link notification handling 
     # during route-churn
     ORCHAGENT_ARGS+="-b 128 "
-elif [ "$SWITCH_TYPE" != "dpu" ]; then
-    # Set orchagent pop batch size to 1024
-    ORCHAGENT_ARGS+="-b 1024 "
-else
+elif [ "$SWITCH_TYPE" == "dpu" ]; then
     # To handle high volume of objects in DPU
     ORCHAGENT_ARGS+="-b 65536 "
+else
+    # Set orchagent pop batch size to 1024
+    ORCHAGENT_ARGS+="-b 1024 "
 fi
 
 # Set zmq mode by default for smartswitch DPU and increase the max bulk limit
