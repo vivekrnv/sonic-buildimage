@@ -1395,7 +1395,6 @@ $(addprefix $(TARGET_PATH)/, $(SONIC_RFS_TARGETS)) : $(TARGET_PATH)/% : \
 #                $(LIBPAM_RADIUS) \
 #                $(LIBNSS_RADIUS) \
 #                $(OPENSSH_SERVER) \
-#                $(BASH) \
 #
 $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
         .platform \
@@ -1422,6 +1421,7 @@ $(addprefix $(TARGET_PATH)/, $(SONIC_INSTALLERS)) : $(TARGET_PATH)/% : \
                 $(SONIC_UTILITIES_DATA) \
                 $(SONIC_CTRMGRD_RS) \
                 $(SONIC_HOST_SERVICES_DATA) \
+                $(BASH) \
                 $(BASH_TACPLUS) \
                 $(AUDISP_TACPLUS) \
                 $(SYSLOG_COUNTER)) \
