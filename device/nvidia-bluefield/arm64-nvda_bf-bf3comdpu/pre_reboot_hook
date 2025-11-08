@@ -21,6 +21,8 @@ declare -r EXIT_ERROR=1
 
 declare -r FW_UPGRADE_SCRIPT="/usr/bin/mlnx-fw-upgrade.sh"
 
+hwclock --systohc
+
 ${FW_UPGRADE_SCRIPT} --upgrade --verbose
 EXIT_CODE=$?
 if [[ ${EXIT_CODE} != ${EXIT_SUCCESS} ]]; then
