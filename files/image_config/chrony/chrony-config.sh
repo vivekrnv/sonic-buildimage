@@ -1,6 +1,6 @@
 #!/bin/bash
 
-hwclock --show
+hwclock --show &> /dev/null
 if [ $? -ne 0 ]; then
     echo "hwclock --show failed, attempting hwclock --systohc..."
     hwclock --systohc
