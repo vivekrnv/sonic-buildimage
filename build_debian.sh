@@ -431,6 +431,11 @@ sudo chmod +x /etc/initramfs-tools/hooks/network_setup
 # Copy vmcore-sysctl.conf to add more vmcore dump flags to kernel
 sudo cp files/image_config/kdump/vmcore-sysctl.conf $FILESYSTEM_ROOT/etc/sysctl.d/
 
+# To fix iproute2 6.15.0-1+ removal of /etc/iproute2/ directory
+# https://salsa.debian.org/kernel-team/iproute2/-/commit/245d1f34b6045f178d36fee24cc6b7544a7efd7d
+sudo mkdir -p /etc/iproute2/rt_tables.d/
+sudo mkdir -p /etc/iproute2/rt_protos.d/
+
 #Adds a locale to a debian system in non-interactive mode
 sudo sed -i '/^#.* en_US.* /s/^#//' $FILESYSTEM_ROOT/etc/locale.gen && \
     sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT locale-gen "en_US.UTF-8"
