@@ -27,6 +27,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 	rm -rf mlnx_sai_src
 	wget -c $(DPU_SAI_SOURCE_BASE_URL)/$(DPU_SAI_VERSION).tar.gz -O - | tar -xz --one-top-level=mlnx_sai_src
 	pushd mlnx_sai_src
+	patch -p1 < ../0001-Fixing-array-indexing-in-sai-meta-attr-to-support-SA.patch
 	pushd mlnx_sai
 
 	# Build the package 

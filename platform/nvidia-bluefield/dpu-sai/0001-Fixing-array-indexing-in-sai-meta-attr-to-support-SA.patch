@@ -1,0 +1,105 @@
+From f81ba0255ef0994711de46c694e7b2a954da616a Mon Sep 17 00:00:00 2001
+From: Vishal Srivastav <vsrivastav@nvidia.com>
+Date: Thu, 5 Feb 2026 17:58:41 -0800
+Subject: [PATCH] Fixing array indexing in sai meta attr to support SAI header
+ backward compatibility #4875115
+
+Change-Id: Ic99c762ca99952c9af625194be91e2efb5b40589
+---
+ mlnx_sai/src/mlnx_sai_utils.c | 30 +++++++++++++++++-------------
+ 1 file changed, 17 insertions(+), 13 deletions(-)
+
+diff --git a/mlnx_sai/src/mlnx_sai_utils.c b/mlnx_sai/src/mlnx_sai_utils.c
+index 1aff2e9..1fdd2c4 100644
+--- a/mlnx_sai/src/mlnx_sai_utils.c
++++ b/mlnx_sai/src/mlnx_sai_utils.c
+@@ -487,6 +487,7 @@ static sai_status_t sai_object_type_attr_index_find(_In_ const sai_attr_id_t
+                                                     _Out_ uint32_t              *index)
+ {
+     const sai_attr_metadata_t* const *md;
++    const sai_object_type_info_t     *object_type_info;
+     uint32_t                          ii;
+ 
+     SX_LOG_ENTER();
+@@ -503,12 +504,13 @@ static sai_status_t sai_object_type_attr_index_find(_In_ const sai_attr_id_t
+         return SAI_STATUS_INVALID_PARAMETER;
+     }
+ 
+-    md = sai_metadata_attr_by_object_type[SAI_OBJ_TYPE_TO_ARRAY_IDX(object_type)];
+-    if (NULL == md) {
++    object_type_info = sai_metadata_get_object_type_info(object_type);
++    if ((NULL == object_type_info) || (NULL == object_type_info->attrmetadata)) {
+         SX_LOG_ERR("Failed to fetch meta data array for object type - %d\n", object_type);
+         SX_LOG_EXIT();
+         return SAI_STATUS_FAILURE;
+     }
++    md = object_type_info->attrmetadata;
+ 
+     for (ii = 0; md[ii] != NULL; ii++) {
+         if (md[ii]->attrid == attr_id) {
+@@ -557,8 +559,7 @@ static sai_status_t sai_vendor_attr_index_find(_In_ const sai_attr_id_t
+ static sai_status_t sai_object_type_attr_count_meta_get(_In_ const sai_object_type_t object_type,
+                                                         _Out_ uint32_t              *attr_count)
+ {
+-    const sai_attr_metadata_t* const *md;
+-    uint32_t                          ii;
++    const sai_object_type_info_t *object_type_info;
+ 
+     SX_LOG_ENTER();
+ 
+@@ -576,17 +577,14 @@ static sai_status_t sai_object_type_attr_count_meta_get(_In_ const sai_object_ty
+         return SAI_STATUS_INVALID_PARAMETER;
+     }
+ 
+-    md = sai_metadata_attr_by_object_type[SAI_OBJ_TYPE_TO_ARRAY_IDX(object_type)];
+-    if (NULL == md) {
+-        SX_LOG_ERR("Failed to fetch meta data array for object type - %d\n", object_type);
++    object_type_info = sai_metadata_get_object_type_info(object_type);
++    if (NULL == object_type_info) {
++        SX_LOG_ERR("Failed to fetch object type info for object type - %d\n", object_type);
+         SX_LOG_EXIT();
+         return SAI_STATUS_FAILURE;
+     }
+ 
+-    for (ii = 0; md[ii] != NULL; ii++) {
+-    }
+-
+-    *attr_count = ii;
++    *attr_count = (uint32_t)object_type_info->attrmetadatalength;
+ 
+     SX_LOG_EXIT();
+     return SAI_STATUS_SUCCESS;
+@@ -614,7 +612,7 @@ sai_status_t sai_attribute_short_name_fetch(_In_ sai_object_type_t object_type,
+         return SAI_STATUS_FAILURE;
+     }
+ 
+-    object_type_info = sai_metadata_all_object_type_infos[SAI_OBJ_TYPE_TO_ARRAY_IDX(object_type)];
++    object_type_info = sai_metadata_get_object_type_info(object_type);
+     if (NULL == object_type_info) {
+         SX_LOG_ERR("Failed to fetch object type info for %d\n", object_type);
+         SX_LOG_EXIT();
+@@ -1331,6 +1329,7 @@ static sai_status_t sai_attrlist_mandatory_attrs_check(
+     sai_status_t                      status;
+     char                              conditions_str[MAX_LIST_VALUE_STR_LEN] = {0};
+     const sai_attr_metadata_t* const *md;
++    const sai_object_type_info_t     *object_type_info;
+     uint32_t                          ii;
+     bool                              is_mandatory_condtitions_valid, is_not_mandatory;
+ 
+@@ -1341,7 +1340,12 @@ static sai_status_t sai_attrlist_mandatory_attrs_check(
+         return SAI_STATUS_INVALID_PARAMETER;
+     }
+ 
+-    md = sai_metadata_attr_by_object_type[SAI_OBJ_TYPE_TO_ARRAY_IDX(object_type)];
++    object_type_info = sai_metadata_get_object_type_info(object_type);
++    if ((NULL == object_type_info) || (NULL == object_type_info->attrmetadata)) {
++        MLNX_SAI_LOG_ERR("Failed to fetch meta data for object type %s\n", SAI_TYPE_STR(object_type));
++        return SAI_STATUS_FAILURE;
++    }
++    md = object_type_info->attrmetadata;
+ 
+     for (ii = 0; ii < attr_count_meta; ii++) {
+         if (NULL == md[ii]) {
+-- 
+2.49.0
+
