@@ -328,7 +328,7 @@ class DpuCtlPlat():
 
         The main DPU PCI device (PCIE_INT) is unbound from the mlx5_core
         driver rather than fully removed from sysfs so the device stays
-        enumerated on the host bus. The RSHIM/ConnectX PCI device
+        enumerated on the host bus. The RSHIM/SoC PCI device
         (RSHIM_PCIE_INT) is intentionally left alone.
         """
         try:
@@ -346,7 +346,7 @@ class DpuCtlPlat():
                     f"Skipping unbind for {pci_dev_path}: driver not bound "
                     f"or mlx5_core unbind path missing"
                 )
-            # RSHIM_PCIE_INT (ConnectX) is intentionally skipped.
+            # RSHIM_PCIE_INT (SoC) is intentionally skipped.
             self.log_debug(f"Skip pci removal for SOC PCIE dev {rshim_pci_dev_path}")
             return True
         except Exception as e:
@@ -359,7 +359,7 @@ class DpuCtlPlat():
         Re-attach the main DPU PCI device (PCIE_INT) to the mlx5_core
         driver (symmetric with the unbind performed in ``dpu_pci_remove``).
         If the driver is already bound, log a message and skip the bind.
-        For the RSHIM/ConnectX PCI device (RSHIM_PCIE_INT) only verify the
+        For the RSHIM/SoC PCI device (RSHIM_PCIE_INT) only verify the
         device is back on the bus.
         """
         try:
@@ -384,7 +384,7 @@ class DpuCtlPlat():
                     f"mlx5_core bind path {MLX5_CORE_BIND_PATH} not found, "
                     f"skipping bind for {pci_dev_path}"
                 )
-            # RSHIM_PCIE_INT (ConnectX): verify reappearance only.
+            # RSHIM_PCIE_INT (SoC): verify reappearance only.
             if not os.path.exists(rshim_pci_dev_path):
                 self.log_warning(f"PCI device {rshim_pci_dev_path} not found")
             return True
