@@ -160,7 +160,7 @@ class TestDpuCtlPlatPCI:
         """Test PCI unbind/bind operations.
 
         ``dpu_pci_remove`` unbinds PCIE_INT from mlx5_core and intentionally
-        skips the RSHIM/ConnectX device. ``dpu_pci_scan`` binds PCIE_INT
+        skips the RSHIM/SoC device. ``dpu_pci_scan`` binds PCIE_INT
         back, or logs a skip message when the driver is already bound.
         """
         written_data = []
@@ -251,7 +251,7 @@ class TestDpuCtlPlatPCI:
                 for c in mock_warn.call_args_list
             )
 
-        # PCI scan when RSHIM/ConnectX device hasn't reappeared: warning logged.
+        # PCI scan when RSHIM/SoC device hasn't reappeared: warning logged.
         written_data.clear()
 
         def exists_missing_rshim(path):
