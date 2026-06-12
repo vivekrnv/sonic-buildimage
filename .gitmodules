@@ -9,7 +9,7 @@
 	url = https://github.com/sonic-net/sonic-sairedis
 [submodule "sonic-swss"]
 	path = src/sonic-swss
-	url = https://github.com/sonic-net/sonic-swss
+	url = https://github.com/vivekrnv/sonic-swss
 [submodule "src/p4c-bm/p4c-bm"]
 	path = platform/p4/p4c-bm/p4c-bm
 	url = https://github.com/krambn/p4c-bm
@@ -119,7 +119,7 @@
 	url = https://github.com/sonic-net/sonic-dash-api.git
 [submodule "src/sonic-dash-ha"]
 	path = src/sonic-dash-ha
-	url = https://github.com/sonic-net/sonic-dash-ha
+	url = https://github.com/vivekrnv/sonic-dash-ha
 [submodule "src/sonic-stp"]
 	path = src/sonic-stp
 	url = https://github.com/sonic-net/sonic-stp
