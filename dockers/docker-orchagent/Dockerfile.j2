@@ -21,6 +21,7 @@ RUN apt-get update &&       \
         python3-protobuf    \
         pciutils            \
         gdb                 \
+        linux-perf          \
         python3-netifaces
 
 {% if ( CONFIGURED_ARCH == "armhf" or CONFIGURED_ARCH == "arm64" ) %}
